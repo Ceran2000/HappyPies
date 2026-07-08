@@ -1,0 +1,46 @@
+# Gradle / Kotlin
+.gradle/
+build/
+*/build/
+.kotlin/
+local.properties
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Android Studio
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Xcode / iOS
+iosApp/**/*.xcuserstate
+iosApp/**/xcuserdata/
+iosApp/**/DerivedData/
+iosApp/**/*.xcworkspace/xcuserdata/
+iosApp/Pods/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# KMP shared framework build output
+shared/build/
+**/kotlin-native/
+
+# environment secrets
+local.properties
+*.jks
+*.keystore
+secrets.properties
+
+# System
+.DS_Store
+Thumbs.db
+
+# AI
+CLAUDE.md
+docs/
+EOF
