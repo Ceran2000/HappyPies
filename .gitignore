@@ -1,46 +1,19 @@
-# Gradle / Kotlin
-.gradle/
-build/
-*/build/
-.kotlin/
-local.properties
-gradle-app.setting
-!gradle-wrapper.jar
-
-# Android Studio
-.idea/
 *.iml
-.DS_Store
-captures/
-.externalNativeBuild/
-.cxx/
-
-# Xcode / iOS
-iosApp/**/*.xcuserstate
-iosApp/**/xcuserdata/
-iosApp/**/DerivedData/
-iosApp/**/*.xcworkspace/xcuserdata/
-iosApp/Pods/
-*.hmap
-*.ipa
-*.dSYM.zip
-*.dSYM
-
-# KMP shared framework build output
-shared/build/
-**/kotlin-native/
-
-# environment secrets
+.kotlin
+.gradle
+**/build/
+xcuserdata
+!src/**/build/
 local.properties
-*.jks
-*.keystore
-secrets.properties
-
-# System
+.idea
 .DS_Store
-Thumbs.db
-
-# AI
-CLAUDE.md
-docs/
-EOF
+captures
+.externalNativeBuild
+.cxx
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcodeproj/project.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
+node_modules/
