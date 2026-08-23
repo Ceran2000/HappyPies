@@ -34,14 +34,10 @@ kotlin {
     
     sourceSets {
         commonMain.dependencies {
-            // put your Multiplatform dependencies here
+            implementation(libs.kotlinx.coroutines.core)
         }
         androidMain.dependencies {
-            implementation(project.dependencies.platform(libs.firebase.bom))
-            implementation(libs.firebase.auth)
-            implementation(libs.firebase.firestore)
-            implementation(libs.firebase.storage)
-            implementation(libs.firebase.messaging)
+            // put your Android-specific dependencies here
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
