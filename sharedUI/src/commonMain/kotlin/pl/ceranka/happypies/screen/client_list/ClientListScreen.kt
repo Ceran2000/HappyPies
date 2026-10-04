@@ -17,18 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import pl.ceranka.happypies.auth.AuthSessionStore
+import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.data.client.Client
-import pl.ceranka.happypies.data.client.ClientRepository
 
 @Composable
 fun ClientListScreen(
-    clientRepository: ClientRepository,
-    sessionStore: AuthSessionStore,
     onClientClick: (String) -> Unit,
 ) {
-    val viewModel = viewModel { ClientListViewModel(clientRepository, sessionStore) }
+    val viewModel = koinViewModel<ClientListViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     ClientListContent(

@@ -19,18 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import pl.ceranka.happypies.auth.AuthManager
-import pl.ceranka.happypies.data.user.UserRepository
+import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.data.user.UserRole
 
 @Composable
 fun LoginScreen(
-    authManager: AuthManager,
-    userRepository: UserRepository,
     onLoggedIn: (UserRole) -> Unit,
 ) {
-    val viewModel = viewModel { LoginViewModel(authManager, userRepository) }
+    val viewModel = koinViewModel<LoginViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState) {

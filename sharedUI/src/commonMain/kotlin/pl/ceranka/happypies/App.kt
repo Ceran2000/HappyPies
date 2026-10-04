@@ -9,10 +9,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import pl.ceranka.happypies.auth.AuthManager
-import pl.ceranka.happypies.auth.AuthSessionStore
-import pl.ceranka.happypies.data.client.ClientRepository
-import pl.ceranka.happypies.data.user.UserRepository
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.navigation.Route
 import pl.ceranka.happypies.navigation.routeSavedStateConfiguration
@@ -23,12 +21,8 @@ import pl.ceranka.happypies.screen.login.LoginScreen
 import pl.ceranka.happypies.ui.common.AuthenticatedScreen
 
 @Composable
-fun App(
-    authManager: AuthManager,
-    userRepository: UserRepository,
-    clientRepository: ClientRepository,
-    sessionStore: AuthSessionStore
-) {
+fun App() {
+    val authManager = koinInject<AuthManager>()
     MaterialTheme {
         val backStack = rememberNavBackStack(routeSavedStateConfiguration, Route.Login)
         val scope = rememberCoroutineScope()
@@ -50,8 +44,6 @@ fun App(
             entryProvider = entryProvider {
                 entry<Route.Login> {
                     LoginScreen(
-                        authManager = authManager,
-                        userRepository = userRepository,
                         onLoggedIn = { role ->
                             backStack.clear()
                             backStack.add(
@@ -66,8 +58,6 @@ fun App(
                 entry<Route.ClientList> {
                     AuthenticatedScreen(onLogout = ::logout) {
                         ClientListScreen(
-                            clientRepository = clientRepository,
-                            sessionStore = sessionStore,
                             onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) }
                         )
                     }
@@ -75,7 +65,6 @@ fun App(
                 entry<Route.ClientDetail> { route ->
                     AuthenticatedScreen(onLogout = ::logout) {
                         ClientDetailsScreen(
-                            clientRepository = clientRepository,
                             clientId = route.clientId,
                             onBack = { backStack.removeLastOrNull() }
                         )
