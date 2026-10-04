@@ -6,12 +6,12 @@
 
 ## 📍 Teraz
 
-**Faza 0 — fundament** · branch `feature/client-list`
+**Faza 0 — fundament** · branch: `feature/koin-multiplatform`
 
 Najbliższe kroki:
-1. Zacommitować `ROADMAP.md` i `.gitignore` (`CLAUDE.md` i `plan.md` zostają lokalnie)
-2. Wypchnąć `feature/client-list` (branch jest tylko lokalnie!) i zmergować do `main`
-3. Decyzja: migracja na Koin multiplatform — robimy czy nie?
+1. ✅ Koin multiplatform wdrożony i przetestowany ręcznie na Androidzie i iOS (przelogowanie, lista, szczegóły) — do zacommitowania
+2. ⏳ Test `verify()` grafu Koina i testy ViewModeli (`commonTest`, fałszywe repozytoria)
+3. ⏳ Zaproszenie klienta mailem + Security Rules z podziałem na role
 
 ---
 
@@ -20,10 +20,11 @@ Najbliższe kroki:
 - ✅ Inicjalizacja projektu KMP
 - ✅ Firebase SDK: Android natywnie, iOS przez SPM (Protocol Injection Bridge)
 - ✅ Logowanie z rolami (trener / klient), wspólny UI Compose na obu platformach
-- 🔄 Lista klientów i szczegóły klienta (trener) — przetestowane (także przelogowanie między kontami), czeka na merge
+- ✅ Lista klientów i szczegóły klienta (trener)
 - ⏳ Zaproszenie klienta mailem: deep link → rejestracja/logowanie
 - ⏳ Security Rules z podziałem na role (teraz: każdy zalogowany czyta `clients`)
-- 💤 Koin multiplatform zamiast ręcznego przekazywania zależności (`koinViewModel()`)
+- ✅ Koin multiplatform zamiast ręcznego przekazywania zależności (`koinViewModel()`) — wdrożone 2026-10-04, czeka na commit
+- ⏳ Testy: `verify()` dla grafu Koina + testy ViewModeli (dziś są tylko pliki z szablonu)
 - 💤 CI (opcjonalnie)
 
 ## Faza 1 — działające MVP ⏳
@@ -59,6 +60,21 @@ Najbliższe kroki:
 
 ---
 
+## 🐞 Znane problemy
+
+- [ ] **iOS: wolne animacje przy przejściach między ekranami.** Zgłoszone 2026-10-04, nie wiadomo, czy to regresja po Koinie. Do sprawdzenia: (1) czy to build Debug (Kotlin/Native + Compose w Debug bywa dużo wolniejszy) — uruchom schemat w konfiguracji Release na urządzeniu; (2) porównanie z commitem `75ceb94` sprzed Koina; (3) dopiero potem szukanie przyczyny w kodzie nawigacji. Na razie założenie, a nie diagnoza.
+
+---
+
+## 📚 Do poczytania (w wolnym czasie)
+
+- [ ] **Argumenty ViewModelu w Navigation 3.** Wątpliwość: `ClientDetailsViewModel` dostaje `clientId` w konstruktorze (przez Koina `parametersOf`), a nie przez `SavedStateHandle`. Ustalenie z sesji 2026-10-04: w Nav3 trasa to zwykły obiekt w back stacku, a nie wpis z argumentami, więc `SavedStateHandle` nie jest automatycznie wypełniany; ID przetrwa śmierć procesu, bo siedzi w trasie zapisywanej przez `rememberNavBackStack`. **Do zweryfikowania w dokumentacji** (to moje ustalenie z pamięci, nie sprawdzone w źródle): czy oficjalne receptury Nav3 faktycznie zalecają fabrykę/assisted injection dla kluczy tras, i czy `SavedStateHandle` ma w Nav3 jakąś rolę.
+  Gdzie: [Navigation 3 — dokumentacja](https://developer.android.com/guide/navigation/navigation-3), receptury Nav3 (repo `android/nav3-recipes`), [Koin: parametry](https://insert-koin.io/docs/reference/koin-core/injection-parameters/).
+- [ ] **Koin głębiej.** Service locator a DI generowane w czasie kompilacji (czemu błędy wychodzą dopiero w runtime), zakresy (`scope`), `verify()` / `checkModules`, `viewModelOf`, start Koina na iOS, ograniczenia. Dla porównania: `kotlin-inject` jako alternatywa z weryfikacją w czasie kompilacji.
+  Gdzie: [Koin dla KMP](https://insert-koin.io/docs/reference/koin-mp/kmp/), [Koin Compose Multiplatform](https://insert-koin.io/docs/reference/koin-compose/multiplatform/).
+
+---
+
 ## Historia
 
 | Data | Co się wydarzyło |
@@ -66,5 +82,5 @@ Najbliższe kroki:
 | 2026-07-08 | Inicjalizacja projektu KMP |
 | 2026-07-11 | Firebase SDK; decyzje: natywne SDK zamiast GitLive, wspólny UI w Compose Multiplatform |
 | 2026-08-23 | Logowanie z rolami zmergowane do `main` |
-| 2026-08-24 | Lista i szczegóły klientów (`75ceb94`, niezmergowane) |
-| 2026-10-04 | Powstała ta roadmapa; testy przelogowania (trener/klient w każdej kombinacji) OK |
+| 2026-08-24 | Lista i szczegóły klientów (`75ceb94`) |
+| 2026-10-04 | Decyzja: migracja na Koin multiplatform + testy jako kolejny krok. Powstała ta roadmapa; testy przelogowania OK; `feature/client-list` zmergowane do `main` (`c68900e`) |

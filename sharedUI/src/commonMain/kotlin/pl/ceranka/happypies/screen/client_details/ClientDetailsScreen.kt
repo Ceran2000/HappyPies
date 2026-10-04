@@ -14,17 +14,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.data.client.Client
-import pl.ceranka.happypies.data.client.ClientRepository
 
 @Composable
 fun ClientDetailsScreen(
-    clientRepository: ClientRepository,
     clientId: String,
     onBack: () -> Unit,
 ) {
-    val viewModel = viewModel { ClientDetailsViewModel(clientRepository, clientId) }
+    val viewModel = koinViewModel<ClientDetailsViewModel> { parametersOf(clientId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     ClientDetailsContent(
