@@ -21,3 +21,7 @@ node_modules/
 # Firebase config files (zawierają klucze/sekrety - nie powinny być commitowane)
 google-services.json
 GoogleService-Info.plist
+
+# Local-only project docs (not pushed)
+CLAUDE.md
+docs/plan.md
