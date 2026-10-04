@@ -9,8 +9,8 @@
 **Faza 0 — fundament** · branch: `feature/koin-multiplatform`
 
 Najbliższe kroki:
-1. ✅ Koin multiplatform wdrożony i przetestowany ręcznie na Androidzie i iOS (przelogowanie, lista, szczegóły) — do zacommitowania
-2. ⏳ Test `verify()` grafu Koina i testy ViewModeli (`commonTest`, fałszywe repozytoria)
+1. ✅ Koin multiplatform wdrożony, zacommitowany i przetestowany ręcznie na Androidzie i iOS
+2. 🔄 Testy ViewModeli (`commonTest`, fałszywe repozytoria) — graf Koina już pokryty
 3. ⏳ Zaproszenie klienta mailem + Security Rules z podziałem na role
 
 ---
@@ -24,7 +24,9 @@ Najbliższe kroki:
 - ⏳ Zaproszenie klienta mailem: deep link → rejestracja/logowanie
 - ⏳ Security Rules z podziałem na role (teraz: każdy zalogowany czyta `clients`)
 - ✅ Koin multiplatform zamiast ręcznego przekazywania zależności (`koinViewModel()`) — wdrożone 2026-10-04, czeka na commit
-- ⏳ Testy: `verify()` dla grafu Koina + testy ViewModeli (dziś są tylko pliki z szablonu)
+- ✅ Test grafu Koina w `commonTest` (`ViewModelModuleTest`, działa na JVM i iOS; `verify()` odpada, bo jest tylko dla JVM)
+- ⏳ Testy logiki ViewModeli (stany Loading/Success/Error) z fałszywymi repozytoriami
+- ⏳ Luka: brak testu, że `appModule` (Android) dostarcza wszystkie interfejsy
 - 💤 CI (opcjonalnie)
 
 ## Faza 1 — działające MVP ⏳
@@ -83,4 +85,4 @@ Najbliższe kroki:
 | 2026-07-11 | Firebase SDK; decyzje: natywne SDK zamiast GitLive, wspólny UI w Compose Multiplatform |
 | 2026-08-23 | Logowanie z rolami zmergowane do `main` |
 | 2026-08-24 | Lista i szczegóły klientów (`75ceb94`) |
-| 2026-10-04 | Decyzja: migracja na Koin multiplatform + testy jako kolejny krok. Powstała ta roadmapa; testy przelogowania OK; `feature/client-list` zmergowane do `main` (`c68900e`) |
+| 2026-10-04 | Koin multiplatform zmergowany na branchu (`a536c83`), dodany test grafu Koina. Decyzja: migracja na Koin multiplatform + testy jako kolejny krok. Powstała ta roadmapa; testy przelogowania OK; `feature/client-list` zmergowane do `main` (`c68900e`) |

@@ -13,13 +13,12 @@ struct iOSApp: App {
         let authManager = AuthManagerImpl(auth: Auth.auth(), sessionStore: session)
         let userRepository = UserRepositoryImpl(firestore: firestore)
         let clientRepository = ClientRepositoryImpl(firestore: firestore)
-        let sessionStore = session
         
         KoinIosKt.setUpKoin(
             authManager: authManager,
             userRepository: userRepository,
             clientRepository: clientRepository,
-            sessionStore: sessionStore
+            sessionStore: session
         )
     }
 

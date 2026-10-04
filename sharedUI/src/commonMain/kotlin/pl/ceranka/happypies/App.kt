@@ -11,9 +11,6 @@ import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import pl.ceranka.happypies.auth.AuthManager
-import pl.ceranka.happypies.auth.AuthSessionStore
-import pl.ceranka.happypies.data.client.ClientRepository
-import pl.ceranka.happypies.data.user.UserRepository
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.navigation.Route
 import pl.ceranka.happypies.navigation.routeSavedStateConfiguration
