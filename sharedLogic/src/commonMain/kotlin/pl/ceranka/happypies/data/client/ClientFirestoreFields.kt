@@ -1,6 +1,8 @@
 package pl.ceranka.happypies.data.client
 
 object ClientFirestoreFields {
+    const val COLLECTION = "clients"
+
     const val TRAINER_ID = "trainerId"
     const val NAME = "name"
     const val EMAIL = "email"

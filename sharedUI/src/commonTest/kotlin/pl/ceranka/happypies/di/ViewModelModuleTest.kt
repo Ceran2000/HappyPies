@@ -11,10 +11,11 @@ import org.koin.dsl.module
 import pl.ceranka.happypies.auth.AppUser
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthSessionStore
-import pl.ceranka.happypies.data.client.Client
-import pl.ceranka.happypies.data.client.ClientRepository
-import pl.ceranka.happypies.data.user.UserRepository
-import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.data.firestore.CollectionQuery
+import pl.ceranka.happypies.data.firestore.FirestoreGateway
+import pl.ceranka.happypies.data.firestore.FirestoreValue
+import pl.ceranka.happypies.data.firestore.ReadResult
+import pl.ceranka.happypies.data.firestore.WriteResult
 import pl.ceranka.happypies.screen.client_details.ClientDetailsViewModel
 import pl.ceranka.happypies.screen.client_list.ClientListViewModel
 import pl.ceranka.happypies.screen.login.LoginViewModel
@@ -34,12 +35,11 @@ class ViewModelModuleTest {
 
     private val platformModule = module {
         single<AuthManager> { FakeAuthManager }
-        single<UserRepository> { FakeUserRepository }
-        single<ClientRepository> { FakeClientRepository }
+        single<FirestoreGateway> { FakeFirestoreGateway }
         single { AuthSessionStore() }
     }
 
-    private val koin = koinApplication { modules(platformModule, viewModelModule) }.koin
+    private val koin = koinApplication { modules(platformModule, dataModule, viewModelModule) }.koin
 
     @Test
     fun resolvesLoginViewModel() {
@@ -62,11 +62,10 @@ private object FakeAuthManager : AuthManager {
     override suspend fun signOut() = Unit
 }
 
-private object FakeUserRepository : UserRepository {
-    override suspend fun getRole(uid: String) = UserRole.TRAINER
-}
-
-private object FakeClientRepository : ClientRepository {
-    override suspend fun getClients(trainerId: String) = emptyList<Client>()
-    override suspend fun getClient(clientId: String) = Client(clientId, "Test", "test@example.com", emptyList())
+private object FakeFirestoreGateway : FirestoreGateway {
+    override suspend fun getDocument(collection: String, id: String) = ReadResult.Success(emptyList())
+    override suspend fun query(query: CollectionQuery) = ReadResult.Success(emptyList())
+    override suspend fun add(collection: String, fields: Map<String, FirestoreValue>) = WriteResult.Success("id")
+    override suspend fun update(collection: String, id: String, fields: Map<String, FirestoreValue>) = WriteResult.Success(id)
+    override suspend fun delete(collection: String, id: String) = WriteResult.Success(id)
 }

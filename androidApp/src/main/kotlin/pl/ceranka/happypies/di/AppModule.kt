@@ -4,14 +4,11 @@ import org.koin.dsl.module
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthManagerImpl
 import pl.ceranka.happypies.auth.AuthSessionStore
-import pl.ceranka.happypies.data.client.ClientRepository
-import pl.ceranka.happypies.data.client.ClientRepositoryImpl
-import pl.ceranka.happypies.data.user.UserRepository
-import pl.ceranka.happypies.data.user.UserRepositoryImpl
+import pl.ceranka.happypies.data.firestore.AndroidFirestoreGateway
+import pl.ceranka.happypies.data.firestore.FirestoreGateway
 
 val appModule = module {
     single<AuthManager> { AuthManagerImpl(get(), get()) }
-    single<UserRepository> { UserRepositoryImpl(get()) }
-    single<ClientRepository> { ClientRepositoryImpl(get()) }
+    single<FirestoreGateway> { AndroidFirestoreGateway(get()) }
     single { AuthSessionStore() }
 }

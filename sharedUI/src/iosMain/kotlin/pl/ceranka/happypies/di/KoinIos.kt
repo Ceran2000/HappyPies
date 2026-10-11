@@ -4,23 +4,21 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthSessionStore
-import pl.ceranka.happypies.data.client.ClientRepository
-import pl.ceranka.happypies.data.user.UserRepository
+import pl.ceranka.happypies.data.firestore.FirestoreGateway
 
 fun setUpKoin(
     authManager: AuthManager,
-    userRepository: UserRepository,
-    clientRepository: ClientRepository,
+    firestoreGateway: FirestoreGateway,
     sessionStore: AuthSessionStore,
 ) {
     startKoin {
         modules(
             module {
                 single<AuthManager> { authManager }
-                single<UserRepository> { userRepository }
-                single<ClientRepository> { clientRepository }
+                single<FirestoreGateway> { firestoreGateway }
                 single<AuthSessionStore> { sessionStore }
             },
+            dataModule,
             viewModelModule
         )
     }
