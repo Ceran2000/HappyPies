@@ -10,9 +10,9 @@
 
 Najbliższe kroki:
 1. ✅ Koin multiplatform wdrożony, przetestowany i zmergowany do `main`
-2. ⏳ Model raportu i lista raportów w szczegółach klienta (start Fazy 1)
-3. ⏳ Formularz raportu, edycja i usuwanie, komentarz drugiej strony
-4. ⏳ Zdjęcia i film w raporcie
+2. ✅ Warstwa danych raportów: model i repozytorium Android / iOS (krok 1 brancha `feature/reports`)
+3. ⏳ Lista raportów w szczegółach klienta i formularz „Nowy raport” (kroki 2–3)
+4. ⏳ Szczegóły raportu z komentarzem, potem widok klienta (kroki 4–5)
 
 Zakres MVP ustalony 2026-10-11: klient i trener dodają raporty (tytuł, opis, zdjęcia, film), druga strona zostawia jeden komentarz. Bez kalendarza, powiadomień push i encji psa. Szczegóły: Faza 1 poniżej.
 
@@ -38,13 +38,16 @@ Pozostałe pozycje fundamentu (zaproszenia, testy, Security Rules) przeniesione 
 
 Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP trener doprecyzuje oczekiwania. Wymagania z ID (lokalnie): `docs/requirements/functional.md`.
 
-**Raporty**
-- ⏳ Model `reports`, repozytorium (bridge Android / iOS) i Security Rules: klient widzi swoje, trener wszystkie (FR-03, FR-07, FR-29)
-- ⏳ Szczegóły klienta: lista raportów chronologicznie (FR-10)
-- ⏳ Formularz raportu: tytuł (wymagany), opis; edycja i usuwanie przez trenera i klienta, „Dodany przez” i `lastEditedBy` (FR-07, FR-31, FR-32)
+**Raporty** (branch `feature/reports`, merge po kroku 5, gdy raporty tekstowe działają u trenera i klienta)
+- ✅ Krok 1. Warstwa danych: model `reports` i repozytorium; jeden most Firestore na platformę, repozytoria `User` / `Client` / `Report` i mapowanie w `commonMain` z testami, błędy domenowe `DataException` (ADR 0006), bez UI (FR-07, FR-29)
+- ⏳ Krok 2. Lista raportów w szczegółach klienta, widok trenera, z limitem i stronicowaniem zapytania (FR-10, NFR-07)
+- ⏳ Krok 3. Formularz „Nowy raport”: tytuł (wymagany), opis (opcjonalny) (FR-07, FR-29)
+- ⏳ Krok 4. Szczegóły raportu: edycja, usuwanie, „Dodany przez” i `lastEditedBy`, jeden komentarz drugiej strony (FR-13, FR-31, FR-32)
+- ⏳ Krok 5. Widok klienta: ekran startowy z listą jego raportów i dodawaniem własnych (FR-10, FR-29)
+- ⏳ Krok 6. Lista klientów: sortowanie wg ostatniego raportu i znaczniki „nowy raport” / „bez komentarza” (FR-33)
+
+**Zdjęcia i film** (osobny branch po zmergowaniu raportów, najbardziej ryzykowna część: upload przez bridge na iOS)
 - ⏳ Zdjęcia i film w raporcie, upload do Firebase Storage (nowy interfejs bridge'a) (FR-15)
-- ⏳ Jeden komentarz pod raportem, zostawia go strona niebędąca autorem (FR-13)
-- ⏳ Lista klientów: sortowanie wg ostatniego raportu i znaczniki „nowy raport” / „bez komentarza” (FR-33)
 
 **Konta i profil**
 - ⏳ Reset hasła i wylogowanie (FR-23, FR-24)
@@ -56,7 +59,7 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 **Na koniec MVP** (decyzja 2026-10-11; do tego czasu klient w demo zakładany ręcznie w konsoli Firebase)
 - ⏳ Zaproszenie klienta mailem: deep link → rejestracja (tylko po zaproszeniu), ważność 7 dni, ponowne wysłanie (FR-02, FR-25)
 - ⏳ Usunięcie klienta wraz z danymi, w tym kaskadowe kasowanie mediów (Cloud Function) (FR-04)
-- ⏳ Security Rules z podziałem na role dla `clients` i `users` (teraz: każdy zalogowany czyta `clients`) (FR-03)
+- ⏳ Security Rules z podziałem na role dla `clients`, `users` i `reports` (teraz: każdy zalogowany czyta `clients`, dla `reports` tymczasowa reguła „zalogowany”) (FR-03)
 - ⏳ Testy logiki ViewModeli (stany Loading/Success/Error) z fałszywymi repozytoriami
 - ⏳ Luka: brak testu, że `appModule` (Android) dostarcza wszystkie interfejsy
 - ⏳ Kompresja wideo na urządzeniu i limity rozmiaru: ustalamy na realnych filmach (kompromis jakość / koszt) (FR-16, NFR-05)
@@ -87,6 +90,11 @@ Do uzgodnienia z trenerem po MVP.
 
 ---
 
+## ⚠️ Świadome ograniczenia
+
+- **Zapisy czekają na potwierdzenie serwera.** Repozytoria czekają (`await`) na zapis w Firestore, więc offline zapis nie kończy się, dopóki nie wróci sieć, a UI pokaże wskaźnik ładowania. Firestore zapisuje lokalnie od razu, ale z tego trybu offline w MVP świadomie nie korzystamy.
+- **Usunięcie raportu nie usuwa plików z Storage.** `deleteReport` kasuje tylko dokument. Do rozwiązania razem ze zdjęciami i filmem (F1-04), inaczej zostaną osierocone pliki.
+
 ## 🐞 Znane problemy
 
 - [ ] **iOS: wolne animacje przy przejściach między ekranami.** Zgłoszone 2026-10-04, nie wiadomo, czy to regresja po Koinie. Do sprawdzenia: (1) czy to build Debug (Kotlin/Native + Compose w Debug bywa dużo wolniejszy) — uruchom schemat w konfiguracji Release na urządzeniu; (2) porównanie z commitem `75ceb94` sprzed Koina; (3) dopiero potem szukanie przyczyny w kodzie nawigacji. Na razie założenie, a nie diagnoza.
@@ -112,3 +120,4 @@ Do uzgodnienia z trenerem po MVP.
 | 2026-08-24 | Lista i szczegóły klientów (`75ceb94`) |
 | 2026-10-04 | Koin multiplatform zmergowany do `main` (`f492034`), dodany test grafu Koina. Decyzja: migracja na Koin multiplatform + testy jako kolejny krok. Powstała ta roadmapa; testy przelogowania OK; `feature/client-list` zmergowane do `main` (`c68900e`) |
 | 2026-10-11 | Przegląd wymagań i ustalenie zakresu MVP: jeden typ raportu z komentarzem drugiej strony, bez kalendarza, push i encji psa; tylko usunięcie klienta; wideo bez limitu długości (limity rozmiaru na koniec MVP). Powstały FR/NFR, ADR-y i mockupy w stylu A (ciepły i miękki, paleta z logo, tryb ciemny) |
+| 2026-10-11 | Wspólna warstwa danych na `feature/reports` (ADR 0006): jeden generyczny most Firestore na platformę, repozytoria i mapowanie w `commonMain`, błędy domenowe `DataException`, testy mapowania na JVM i iOS |
