@@ -24,4 +24,5 @@ GoogleService-Info.plist
 
 # Local-only project docs (not pushed)
 CLAUDE.md
-docs/plan.md
+docs/*
+!docs/ROADMAP.md
