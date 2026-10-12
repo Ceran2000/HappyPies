@@ -25,7 +25,7 @@ class LoginViewModel(
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    fun signIn() {
+    fun onSignIn() {
         if (_uiState.value == LoginUiState.Loading) return
 
         _uiState.value = LoginUiState.Loading

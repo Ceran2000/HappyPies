@@ -29,7 +29,7 @@ class ReportFormViewModel(
     private val _uiState = MutableStateFlow<ReportFormUiState>(ReportFormUiState.Editing())
     val uiState: StateFlow<ReportFormUiState> = _uiState.asStateFlow()
 
-    fun save() {
+    fun onSave() {
         // Ignore taps while saving or after saving (no double submit).
         if (_uiState.value !is ReportFormUiState.Editing) return
         val title = titleState.text.toString().trim()

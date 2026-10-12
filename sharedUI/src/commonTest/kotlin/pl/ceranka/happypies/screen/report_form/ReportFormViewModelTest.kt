@@ -42,7 +42,7 @@ class ReportFormViewModelTest {
     fun blankTitleIsRejected() {
         fill(title = "   ")
 
-        viewModel.save()
+        viewModel.onSave()
 
         assertEquals(ReportFormUiState.Editing(titleError = "Podaj tytuł raportu"), viewModel.uiState.value)
         assertTrue(reports.created.isEmpty())
@@ -52,7 +52,7 @@ class ReportFormViewModelTest {
     fun savesWithTheAuthorFromTheSession() {
         fill(title = "  Przywołanie  ", description = "  Trzy próby ")
 
-        viewModel.save()
+        viewModel.onSave()
 
         assertEquals(ReportFormUiState.Saved, viewModel.uiState.value)
         assertEquals(
@@ -65,7 +65,7 @@ class ReportFormViewModelTest {
     fun blankDescriptionIsSavedAsNull() {
         fill(title = "Przywołanie", description = "   ")
 
-        viewModel.save()
+        viewModel.onSave()
 
         assertEquals(null, reports.created.single().description)
     }
@@ -75,7 +75,7 @@ class ReportFormViewModelTest {
         reports.createError = DataException.Unavailable("offline")
         fill(title = "Przywołanie")
 
-        viewModel.save()
+        viewModel.onSave()
 
         assertEquals(
             ReportFormUiState.Editing(saveError = "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."),
@@ -89,8 +89,8 @@ class ReportFormViewModelTest {
         reports.createGate = gate
         fill(title = "Przywołanie")
 
-        viewModel.save()
-        viewModel.save()
+        viewModel.onSave()
+        viewModel.onSave()
         assertEquals(ReportFormUiState.Saving, viewModel.uiState.value)
         gate.complete(Unit)
 
@@ -103,7 +103,7 @@ class ReportFormViewModelTest {
         session = sessionOf(null)
         fill(title = "Przywołanie")
 
-        viewModel.save()
+        viewModel.onSave()
 
         assertEquals(ReportFormUiState.Editing(saveError = "Sesja wygasła. Zaloguj się ponownie."), viewModel.uiState.value)
         assertTrue(reports.created.isEmpty())

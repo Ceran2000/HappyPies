@@ -41,8 +41,8 @@ fun ClientDetailsScreen(
         uiState = uiState,
         onBack = onBack,
         onAddReport = onAddReport,
-        onRefresh = viewModel::refresh,
-        onRetry = viewModel::retry,
+        onRefresh = viewModel::onRefresh,
+        onRetry = viewModel::onRetry,
     )
 }
 

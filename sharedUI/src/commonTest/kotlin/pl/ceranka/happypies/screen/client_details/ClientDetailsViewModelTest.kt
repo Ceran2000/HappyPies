@@ -97,7 +97,7 @@ class ClientDetailsViewModelTest {
 
         reports.reportsError = null
         reports.reports = listOf(report("r1"))
-        viewModel.retry()
+        viewModel.onRetry()
 
         assertEquals(listOf("r1"), viewModel.loadedReports.items.map { it.id })
     }
@@ -109,7 +109,7 @@ class ClientDetailsViewModelTest {
         val viewModel = createViewModel()
 
         reports.reports = listOf(report("r2"), report("r1"))
-        viewModel.refresh()
+        viewModel.onRefresh()
 
         assertEquals(listOf("r2", "r1"), viewModel.loadedReports.items.map { it.id })
         assertEquals(false, viewModel.loadedReports.isRefreshing)
@@ -121,7 +121,7 @@ class ClientDetailsViewModelTest {
         val viewModel = createViewModel()
 
         reports.reportsError = DataException.Unavailable("offline")
-        viewModel.refresh()
+        viewModel.onRefresh()
 
         assertEquals(listOf("r1"), viewModel.loadedReports.items.map { it.id })
         assertEquals(false, viewModel.loadedReports.isRefreshing)

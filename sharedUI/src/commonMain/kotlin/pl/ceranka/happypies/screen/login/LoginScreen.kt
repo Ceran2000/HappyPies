@@ -29,7 +29,7 @@ fun LoginScreen() {
         emailState = viewModel.emailState,
         passwordState = viewModel.passwordState,
         uiState = uiState,
-        onSignInClick = viewModel::signIn,
+        onSignIn = viewModel::onSignIn,
     )
 }
 
@@ -38,7 +38,7 @@ private fun LoginContent(
     emailState: TextFieldState,
     passwordState: TextFieldState,
     uiState: LoginUiState,
-    onSignInClick: () -> Unit,
+    onSignIn: () -> Unit,
 ) {
     val isLoading = uiState is LoginUiState.Loading
 
@@ -61,7 +61,7 @@ private fun LoginContent(
             Text(uiState.message, color = MaterialTheme.colorScheme.error)
         }
         Button(
-            onClick = onSignInClick,
+            onClick = onSignIn,
             enabled = !isLoading && emailState.text.isNotEmpty() && passwordState.text.isNotEmpty()
         ) {
             Text(if (isLoading) "Logowanie..." else "Zaloguj")

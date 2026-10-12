@@ -45,7 +45,7 @@ fun ReportFormScreen(
         uiState = uiState,
         titleState = viewModel.titleState,
         descriptionState = viewModel.descriptionState,
-        onSave = viewModel::save,
+        onSave = viewModel::onSave,
         onCancel = onCancel,
     )
 }

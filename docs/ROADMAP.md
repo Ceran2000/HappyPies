@@ -11,8 +11,9 @@
 Najbliższe kroki:
 1. ✅ Koin multiplatform wdrożony, przetestowany i zmergowany do `main`
 2. ✅ Warstwa danych raportów: model i repozytorium Android / iOS (krok 1 brancha `feature/reports`)
-3. 🔄 Lista raportów w szczegółach klienta i formularz „Nowy raport” (kroki 2–3): przetestowane ręcznie na Androidzie 2026-10-11; **kod niescommitowany na `feature/reports`, czeka na review kodu**, potem commity
-4. ⏳ Szczegóły raportu z komentarzem, potem widok klienta (kroki 4–5)
+3. ✅ Lista raportów w szczegółach klienta i formularz „Nowy raport” (kroki 2–3): po review kodu scommitowane 2026-10-12 (`dbd7091`)
+4. 🔄 Sesja reaktywna: stan sesji wyprowadzany ze zmian w Firebase Auth (szczegóły w Fazie 1)
+5. ⏳ Szczegóły raportu z komentarzem, potem widok klienta (kroki 4–5)
 
 Zakres MVP ustalony 2026-10-11: klient i trener dodają raporty (tytuł, opis, zdjęcia, film), druga strona zostawia jeden komentarz. Bez kalendarza, powiadomień push i encji psa. Szczegóły: Faza 1 poniżej.
 
@@ -40,9 +41,9 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 
 **Raporty** (branch `feature/reports`, merge po kroku 5, gdy raporty tekstowe działają u trenera i klienta)
 - ✅ Krok 1. Warstwa danych: model `reports` i repozytorium; jeden most Firestore na platformę, repozytoria `User` / `Client` / `Report` i mapowanie w `commonMain` z testami, błędy domenowe `DataException` (ADR 0006), bez UI (FR-07, FR-29)
-- 🔄 Krok 2. Lista raportów w szczegółach klienta, widok trenera, wszystkie raporty klienta od najnowszego (stronicowanie usunięte 2026-10-12, wraca w kroku 7), odświeżanie, komunikaty błędów wg typu; przy okazji profil osoby w jednej kolekcji `users` i raporty z samymi ID (ADR 0007) oraz sesja w jednym miejscu z automatycznym logowaniem po ponownym otwarciu aplikacji (ADR 0008). Przetestowane ręcznie na Androidzie, czeka na review kodu i commit (FR-06, FR-10, NFR-07)
-- 🔄 Krok 3. Formularz „Nowy raport”: tytuł (wymagany), opis (opcjonalny), autor z sesji. Przetestowane ręcznie na Androidzie, czeka na review kodu i commit (FR-07, FR-29)
-- ⏳ Sesja reaktywna (decyzja 2026-10-12, zaraz po commicie kroków 2–3). `SessionManager` wyprowadza stan ze zmian w Firebase Auth zamiast ustawiać go ręcznie w `restore`/`signIn`/`signOut`. Most wystawia listener-callback (np. `addUserListener`), nie `Flow`; `callbackFlow` + `mapLatest` + `stateIn` w `commonMain`; `distinctUntilChanged()` na całym `AppUser`; `signIn()` czeka na rozstrzygnięcie profilu; nowy stan „profil niedostępny” (brak sieci) z ponowieniem; znika `restore()` i `currentUser`. Źródło: AuthStateListener; IdTokenListener dopiero, jeśli role przejdą do custom claims. Nowy ADR częściowo zastępujący ADR 0008
+- ✅ Krok 2. Lista raportów w szczegółach klienta, widok trenera, wszystkie raporty klienta od najnowszego (stronicowanie usunięte 2026-10-12, wraca w kroku 7), odświeżanie, komunikaty błędów wg typu; przy okazji profil osoby w jednej kolekcji `users` i raporty z samymi ID (ADR 0007) oraz sesja w jednym miejscu z automatycznym logowaniem po ponownym otwarciu aplikacji (ADR 0008). Przetestowane ręcznie na Androidzie, po review scommitowane (`dbd7091`) (FR-06, FR-10, NFR-07)
+- ✅ Krok 3. Formularz „Nowy raport”: tytuł (wymagany), opis (opcjonalny), autor z sesji. Przetestowane ręcznie na Androidzie, po review scommitowane (`dbd7091`) (FR-07, FR-29)
+- 🔄 Sesja reaktywna (decyzja 2026-10-12, zaraz po commicie kroków 2–3). `SessionManager` wyprowadza stan ze zmian w Firebase Auth zamiast ustawiać go ręcznie w `restore`/`signIn`/`signOut`. Most wystawia listener-callback (np. `addUserListener`), nie `Flow`; `callbackFlow` + `mapLatest` + `stateIn` w `commonMain`; `distinctUntilChanged()` na całym `AppUser`; `signIn()` czeka na rozstrzygnięcie profilu; nowy stan „profil niedostępny” (brak sieci) z ponowieniem; znika `restore()` i `currentUser`. Źródło: AuthStateListener; IdTokenListener dopiero, jeśli role przejdą do custom claims. Nowy ADR częściowo zastępujący ADR 0008
 - ⏳ Krok 4. Szczegóły raportu: edycja, usuwanie, „Dodany przez” i `lastEditedBy`, jeden komentarz drugiej strony (FR-13, FR-31, FR-32)
 - ⏳ Krok 5. Widok klienta: ekran startowy z listą jego raportów i dodawaniem własnych (FR-10, FR-29)
 - ⏳ Krok 6. Lista klientów: sortowanie wg ostatniego raportu i znaczniki „nowy raport” / „bez komentarza” (FR-33)
@@ -130,3 +131,4 @@ Do uzgodnienia z trenerem po MVP.
 | 2026-10-11 | Wspólna warstwa danych na `feature/reports` (ADR 0006): jeden generyczny most Firestore na platformę, repozytoria i mapowanie w `commonMain`, błędy domenowe `DataException`, testy mapowania na JVM i iOS |
 | 2026-10-11 | Kroki 2–3 na `feature/reports` (do review): jedna kolekcja `users` z profilem, raporty z samymi ID (ADR 0007), lista raportów ze stronicowaniem kursorem i odświeżaniem, formularz „Nowy raport”, testy ViewModeli |
 | 2026-10-11 | Sesja w jednym miejscu (ADR 0008): `SessionManager` z jawnym stanem, odtwarzanie z Firebase Auth przy starcie, nawigacja wynikająca ze stanu sesji; `ReportRepository.changes` jako `Flow` |
+| 2026-10-12 | Review kodu kroków 2–3 i commit `dbd7091`: `DocumentResult` i jedna reguła błędów w moście Firestore, walidacja `CollectionQuery`, `currentUser` jako właściwość; stronicowanie usunięte (wraca w kroku 7). Decyzja: następna jest sesja reaktywna |

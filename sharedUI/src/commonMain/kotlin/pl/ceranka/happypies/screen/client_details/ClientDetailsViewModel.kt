@@ -58,21 +58,24 @@ class ClientDetailsViewModel(
         loadClient()
         loadReports()
         viewModelScope.launch {
-            reportRepository.changes.collect { refresh() }
+            reportRepository.changes.collect { refreshReports() }
         }
     }
 
-    fun refresh() {
+    fun onRefresh() = refreshReports()
+
+    fun onRetry() {
+        if (clientState.value is ClientState.Error) loadClient()
+        if (reportsLoad.value is ReportsLoad.Failed) loadReports()
+    }
+
+    /** Keeps the shown list while the reports reload. */
+    private fun refreshReports() {
         val current = reportsLoad.value
         if (current is ReportsLoad.Loaded) {
             reportsLoad.value = current.copy(isRefreshing = true, actionError = null)
         }
         loadReports()
-    }
-
-    fun retry() {
-        if (clientState.value is ClientState.Error) loadClient()
-        if (reportsLoad.value is ReportsLoad.Failed) loadReports()
     }
 
     private fun loadClient() {

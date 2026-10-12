@@ -30,7 +30,7 @@ class LoginViewModelTest {
     private fun signIn(session: SessionManager): LoginViewModel = LoginViewModel(session).apply {
         emailState.setTextAndPlaceCursorAtEnd("jan@przyklad.pl")
         passwordState.setTextAndPlaceCursorAtEnd("secret")
-        signIn()
+        onSignIn()
     }
 
     @Test
