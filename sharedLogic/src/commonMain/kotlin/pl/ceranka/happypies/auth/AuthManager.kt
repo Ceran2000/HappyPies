@@ -6,19 +6,21 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 interface AuthManager {
+    val authUser: AuthUser?
+
     @Throws(Exception::class)
     suspend fun signIn(email: String, password: String)
 
     @Throws(Exception::class)
     suspend fun signOut()
 
-    fun addUserListener(listener: AuthUserListener): ListenerHandle
+    fun addAuthStateListener(listener: AuthStateListener): ListenerHandle
 }
 
-data class AuthUser(val uid: String, val email: String?)
+data class AuthUser(val uid: String, val email: String)
 
-fun interface AuthUserListener {
-    fun onAuthUserChanged(user: AuthUser?)
+fun interface AuthStateListener {
+    fun onAuthStateChanged()
 }
 
 fun interface ListenerHandle {
@@ -26,8 +28,8 @@ fun interface ListenerHandle {
 }
 
 // An extension, not a member: Swift implements AuthManager and cannot implement a Flow.
-val AuthManager.authUser: Flow<AuthUser?>
+val AuthManager.authUserFlow: Flow<AuthUser?>
     get() = callbackFlow {
-        val handle = addUserListener { trySend(it) }
+        val handle = addAuthStateListener { trySend(authUser) }
         awaitClose { handle.remove() }
     }.distinctUntilChanged()

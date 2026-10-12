@@ -11,14 +11,19 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 private class ListenerOnlyAuthManager : AuthManager {
-    val listeners = mutableListOf<AuthUserListener>()
+    val listeners = mutableListOf<AuthStateListener>()
 
-    fun emit(user: AuthUser?) = listeners.toList().forEach { it.onAuthUserChanged(user) }
+    override var authUser: AuthUser? = null
+
+    fun emit(user: AuthUser?) {
+        authUser = user
+        listeners.toList().forEach { it.onAuthStateChanged() }
+    }
 
     override suspend fun signIn(email: String, password: String) = Unit
     override suspend fun signOut() = Unit
 
-    override fun addUserListener(listener: AuthUserListener): ListenerHandle {
+    override fun addAuthStateListener(listener: AuthStateListener): ListenerHandle {
         listeners += listener
         return ListenerHandle { listeners -= listener }
     }
@@ -33,7 +38,7 @@ class AuthUserFlowTest {
     @Test
     fun emitsEveryChangeOnce() = runTest {
         val seen = mutableListOf<AuthUser?>()
-        auth.authUser.onEach { seen += it }.launchIn(backgroundScope + UnconfinedTestDispatcher(testScheduler))
+        auth.authUserFlow.onEach { seen += it }.launchIn(backgroundScope + UnconfinedTestDispatcher(testScheduler))
 
         auth.emit(null)
         auth.emit(jan)
@@ -45,7 +50,7 @@ class AuthUserFlowTest {
 
     @Test
     fun stoppingTheCollectionRemovesTheListener() = runTest {
-        val job = auth.authUser.launchIn(backgroundScope + UnconfinedTestDispatcher(testScheduler))
+        val job = auth.authUserFlow.launchIn(backgroundScope + UnconfinedTestDispatcher(testScheduler))
         assertEquals(1, auth.listeners.size)
 
         job.cancel()

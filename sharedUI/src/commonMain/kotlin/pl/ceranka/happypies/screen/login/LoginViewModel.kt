@@ -11,10 +11,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
+import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountState
 
 class LoginViewModel(
+    private val authManager: AuthManager,
     private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
@@ -43,7 +45,7 @@ class LoginViewModel(
         _uiState.value = LoginUiState.Loading
         viewModelScope.launch {
             try {
-                accountRepository.signIn(emailState.text.toString(), passwordState.text.toString())
+                authManager.signIn(emailState.text.toString(), passwordState.text.toString())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

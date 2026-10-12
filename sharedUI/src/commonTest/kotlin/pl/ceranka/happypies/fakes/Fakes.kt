@@ -3,6 +3,10 @@ package pl.ceranka.happypies.fakes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import pl.ceranka.happypies.auth.AuthManager
+import pl.ceranka.happypies.auth.AuthStateListener
+import pl.ceranka.happypies.auth.AuthUser
+import pl.ceranka.happypies.auth.ListenerHandle
 import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountState
@@ -43,24 +47,29 @@ fun report(
 
 val video = MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)
 
-/** Signing in makes [trainer] signed in, unless [signInError] or [rejectSignIn] says otherwise. */
 class FakeAccountRepository(initial: AccountState) : AccountRepository {
     override val state = MutableStateFlow(initial)
+    var retries = 0
+
+    override fun retry() {
+        retries++
+    }
+}
+
+class FakeAuthManager : AuthManager {
     var signInError: Exception? = null
-    var rejectSignIn = false
     val signIns = mutableListOf<Pair<String, String>>()
+
+    override val authUser: AuthUser? = null
 
     override suspend fun signIn(email: String, password: String) {
         signIns += email to password
         signInError?.let { throw it }
-        state.value = if (rejectSignIn) AccountState.SignedOut(rejected = true) else AccountState.SignedIn(trainer)
     }
 
-    override suspend fun signOut() {
-        state.value = AccountState.SignedOut()
-    }
+    override suspend fun signOut() = Unit
 
-    override fun retry() = Unit
+    override fun addAuthStateListener(listener: AuthStateListener) = ListenerHandle {}
 }
 
 fun accountOf(account: Account?) =

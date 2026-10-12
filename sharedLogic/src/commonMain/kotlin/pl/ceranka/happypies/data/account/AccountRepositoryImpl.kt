@@ -7,12 +7,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthUser
-import pl.ceranka.happypies.auth.authUser
+import pl.ceranka.happypies.auth.authUserFlow
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.firestore.DocumentReader
 import pl.ceranka.happypies.data.firestore.FirestoreGateway
@@ -25,7 +23,7 @@ private typealias Fields = UserFirestoreFields
 class AccountRepositoryImpl(
     private val authManager: AuthManager,
     private val gateway: FirestoreGateway,
-    scope: CoroutineScope,
+    private val scope: CoroutineScope,
 ) : AccountRepository {
 
     private val log = Logger.withTag("Account")
@@ -33,60 +31,55 @@ class AccountRepositoryImpl(
     private val _state = MutableStateFlow<AccountState>(AccountState.Loading)
     override val state: StateFlow<AccountState> = _state.asStateFlow()
 
-    private val retries = MutableStateFlow(0)
-
     init {
         scope.launch {
-            combine(authManager.authUser, retries) { user, _ -> user }.collectLatest { user ->
+            authManager.authUserFlow.collectLatest { user ->
                 if (user == null) {
                     // Keeps SignedOut(rejected): the sign-out after a rejection also ends up here.
                     if (_state.value !is AccountState.SignedOut) _state.value = AccountState.SignedOut()
                 } else {
-                    _state.value = AccountState.Loading
-                    val loaded = loadAccount(user)
-                    _state.value = loaded
-                    if (loaded is AccountState.SignedOut) signOutQuietly()
+                    load(user)
                 }
             }
         }
     }
 
     override fun retry() {
-        retries.update { it + 1 }
+        scope.launch {
+            val user = authManager.authUser ?: return@launch     //TODO: handle null
+            load(user)
+        }
     }
 
-    override suspend fun signIn(email: String, password: String) {
-        authManager.signIn(email, password)
+    private suspend fun load(user: AuthUser) {
+        _state.value = AccountState.Loading
+        val loaded = try {
+            AccountState.SignedIn(fetchAccount(user))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.w(e) { "Loading the account of ${user.uid} failed" }
+            val unusable = e is DataException.NotFound || e is DataException.MalformedData || e is DataException.PermissionDenied
+            if (unusable) AccountState.SignedOut(rejected = true) else AccountState.Unavailable(e)
+        }
+        // A retry can finish after the user changed (e.g. signed out meanwhile); its result is stale then.
+        if (user != authManager.authUser) return
+        _state.value = loaded
+        if (loaded is AccountState.SignedOut) signOutOfFirebase()
     }
 
-    override suspend fun signOut() {
-        signOutQuietly()
-    }
-
-    private suspend fun loadAccount(user: AuthUser): AccountState = try {
-        AccountState.SignedIn(readAccount(user))
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        log.w(e) { "Loading the account of ${user.uid} failed" }
-        val unusable = e is DataException.NotFound || e is DataException.MalformedData || e is DataException.PermissionDenied
-        if (unusable) AccountState.SignedOut(rejected = true) else AccountState.Unavailable(e)
-    }
-
-    private suspend fun readAccount(user: AuthUser): Account {
-        // Only email and password sign-in exists, so Firebase always knows the email.
-        val email = user.email ?: throw DataException.MalformedData("Firebase user ${user.uid} has no email")
+    private suspend fun fetchAccount(user: AuthUser): Account {
         val document = gateway.getDocument(Fields.COLLECTION, user.uid).documentOrThrow { "User ${user.uid} does not exist" }
         val reader = DocumentReader(Fields.COLLECTION, document)
         return Account(
             uid = user.uid,
-            email = email,
+            email = user.email,
             name = reader.requireString(Fields.NAME),
             role = reader.requireEnum(Fields.ROLE, UserRole.entries),
         )
     }
 
-    private suspend fun signOutQuietly() {
+    private suspend fun signOutOfFirebase() {
         try {
             authManager.signOut()
         } catch (e: CancellationException) {

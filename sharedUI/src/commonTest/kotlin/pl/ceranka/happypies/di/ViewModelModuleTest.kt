@@ -9,7 +9,8 @@ import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import pl.ceranka.happypies.auth.AuthManager
-import pl.ceranka.happypies.auth.AuthUserListener
+import pl.ceranka.happypies.auth.AuthStateListener
+import pl.ceranka.happypies.auth.AuthUser
 import pl.ceranka.happypies.auth.ListenerHandle
 import pl.ceranka.happypies.data.firestore.CollectionQuery
 import pl.ceranka.happypies.data.firestore.DocumentResult
@@ -64,10 +65,11 @@ class ViewModelModuleTest {
 }
 
 private object FakeAuthManager : AuthManager {
+    override val authUser: AuthUser? = null
     override suspend fun signIn(email: String, password: String) = Unit
     override suspend fun signOut() = Unit
-    override fun addUserListener(listener: AuthUserListener): ListenerHandle {
-        listener.onAuthUserChanged(null)
+    override fun addAuthStateListener(listener: AuthStateListener): ListenerHandle {
+        listener.onAuthStateChanged()
         return ListenerHandle {}
     }
 }

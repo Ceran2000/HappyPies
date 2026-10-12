@@ -9,6 +9,10 @@ final class AuthManagerImpl: AuthManager {
         self.auth = auth
     }
 
+    var authUser: AuthUser? {
+        auth.currentUser.flatMap(toAuthUser)
+    }
+
     func signIn(email: String, password: String) async throws {
         _ = try await auth.signIn(withEmail: email, password: password)
     }
@@ -17,9 +21,9 @@ final class AuthManagerImpl: AuthManager {
         try auth.signOut()
     }
 
-    func addUserListener(listener: AuthUserListener) -> ListenerHandle {
-        let handle = auth.addStateDidChangeListener { _, user in
-            listener.onAuthUserChanged(user: user.map(toAuthUser))
+    func addAuthStateListener(listener: AuthStateListener) -> ListenerHandle {
+        let handle = auth.addStateDidChangeListener { _, _ in
+            listener.onAuthStateChanged()
         }
         return AuthListenerHandle(auth: auth, handle: handle)
     }
@@ -40,6 +44,7 @@ private final class AuthListenerHandle: ListenerHandle {
     }
 }
 
-private func toAuthUser(_ user: User) -> AuthUser {
-    AuthUser(uid: user.uid, email: user.email)
+private func toAuthUser(_ user: User) -> AuthUser? {
+    guard let email = user.email else { return nil }
+    return AuthUser(uid: user.uid, email: email)
 }

@@ -17,8 +17,11 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import co.touchlab.kermit.Logger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.navigation.Route
@@ -37,6 +40,7 @@ import pl.ceranka.happypies.ui.common.toUserMessage
 
 @Composable
 fun App() {
+    val authManager = koinInject<AuthManager>()
     val accountRepository = koinInject<AccountRepository>()
     MaterialTheme {
         // Restored after process death; kept as long as the account allows it.
@@ -54,7 +58,15 @@ fun App() {
         }
 
         fun logout() {
-            scope.launch { accountRepository.signOut() }
+            scope.launch {
+                try {
+                    authManager.signOut()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Logger.withTag("App").e(e) { "Sign-out failed" }
+                }
+            }
         }
 
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
