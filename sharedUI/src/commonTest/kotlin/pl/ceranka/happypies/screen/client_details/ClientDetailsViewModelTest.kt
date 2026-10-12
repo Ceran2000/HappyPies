@@ -1,5 +1,6 @@
 package pl.ceranka.happypies.screen.client_details
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -20,8 +21,6 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ClientDetailsViewModelTest {
@@ -29,6 +28,7 @@ class ClientDetailsViewModelTest {
     private val clients = FakeClientRepository()
     private val reports = FakeReportRepository()
     private val session = sessionOf(trainer)
+    private val offline = "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -38,70 +38,57 @@ class ClientDetailsViewModelTest {
 
     private fun createViewModel() = ClientDetailsViewModel(clients, reports, session, anna.id, TimeZone.UTC)
 
-    private val ClientDetailsViewModel.loadedReports get() = assertIs<ReportsState.Loaded>(uiState.value.reports)
+    private val ClientDetailsViewModel.reportIds get() = uiState.value.reports.map { it.id }
 
     @Test
     fun showsTheClientAndTheReportsWithResolvedAuthors() {
         reports.reports = listOf(
-                report("r1", createdAt = 1_791_830_400_000, media = listOf(video)),
-                report(
-                    "r2",
-                    createdAt = 1_791_191_100_000,
-                    authorId = trainer.uid,
-                    authorRole = UserRole.TRAINER,
+            report("r1", createdAt = 1_791_830_400_000, media = listOf(video)),
+            report(
+                "r2",
+                createdAt = 1_791_191_100_000,
+                authorId = trainer.uid,
+                authorRole = UserRole.TRAINER,
                 comment = ReportComment(anna.id, UserRole.CLIENT, "Dzięki", 2_000),
             ),
         )
 
         val viewModel = createViewModel()
 
-        assertEquals(ClientState.Success(anna), viewModel.uiState.value.client)
         assertEquals(
-            listOf(
-                ReportListItem("r1", "Raport r1", "12.10.2026, 18:40", "Anna Kowalska", mediaCount = 1, hasComment = false),
-                ReportListItem("r2", "Raport r2", "05.10.2026, 09:05", "Jan Trener", mediaCount = 0, hasComment = true),
+            ClientDetailsUiState(
+                client = anna,
+                reports = listOf(
+                    ReportListItem("r1", "Raport r1", "12.10.2026, 18:40", "Anna Kowalska", mediaCount = 1, hasComment = false),
+                    ReportListItem("r2", "Raport r2", "05.10.2026, 09:05", "Jan Trener", mediaCount = 0, hasComment = true),
+                ),
             ),
-            viewModel.loadedReports.items,
+            viewModel.uiState.value,
         )
     }
 
     @Test
-    fun clientErrorDoesNotHideReports() {
+    fun clientErrorShowsTheMessageAndRefreshLoadsAgain() {
         clients.error = DataException.Unavailable("offline")
+        val viewModel = createViewModel()
+        assertEquals(ClientDetailsUiState(error = offline), viewModel.uiState.value)
+
+        clients.error = null
         reports.reports = listOf(report("r1"))
+        viewModel.onRefresh()
 
-        val viewModel = createViewModel()
-
-        assertEquals(
-            ClientState.Error("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."),
-            viewModel.uiState.value.client,
-        )
-        assertEquals(1, viewModel.loadedReports.items.size)
+        assertEquals(anna, viewModel.uiState.value.client)
+        assertEquals(listOf("r1"), viewModel.reportIds)
     }
 
     @Test
-    fun emptyListIsLoaded() {
-        val viewModel = createViewModel()
-
-        assertEquals(emptyList(), viewModel.loadedReports.items)
-    }
-
-    @Test
-    fun reportsErrorCanBeRetried() {
+    fun reportsErrorShowsTheMessage() {
         reports.reportsError = DataException.PermissionDenied("denied")
+
         val viewModel = createViewModel()
-        assertEquals(
-            ReportsState.Error("Nie masz dostępu do tych danych."),
-            viewModel.uiState.value.reports,
-        )
 
-        reports.reportsError = null
-        reports.reports = listOf(report("r1"))
-        viewModel.onRetry()
-
-        assertEquals(listOf("r1"), viewModel.loadedReports.items.map { it.id })
+        assertEquals(ClientDetailsUiState(error = "Nie masz dostępu do tych danych."), viewModel.uiState.value)
     }
-
 
     @Test
     fun refreshReplacesTheList() {
@@ -111,21 +98,38 @@ class ClientDetailsViewModelTest {
         reports.reports = listOf(report("r2"), report("r1"))
         viewModel.onRefresh()
 
-        assertEquals(listOf("r2", "r1"), viewModel.loadedReports.items.map { it.id })
-        assertEquals(false, viewModel.loadedReports.isRefreshing)
+        assertEquals(listOf("r2", "r1"), viewModel.reportIds)
+        assertEquals(false, viewModel.uiState.value.isRefreshing)
     }
 
     @Test
-    fun failedRefreshKeepsTheList() {
+    fun failedRefreshKeepsTheShownData() {
         reports.reports = listOf(report("r1"))
         val viewModel = createViewModel()
 
         reports.reportsError = DataException.Unavailable("offline")
         viewModel.onRefresh()
 
-        assertEquals(listOf("r1"), viewModel.loadedReports.items.map { it.id })
-        assertEquals(false, viewModel.loadedReports.isRefreshing)
-        assertEquals("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.", viewModel.loadedReports.actionError)
+        val state = viewModel.uiState.value
+        assertEquals(anna, state.client)
+        assertEquals(listOf("r1"), viewModel.reportIds)
+        assertEquals(offline, state.error)
+        assertEquals(false, state.isRefreshing)
+    }
+
+    @Test
+    fun newerLoadWinsOverAnOlderOneStillRunning() {
+        val slowFirstLoad = CompletableDeferred<Unit>()
+        reports.reports = listOf(report("old"))
+        reports.reportsGate = slowFirstLoad
+        val viewModel = createViewModel()
+
+        reports.reportsGate = null
+        reports.reports = listOf(report("new"))
+        viewModel.onRefresh()
+        slowFirstLoad.complete(Unit)
+
+        assertEquals(listOf("new"), viewModel.reportIds)
     }
 
     @Test
@@ -135,14 +139,14 @@ class ClientDetailsViewModelTest {
 
         reports.changes.tryEmit(Unit)
 
-        assertEquals(listOf("new"), viewModel.loadedReports.items.map { it.id })
-        assertNull(viewModel.loadedReports.actionError)
+        assertEquals(listOf("new"), viewModel.reportIds)
     }
 
     @Test
-    fun unknownAuthorFallsBackToTheRole() {
-        assertEquals("Trener", authorName("someone", UserRole.TRAINER, client = null, profile = null))
-        assertEquals("Klient", authorName("someone", UserRole.CLIENT, client = null, profile = null))
-        assertEquals("Anna Kowalska", authorName(anna.id, UserRole.CLIENT, client = anna, profile = null))
+    fun authorNameFallsBackToTheRole() {
+        assertEquals("Anna Kowalska", authorName(anna.id, UserRole.CLIENT, anna, profile = null))
+        assertEquals("Jan Trener", authorName(trainer.uid, UserRole.TRAINER, anna, trainer))
+        assertEquals("Trener", authorName("someone", UserRole.TRAINER, anna, profile = null))
+        assertEquals("Klient", authorName("someone", UserRole.CLIENT, anna, profile = null))
     }
 }

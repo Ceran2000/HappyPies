@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -42,37 +41,50 @@ fun ClientDetailsScreen(
         onBack = onBack,
         onAddReport = onAddReport,
         onRefresh = viewModel::onRefresh,
-        onRetry = viewModel::onRetry,
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ClientDetailsContent(
     uiState: ClientDetailsUiState,
     onBack: () -> Unit,
     onAddReport: () -> Unit,
     onRefresh: () -> Unit,
-    onRetry: () -> Unit,
 ) {
-    val reports = uiState.reports
+    Column(modifier = Modifier.fillMaxSize()) {
+        TextButton(onClick = onBack, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Text("← Wstecz")
+        }
+        val client = uiState.client
+        when {
+            client != null -> ClientWithReports(client, uiState, onAddReport, onRefresh)
+            uiState.error != null -> ErrorWithRetry(uiState.error, onRetry = onRefresh)
+            else -> CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ClientWithReports(
+    client: Client,
+    uiState: ClientDetailsUiState,
+    onAddReport: () -> Unit,
+    onRefresh: () -> Unit,
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         PullToRefreshBox(
-            isRefreshing = reports is ReportsState.Loaded && reports.isRefreshing,
+            isRefreshing = uiState.isRefreshing,
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize(),
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp),
+                // Bottom padding keeps the last card above the "Nowy raport" button.
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                item {
-                    TextButton(onClick = onBack) {
-                        Text("← Wstecz")
-                    }
-                }
-                item { ClientSection(uiState.client, onRetry) }
+                item { ClientDetailsFields(client) }
                 item {
                     Text(
                         text = "Raporty",
@@ -80,7 +92,13 @@ private fun ClientDetailsContent(
                         modifier = Modifier.padding(top = 16.dp),
                     )
                 }
-                reportsSection(reports, onRetry)
+                uiState.error?.let { message ->
+                    item { Text(text = message, color = MaterialTheme.colorScheme.error) }
+                }
+                if (uiState.reports.isEmpty()) {
+                    item { Text("Brak raportów. Dodaj pierwszy przyciskiem „Nowy raport”.") }
+                }
+                items(uiState.reports, key = { it.id }) { report -> ReportCard(report) }
             }
         }
         ExtendedFloatingActionButton(
@@ -89,15 +107,6 @@ private fun ClientDetailsContent(
         ) {
             Text("+ Nowy raport")
         }
-    }
-}
-
-@Composable
-private fun ClientSection(client: ClientState, onRetry: () -> Unit) {
-    when (client) {
-        is ClientState.Loading -> CircularProgressIndicator()
-        is ClientState.Error -> ErrorWithRetry(client.message, onRetry)
-        is ClientState.Success -> ClientDetailsFields(client.client)
     }
 }
 
@@ -117,22 +126,6 @@ private fun ClientDetailsFields(client: Client) {
         } else {
             client.dogs.forEach { dog ->
                 Text("${dog.name} (${dog.breed})", modifier = Modifier.padding(vertical = 4.dp))
-            }
-        }
-    }
-}
-
-private fun LazyListScope.reportsSection(reports: ReportsState, onRetry: () -> Unit) {
-    when (reports) {
-        is ReportsState.Loading -> item { CircularProgressIndicator() }
-        is ReportsState.Error -> item { ErrorWithRetry(reports.message, onRetry) }
-        is ReportsState.Loaded -> {
-            if (reports.items.isEmpty()) {
-                item { Text("Brak raportów. Dodaj pierwszy przyciskiem „Nowy raport”.") }
-            }
-            items(reports.items, key = { it.id }) { report -> ReportCard(report) }
-            reports.actionError?.let { message ->
-                item { Text(text = message, color = MaterialTheme.colorScheme.error) }
             }
         }
     }
@@ -158,7 +151,7 @@ private fun ReportCard(report: ReportListItem) {
 
 @Composable
 private fun ErrorWithRetry(message: String, onRetry: () -> Unit) {
-    Column {
+    Column(modifier = Modifier.padding(16.dp)) {
         Text(text = message, color = MaterialTheme.colorScheme.error)
         TextButton(onClick = onRetry) {
             Text("Spróbuj ponownie")

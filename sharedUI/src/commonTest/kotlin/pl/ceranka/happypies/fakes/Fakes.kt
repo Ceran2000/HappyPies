@@ -100,6 +100,9 @@ class FakeReportRepository : ReportRepository {
     var reports: List<Report> = emptyList()
     var reportsError: Exception? = null
 
+    /** When set, getReports answers with the reports it saw on the call, but only after the gate opens. */
+    var reportsGate: CompletableDeferred<Unit>? = null
+
     val created = mutableListOf<NewReport>()
     var createError: Exception? = null
 
@@ -108,7 +111,9 @@ class FakeReportRepository : ReportRepository {
 
     override suspend fun getReports(clientId: String): List<Report> {
         reportsError?.let { throw it }
-        return reports
+        val answer = reports
+        reportsGate?.await()
+        return answer
     }
 
     override suspend fun createReport(report: NewReport): String {
