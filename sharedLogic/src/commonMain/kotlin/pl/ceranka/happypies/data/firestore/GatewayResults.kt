@@ -9,6 +9,11 @@ internal fun GatewayError.toDataException(): DataException = when (kind) {
     DataErrorKind.FAILED_PRECONDITION, DataErrorKind.OTHER -> DataException.Unknown(message)
 }
 
+internal inline fun DocumentResult.documentOrThrow(notFoundMessage: () -> String): FirestoreDocument = when (this) {
+    is DocumentResult.Success -> document ?: throw DataException.NotFound(notFoundMessage())
+    is DocumentResult.Failure -> throw error.toDataException()
+}
+
 internal fun ReadResult.documentsOrThrow(): List<FirestoreDocument> = when (this) {
     is ReadResult.Success -> documents
     is ReadResult.Failure -> throw error.toDataException()

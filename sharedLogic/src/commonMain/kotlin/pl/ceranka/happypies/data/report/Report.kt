@@ -8,7 +8,6 @@ data class MediaItem(val type: MediaType, val storagePath: String, val sizeBytes
 
 data class ReportComment(
     val authorId: String,
-    val authorName: String,
     val authorRole: UserRole,
     val text: String,
     val updatedAt: Long,
@@ -20,10 +19,8 @@ data class Report(
     val title: String,
     val description: String?,
     val authorId: String,
-    val authorName: String,
     val authorRole: UserRole,
     val lastEditedBy: String,
-    val lastEditedByName: String,
     val createdAt: Long,
     val updatedAt: Long,
     val comment: ReportComment?,
@@ -35,6 +32,5 @@ data class NewReport(
     val title: String,
     val description: String?,
     val authorId: String,
-    val authorName: String,
     val authorRole: UserRole,
 )

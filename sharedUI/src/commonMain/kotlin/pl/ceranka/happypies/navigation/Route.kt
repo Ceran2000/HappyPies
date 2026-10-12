@@ -16,4 +16,7 @@ sealed interface Route : NavKey {
 
     @Serializable
     data class ClientDetail(val clientId: String) : Route
+
+    @Serializable
+    data class ReportForm(val clientId: String) : Route
 }

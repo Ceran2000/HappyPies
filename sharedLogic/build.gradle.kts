@@ -35,6 +35,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kermit)
         }
         androidMain.dependencies {
             // put your Android-specific dependencies here

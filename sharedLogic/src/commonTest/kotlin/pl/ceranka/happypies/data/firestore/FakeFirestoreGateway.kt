@@ -16,9 +16,12 @@ class FakeFirestoreGateway : FirestoreGateway {
         readResult = ReadResult.Success(documents.toList())
     }
 
-    override suspend fun getDocument(collection: String, id: String): ReadResult {
+    override suspend fun getDocument(collection: String, id: String): DocumentResult {
         gets += collection to id
-        return readResult
+        return when (val result = readResult) {
+            is ReadResult.Success -> DocumentResult.Success(result.documents.firstOrNull())
+            is ReadResult.Failure -> DocumentResult.Failure(result.error)
+        }
     }
 
     override suspend fun query(query: CollectionQuery): ReadResult {

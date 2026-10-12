@@ -13,28 +13,17 @@ import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
-import pl.ceranka.happypies.data.user.UserRole
 
 @Composable
-fun LoginScreen(
-    onLoggedIn: (UserRole) -> Unit,
-) {
+fun LoginScreen() {
     val viewModel = koinViewModel<LoginViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(uiState) {
-        val state = uiState
-        if (state is LoginUiState.Success) {
-            onLoggedIn(state.role)
-        }
-    }
 
     LoginContent(
         emailState = viewModel.emailState,
@@ -69,7 +58,7 @@ private fun LoginContent(
             modifier = Modifier.fillMaxWidth()
         )
         if (uiState is LoginUiState.Error) {
-            Text(uiState.message ?: "Błąd logowania", color = MaterialTheme.colorScheme.error)
+            Text(uiState.message, color = MaterialTheme.colorScheme.error)
         }
         Button(
             onClick = onSignInClick,

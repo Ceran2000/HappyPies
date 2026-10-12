@@ -3,7 +3,7 @@ package pl.ceranka.happypies.data.user
 interface UserRepository {
 
     @Throws(Exception::class)
-    suspend fun getRole(uid: String): UserRole
+    suspend fun getProfile(uid: String): UserProfile
 }
 
 enum class UserRole { TRAINER, CLIENT }

@@ -9,13 +9,12 @@ final class IosFirestoreGateway: FirestoreGateway {
         self.firestore = firestore
     }
 
-    func getDocument(collection: String, id: String) async throws -> ReadResult {
+    func getDocument(collection: String, id: String) async throws -> DocumentResult {
         do {
             let snapshot = try await firestore.collection(collection).document(id).getDocument()
-            let documents = snapshot.exists ? [toFirestoreDocument(snapshot)] : []
-            return ReadResult.Success(documents: documents)
+            return DocumentResult.Success(document: snapshot.exists ? toFirestoreDocument(snapshot) : nil)
         } catch {
-            return ReadResult.Failure(error: try gatewayError(from: error))
+            return DocumentResult.Failure(error: try gatewayError(from: error))
         }
     }
 
@@ -25,8 +24,8 @@ final class IosFirestoreGateway: FirestoreGateway {
             for (field, value) in query.whereEqualTo {
                 request = request.whereField(field, isEqualTo: try toPlatform(value))
             }
-            if let orderBy = query.orderBy {
-                request = request.order(by: orderBy, descending: query.descending)
+            for order in query.orderBy {
+                request = request.order(by: order.field, descending: order.descending)
             }
             if let limit = query.limit {
                 request = request.limit(to: limit.intValue)

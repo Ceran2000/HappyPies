@@ -9,11 +9,12 @@ import pl.ceranka.happypies.data.firestore.FirestoreValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.data.user.UserFirestoreFields
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-private typealias F = ClientFirestoreFields
+private typealias F = UserFirestoreFields
 
 class ClientRepositoryImplTest {
 
@@ -23,6 +24,7 @@ class ClientRepositoryImplTest {
     private val bala = MapValue(mapOf(F.DOG_NAME to StringValue("Bala"), F.DOG_BREED to StringValue("border collie")))
 
     private val validFields: Map<String, FirestoreValue> = mapOf(
+        F.ROLE to StringValue("CLIENT"),
         F.TRAINER_ID to StringValue("trainer-1"),
         F.NAME to StringValue("Anna Kowalska"),
         F.EMAIL to StringValue("anna@przyklad.pl"),
@@ -40,16 +42,25 @@ class ClientRepositoryImplTest {
             Client("client-1", "Anna Kowalska", "anna@przyklad.pl", listOf(Dog("Bala", "border collie"))),
             readClient(validFields),
         )
+        assertEquals("users" to "client-1", gateway.gets.single())
     }
 
     @Test
-    fun queriesClientsOfTheTrainer() = runTest {
+    fun queriesClientUsersOfTheTrainer() = runTest {
         repository.getClients("trainer-1")
 
         assertEquals(
-            CollectionQuery(collection = "clients", whereEqualTo = mapOf(F.TRAINER_ID to StringValue("trainer-1"))),
+            CollectionQuery(
+                collection = "users",
+                whereEqualTo = mapOf(F.TRAINER_ID to StringValue("trainer-1"), F.ROLE to StringValue("CLIENT")),
+            ),
             gateway.queries.single(),
         )
+    }
+
+    @Test
+    fun trainerIsNotAClient() = runTest {
+        assertFailsWith<DataException.NotFound> { readClient(validFields + (F.ROLE to StringValue("TRAINER"))) }
     }
 
     @Test

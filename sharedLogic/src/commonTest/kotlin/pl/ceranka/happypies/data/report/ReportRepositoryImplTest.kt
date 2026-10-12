@@ -1,5 +1,8 @@
 package pl.ceranka.happypies.data.report
 
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.firestore.CollectionQuery
@@ -16,6 +19,7 @@ import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
 import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.TimestampValue
 import pl.ceranka.happypies.data.firestore.GatewayError
+import pl.ceranka.happypies.data.firestore.OrderBy
 import pl.ceranka.happypies.data.firestore.ReadResult
 import pl.ceranka.happypies.data.firestore.WriteResult
 import pl.ceranka.happypies.data.user.UserRole
@@ -35,7 +39,6 @@ class ReportRepositoryImplTest {
     private val comment = MapValue(
         mapOf(
             F.COMMENT_AUTHOR_ID to StringValue("trainer-1"),
-            F.COMMENT_AUTHOR_NAME to StringValue("Trener"),
             F.COMMENT_AUTHOR_ROLE to StringValue("TRAINER"),
             F.COMMENT_TEXT to StringValue("Dobra robota"),
             F.COMMENT_UPDATED_AT to TimestampValue(3_000),
@@ -55,27 +58,24 @@ class ReportRepositoryImplTest {
         F.TITLE to StringValue("Przywołanie w parku"),
         F.DESCRIPTION to StringValue("Trzy próby"),
         F.AUTHOR_ID to StringValue("client-1"),
-        F.AUTHOR_NAME to StringValue("Anna Kowalska"),
         F.AUTHOR_ROLE to StringValue("CLIENT"),
         F.LAST_EDITED_BY to StringValue("client-1"),
-        F.LAST_EDITED_BY_NAME to StringValue("Anna Kowalska"),
         F.CREATED_AT to TimestampValue(1_000),
         F.UPDATED_AT to TimestampValue(2_000),
         F.COMMENT to comment,
         F.MEDIA to ArrayValue(listOf(video)),
     )
 
-    private fun reportWith(fields: Map<String, FirestoreValue>) = FirestoreDocument("r1", fields)
+    private fun reportDocument(id: String, createdAt: Long) =
+        FirestoreDocument(id, validFields + (F.CREATED_AT to TimestampValue(createdAt)))
 
     private suspend fun readReport(fields: Map<String, FirestoreValue>): Report {
-        gateway.returnDocuments(reportWith(fields))
+        gateway.returnDocuments(FirestoreDocument("r1", fields))
         return repository.getReport("r1")
     }
 
     @Test
     fun mapsACompleteDocument() = runTest {
-        val report = readReport(validFields)
-
         assertEquals(
             Report(
                 id = "r1",
@@ -83,16 +83,14 @@ class ReportRepositoryImplTest {
                 title = "Przywołanie w parku",
                 description = "Trzy próby",
                 authorId = "client-1",
-                authorName = "Anna Kowalska",
                 authorRole = UserRole.CLIENT,
                 lastEditedBy = "client-1",
-                lastEditedByName = "Anna Kowalska",
                 createdAt = 1_000,
                 updatedAt = 2_000,
-                comment = ReportComment("trainer-1", "Trener", UserRole.TRAINER, "Dobra robota", 3_000),
+                comment = ReportComment("trainer-1", UserRole.TRAINER, "Dobra robota", 3_000),
                 media = listOf(MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)),
             ),
-            report,
+            readReport(validFields),
         )
     }
 
@@ -104,11 +102,17 @@ class ReportRepositoryImplTest {
             CollectionQuery(
                 collection = "reports",
                 whereEqualTo = mapOf(F.CLIENT_ID to StringValue("client-1")),
-                orderBy = F.CREATED_AT,
-                descending = true,
+                orderBy = listOf(OrderBy(F.CREATED_AT, descending = true)),
             ),
             gateway.queries.single(),
         )
+    }
+
+    @Test
+    fun returnsTheReportsInTheQueryOrder() = runTest {
+        gateway.returnDocuments(reportDocument("r2", 2_000), reportDocument("r1", 1_000))
+
+        assertEquals(listOf("r2", "r1"), repository.getReports("client-1").map { it.id })
     }
 
     @Test
@@ -185,9 +189,7 @@ class ReportRepositoryImplTest {
 
     @Test
     fun createReportWritesServerTimestampsAndEmptyMedia() = runTest {
-        val id = repository.createReport(
-            NewReport("client-1", "Tytuł", description = null, "trainer-1", "Trener", UserRole.TRAINER)
-        )
+        val id = repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER))
 
         val write = gateway.writes.single()
         assertEquals("new-id", id)
@@ -200,12 +202,11 @@ class ReportRepositoryImplTest {
         assertEquals(ArrayValue(emptyList()), fields[F.MEDIA])
         assertEquals(StringValue("TRAINER"), fields[F.AUTHOR_ROLE])
         assertEquals(StringValue("trainer-1"), fields[F.LAST_EDITED_BY])
-        assertEquals(StringValue("Trener"), fields[F.LAST_EDITED_BY_NAME])
     }
 
     @Test
     fun updateReportRecordsTheEditor() = runTest {
-        repository.updateReport("r1", "Nowy tytuł", "Opis", "client-1", "Anna Kowalska")
+        repository.updateReport("r1", "Nowy tytuł", "Opis", "client-1")
 
         val write = gateway.writes.single()
         assertEquals("update", write.operation)
@@ -215,7 +216,6 @@ class ReportRepositoryImplTest {
                 F.TITLE to StringValue("Nowy tytuł"),
                 F.DESCRIPTION to StringValue("Opis"),
                 F.LAST_EDITED_BY to StringValue("client-1"),
-                F.LAST_EDITED_BY_NAME to StringValue("Anna Kowalska"),
                 F.UPDATED_AT to ServerTimestamp,
             ),
             write.fields,
@@ -224,7 +224,7 @@ class ReportRepositoryImplTest {
 
     @Test
     fun setCommentWritesTheWholeCommentWithServerTimestamp() = runTest {
-        repository.setComment("r1", "Super", "trainer-1", "Trener", UserRole.TRAINER)
+        repository.setComment("r1", "Super", "trainer-1", UserRole.TRAINER)
 
         val written = gateway.writes.single().fields!![F.COMMENT] as MapValue
         assertEquals(StringValue("Super"), written.fields[F.COMMENT_TEXT])
@@ -237,5 +237,24 @@ class ReportRepositoryImplTest {
         repository.deleteComment("r1")
 
         assertEquals(mapOf(F.COMMENT to Delete), gateway.writes.single().fields)
+    }
+
+    @Test
+    fun successfulWriteNotifiesChanges() = runTest {
+        val notified = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { repository.changes.first() }
+
+        repository.createReport(NewReport("client-1", "Tytuł", null, "trainer-1", UserRole.TRAINER))
+
+        assertTrue(notified.isCompleted)
+    }
+
+    @Test
+    fun failedWriteDoesNotNotifyChanges() = runTest {
+        val notified = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { repository.changes.first() }
+        gateway.writeResult = WriteResult.Failure(GatewayError(DataErrorKind.UNAVAILABLE, "offline"))
+
+        assertFailsWith<DataException.Unavailable> { repository.deleteReport("r1") }
+
+        assertTrue(notified.isActive)
     }
 }

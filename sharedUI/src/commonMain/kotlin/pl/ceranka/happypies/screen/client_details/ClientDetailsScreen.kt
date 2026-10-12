@@ -1,13 +1,23 @@
 package pl.ceranka.happypies.screen.client_details
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,47 +32,78 @@ import pl.ceranka.happypies.data.client.Client
 fun ClientDetailsScreen(
     clientId: String,
     onBack: () -> Unit,
+    onAddReport: () -> Unit,
 ) {
     val viewModel = koinViewModel<ClientDetailsViewModel> { parametersOf(clientId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     ClientDetailsContent(
         uiState = uiState,
-        onBack = onBack
+        onBack = onBack,
+        onAddReport = onAddReport,
+        onRefresh = viewModel::refresh,
+        onRetry = viewModel::retry,
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ClientDetailsContent(
     uiState: ClientDetailsUiState,
     onBack: () -> Unit,
+    onAddReport: () -> Unit,
+    onRefresh: () -> Unit,
+    onRetry: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        TextButton(onClick = onBack) {
-            Text("← Wstecz")
-        }
-        when (uiState) {
-            is ClientDetailsUiState.Loading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+    val reports = uiState.reports
+    Box(modifier = Modifier.fillMaxSize()) {
+        PullToRefreshBox(
+            isRefreshing = reports is ReportsState.Loaded && reports.isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 96.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                item {
+                    TextButton(onClick = onBack) {
+                        Text("← Wstecz")
+                    }
                 }
+                item { ClientSection(uiState.client, onRetry) }
+                item {
+                    Text(
+                        text = "Raporty",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
+                reportsSection(reports, onRetry)
             }
-            is ClientDetailsUiState.Error -> {
-                Text(
-                    text = uiState.message ?: "Nie udało się wczytać danych klienta",
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-            is ClientDetailsUiState.Success -> {
-                ClientDetailsFields(client = uiState.client)
-            }
+        }
+        ExtendedFloatingActionButton(
+            onClick = onAddReport,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+        ) {
+            Text("+ Nowy raport")
         }
     }
 }
 
 @Composable
+private fun ClientSection(client: ClientState, onRetry: () -> Unit) {
+    when (client) {
+        is ClientState.Loading -> CircularProgressIndicator()
+        is ClientState.Error -> ErrorWithRetry(client.message, onRetry)
+        is ClientState.Success -> ClientDetailsFields(client.client)
+    }
+}
+
+@Composable
 private fun ClientDetailsFields(client: Client) {
-    Column(modifier = Modifier.padding(top = 16.dp)) {
+    Column {
         Text(text = client.name, style = MaterialTheme.typography.headlineSmall)
         Text(text = client.email, style = MaterialTheme.typography.bodyMedium)
 
@@ -77,6 +118,50 @@ private fun ClientDetailsFields(client: Client) {
             client.dogs.forEach { dog ->
                 Text("${dog.name} (${dog.breed})", modifier = Modifier.padding(vertical = 4.dp))
             }
+        }
+    }
+}
+
+private fun LazyListScope.reportsSection(reports: ReportsState, onRetry: () -> Unit) {
+    when (reports) {
+        is ReportsState.Loading -> item { CircularProgressIndicator() }
+        is ReportsState.Error -> item { ErrorWithRetry(reports.message, onRetry) }
+        is ReportsState.Loaded -> {
+            if (reports.items.isEmpty()) {
+                item { Text("Brak raportów. Dodaj pierwszy przyciskiem „Nowy raport”.") }
+            }
+            items(reports.items, key = { it.id }) { report -> ReportCard(report) }
+            reports.actionError?.let { message ->
+                item { Text(text = message, color = MaterialTheme.colorScheme.error) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportCard(report: ReportListItem) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(text = report.title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = "${report.createdAt} · Dodany przez: ${report.authorName}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            val details = buildList {
+                if (report.mediaCount > 0) add("Media: ${report.mediaCount}")
+                add(if (report.hasComment) "Jest komentarz" else "Bez komentarza")
+            }
+            Text(text = details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun ErrorWithRetry(message: String, onRetry: () -> Unit) {
+    Column {
+        Text(text = message, color = MaterialTheme.colorScheme.error)
+        TextButton(onClick = onRetry) {
+            Text("Spróbuj ponownie")
         }
     }
 }

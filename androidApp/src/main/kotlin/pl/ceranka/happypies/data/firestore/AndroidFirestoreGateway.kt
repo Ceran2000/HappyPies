@@ -8,6 +8,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FirebaseFirestoreException.Code
 import com.google.firebase.firestore.Query
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.BooleanValue
@@ -24,19 +25,20 @@ import java.util.Date
 
 class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : FirestoreGateway {
 
-    override suspend fun getDocument(collection: String, id: String): ReadResult = read {
+    override suspend fun getDocument(collection: String, id: String): DocumentResult = catching({ DocumentResult.Failure(it) }) {
         val snapshot = firestore.collection(collection).document(id).get().await()
-        if (snapshot.exists()) listOf(snapshot.toFirestoreDocument()) else emptyList()
+        DocumentResult.Success(if (snapshot.exists()) snapshot.toFirestoreDocument() else null)
     }
 
-    override suspend fun query(query: CollectionQuery): ReadResult = read {
+    override suspend fun query(query: CollectionQuery): ReadResult = catching({ ReadResult.Failure(it) }) {
         var request: Query = firestore.collection(query.collection)
         query.whereEqualTo.forEach { (field, value) -> request = request.whereEqualTo(field, value.toPlatform()) }
-        query.orderBy?.let { field ->
-            request = request.orderBy(field, if (query.descending) Query.Direction.DESCENDING else Query.Direction.ASCENDING)
+        query.orderBy.forEach { order ->
+            val direction = if (order.descending) Query.Direction.DESCENDING else Query.Direction.ASCENDING
+            request = request.orderBy(order.field, direction)
         }
         query.limit?.let { request = request.limit(it.toLong()) }
-        request.get().await().documents.map { it.toFirestoreDocument() }
+        ReadResult.Success(request.get().await().documents.map { it.toFirestoreDocument() })
     }
 
     override suspend fun add(collection: String, fields: Map<String, FirestoreValue>): WriteResult = write {
@@ -54,23 +56,27 @@ class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : Firest
     }
 }
 
-// Only Firestore errors become a Failure; anything else (cancellation included) propagates.
-private inline fun read(block: () -> List<FirestoreDocument>): ReadResult =
-    try {
-        ReadResult.Success(block())
-    } catch (e: FirebaseFirestoreException) {
-        ReadResult.Failure(e.toGatewayError())
-    }
-
 private inline fun write(block: () -> String): WriteResult =
+    catching({ WriteResult.Failure(it) }) { WriteResult.Success(block()) }
+
+private inline fun <T> catching(failure: (GatewayError) -> T, block: () -> T): T =
     try {
-        WriteResult.Success(block())
-    } catch (e: FirebaseFirestoreException) {
-        WriteResult.Failure(e.toGatewayError())
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        failure(e.toGatewayError())
     }
 
-private fun FirebaseFirestoreException.toGatewayError(): GatewayError {
-    val kind = when (code) {
+private fun Exception.toGatewayError(): GatewayError =
+    if (this is FirebaseFirestoreException) {
+        GatewayError(code.toErrorKind(), message ?: code.name)
+    } else {
+        GatewayError(DataErrorKind.OTHER, message ?: this::class.java.simpleName)
+    }
+
+private fun Code.toErrorKind(): DataErrorKind =
+    when (this) {
         Code.NOT_FOUND -> DataErrorKind.NOT_FOUND
         Code.PERMISSION_DENIED -> DataErrorKind.PERMISSION_DENIED
         Code.UNAUTHENTICATED -> DataErrorKind.UNAUTHENTICATED
@@ -78,8 +84,6 @@ private fun FirebaseFirestoreException.toGatewayError(): GatewayError {
         Code.FAILED_PRECONDITION -> DataErrorKind.FAILED_PRECONDITION
         else -> DataErrorKind.OTHER
     }
-    return GatewayError(kind, message ?: code.name)
-}
 
 // ESTIMATE: a document just written by this device still has a pending server timestamp.
 private fun DocumentSnapshot.toFirestoreDocument() = FirestoreDocument(
