@@ -6,16 +6,19 @@ import kotlinx.coroutines.tasks.await
 
 class AuthManagerImpl(private val auth: FirebaseAuth) : AuthManager {
 
-    override suspend fun signIn(email: String, password: String): AppUser {
-        val result = auth.signInWithEmailAndPassword(email, password).await()
-        return result.user!!.toAppUser()
+    override suspend fun signIn(email: String, password: String) {
+        auth.signInWithEmailAndPassword(email, password).await()
     }
 
     override suspend fun signOut() {
         auth.signOut()
     }
 
-    override val currentUser: AppUser? get() = auth.currentUser?.toAppUser()
+    override fun addUserListener(listener: AuthUserListener): ListenerHandle {
+        val authStateListener = FirebaseAuth.AuthStateListener { listener.onAuthUserChanged(it.currentUser?.toAuthUser()) }
+        auth.addAuthStateListener(authStateListener)
+        return ListenerHandle { auth.removeAuthStateListener(authStateListener) }
+    }
 }
 
-private fun FirebaseUser.toAppUser() = AppUser(uid, email)
+private fun FirebaseUser.toAuthUser() = AuthUser(uid, email)

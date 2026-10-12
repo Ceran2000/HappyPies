@@ -12,7 +12,7 @@ import pl.ceranka.happypies.data.report.NewReport
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.anna
-import pl.ceranka.happypies.fakes.sessionOf
+import pl.ceranka.happypies.fakes.accountOf
 import pl.ceranka.happypies.fakes.trainer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -24,8 +24,8 @@ import kotlin.test.assertTrue
 class ReportFormViewModelTest {
 
     private val reports = FakeReportRepository()
-    private var session = sessionOf(trainer)
-    private val viewModel by lazy { ReportFormViewModel(reports, session, anna.id) }
+    private var account = accountOf(trainer)
+    private val viewModel by lazy { ReportFormViewModel(reports, account, anna.id) }
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -99,8 +99,8 @@ class ReportFormViewModelTest {
     }
 
     @Test
-    fun missingSessionAsksToSignInAgain() {
-        session = sessionOf(null)
+    fun missingProfileAsksToSignInAgain() {
+        account = accountOf(null)
         fill(title = "Przywołanie")
 
         viewModel.onSave()

@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.setMain
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.fakes.FakeClientRepository
 import pl.ceranka.happypies.fakes.anna
-import pl.ceranka.happypies.fakes.sessionOf
+import pl.ceranka.happypies.fakes.accountOf
 import pl.ceranka.happypies.fakes.trainer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -28,7 +28,7 @@ class ClientListViewModelTest {
 
     @Test
     fun loadsTheSignedInTrainersClients() {
-        val viewModel = ClientListViewModel(clients, sessionOf(trainer))
+        val viewModel = ClientListViewModel(clients, accountOf(trainer))
 
         assertEquals(ClientListUiState.Success(listOf(anna)), viewModel.uiState.value)
         assertEquals(listOf(trainer.uid), clients.requestedTrainers)
@@ -38,7 +38,7 @@ class ClientListViewModelTest {
     fun showsTheErrorMessage() {
         clients.error = DataException.Unavailable("offline")
 
-        val viewModel = ClientListViewModel(clients, sessionOf(trainer))
+        val viewModel = ClientListViewModel(clients, accountOf(trainer))
 
         assertEquals(
             ClientListUiState.Error("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."),
@@ -48,7 +48,7 @@ class ClientListViewModelTest {
 
     @Test
     fun waitsWhileNobodyIsSignedIn() {
-        val viewModel = ClientListViewModel(clients, sessionOf(null))
+        val viewModel = ClientListViewModel(clients, accountOf(null))
 
         assertEquals(ClientListUiState.Loading, viewModel.uiState.value)
         assertEquals(emptyList(), clients.requestedTrainers)

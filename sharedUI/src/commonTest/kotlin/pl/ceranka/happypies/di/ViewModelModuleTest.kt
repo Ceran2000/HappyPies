@@ -8,8 +8,9 @@ import kotlinx.coroutines.test.setMain
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
-import pl.ceranka.happypies.auth.AppUser
 import pl.ceranka.happypies.auth.AuthManager
+import pl.ceranka.happypies.auth.AuthUserListener
+import pl.ceranka.happypies.auth.ListenerHandle
 import pl.ceranka.happypies.data.firestore.CollectionQuery
 import pl.ceranka.happypies.data.firestore.DocumentResult
 import pl.ceranka.happypies.data.firestore.FirestoreGateway
@@ -63,9 +64,12 @@ class ViewModelModuleTest {
 }
 
 private object FakeAuthManager : AuthManager {
-    override suspend fun signIn(email: String, password: String) = AppUser("uid", email)
+    override suspend fun signIn(email: String, password: String) = Unit
     override suspend fun signOut() = Unit
-    override val currentUser: AppUser? = null
+    override fun addUserListener(listener: AuthUserListener): ListenerHandle {
+        listener.onAuthUserChanged(null)
+        return ListenerHandle {}
+    }
 }
 
 private object FakeFirestoreGateway : FirestoreGateway {

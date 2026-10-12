@@ -9,21 +9,37 @@ final class AuthManagerImpl: AuthManager {
         self.auth = auth
     }
 
-    func signIn(email: String, password: String) async throws -> AppUser {
-        let result = try await auth.signIn(withEmail: email, password: password)
-        return toAppUser(result.user)
+    func signIn(email: String, password: String) async throws {
+        _ = try await auth.signIn(withEmail: email, password: password)
     }
 
     func signOut() async throws {
         try auth.signOut()
     }
 
-    var currentUser: AppUser? {
-        auth.currentUser.map(toAppUser)
+    func addUserListener(listener: AuthUserListener) -> ListenerHandle {
+        let handle = auth.addStateDidChangeListener { _, user in
+            listener.onAuthUserChanged(user: user.map(toAuthUser))
+        }
+        return AuthListenerHandle(auth: auth, handle: handle)
     }
-    
 }
 
-private func toAppUser(_ user: User) -> AppUser {
-    AppUser(uid: user.uid, email: user.email)
+private final class AuthListenerHandle: ListenerHandle {
+
+    private let auth: Auth
+    private let handle: AuthStateDidChangeListenerHandle
+
+    init(auth: Auth, handle: AuthStateDidChangeListenerHandle) {
+        self.auth = auth
+        self.handle = handle
+    }
+
+    func remove() {
+        auth.removeStateDidChangeListener(handle)
+    }
+}
+
+private func toAuthUser(_ user: User) -> AuthUser {
+    AuthUser(uid: user.uid, email: user.email)
 }

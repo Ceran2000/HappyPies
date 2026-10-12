@@ -15,13 +15,13 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
-import pl.ceranka.happypies.auth.SessionManager
-import pl.ceranka.happypies.auth.profileOrNull
+import pl.ceranka.happypies.data.account.Account
+import pl.ceranka.happypies.data.account.AccountRepository
+import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
-import pl.ceranka.happypies.data.user.UserProfile
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.ui.common.formatDateTime
 import pl.ceranka.happypies.ui.common.toUserMessage
@@ -29,7 +29,7 @@ import pl.ceranka.happypies.ui.common.toUserMessage
 class ClientDetailsViewModel(
     private val clientRepository: ClientRepository,
     private val reportRepository: ReportRepository,
-    private val sessionManager: SessionManager,
+    private val accountRepository: AccountRepository,
     private val clientId: String,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
 ) : ViewModel() {
@@ -71,15 +71,15 @@ class ClientDetailsViewModel(
         id = id,
         title = title,
         createdAt = formatDateTime(createdAt, timeZone),
-        authorName = authorName(authorId, authorRole, client, sessionManager.state.value.profileOrNull),
+        authorName = authorName(authorId, authorRole, client, accountRepository.state.value.accountOrNull),
         mediaCount = media.size,
         hasComment = comment != null,
     )
 }
 
-internal fun authorName(authorId: String, authorRole: UserRole, client: Client, profile: UserProfile?): String = when {
+internal fun authorName(authorId: String, authorRole: UserRole, client: Client, account: Account?): String = when {
     authorId == client.id -> client.name
-    authorId == profile?.uid -> profile.name
+    authorId == account?.uid -> account.name
     authorRole == UserRole.TRAINER -> "Trener"
     else -> "Klient"
 }

@@ -1,15 +1,11 @@
 package pl.ceranka.happypies.fakes
 
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import pl.ceranka.happypies.auth.AppUser
-import pl.ceranka.happypies.auth.AuthManager
-import pl.ceranka.happypies.auth.SessionManager
-import pl.ceranka.happypies.data.DataException
+import kotlinx.coroutines.flow.MutableStateFlow
+import pl.ceranka.happypies.data.account.Account
+import pl.ceranka.happypies.data.account.AccountRepository
+import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.client.Dog
@@ -19,12 +15,10 @@ import pl.ceranka.happypies.data.report.NewReport
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportComment
 import pl.ceranka.happypies.data.report.ReportRepository
-import pl.ceranka.happypies.data.user.UserProfile
-import pl.ceranka.happypies.data.user.UserRepository
 import pl.ceranka.happypies.data.user.UserRole
 
 val anna = Client("client-1", "Anna Kowalska", "anna@przyklad.pl", listOf(Dog("Bala", "border collie")))
-val trainer = UserProfile("trainer-1", "Jan Trener", "jan@przyklad.pl", UserRole.TRAINER)
+val trainer = Account("trainer-1", "jan@przyklad.pl", "Jan Trener", UserRole.TRAINER)
 
 fun report(
     id: String,
@@ -49,34 +43,28 @@ fun report(
 
 val video = MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)
 
-class FakeAuthManager(var current: AppUser? = null) : AuthManager {
+/** Signing in makes [trainer] signed in, unless [signInError] or [rejectSignIn] says otherwise. */
+class FakeAccountRepository(initial: AccountState) : AccountRepository {
+    override val state = MutableStateFlow(initial)
     var signInError: Exception? = null
+    var rejectSignIn = false
+    val signIns = mutableListOf<Pair<String, String>>()
 
-    override suspend fun signIn(email: String, password: String): AppUser {
+    override suspend fun signIn(email: String, password: String) {
+        signIns += email to password
         signInError?.let { throw it }
-        return AppUser(trainer.uid, email).also { current = it }
+        state.value = if (rejectSignIn) AccountState.SignedOut(rejected = true) else AccountState.SignedIn(trainer)
     }
 
     override suspend fun signOut() {
-        current = null
+        state.value = AccountState.SignedOut()
     }
 
-    override val currentUser: AppUser? get() = current
+    override fun retry() = Unit
 }
 
-class FakeUserRepository(private vararg val profiles: UserProfile) : UserRepository {
-    override suspend fun getProfile(uid: String): UserProfile =
-        profiles.firstOrNull { it.uid == uid } ?: throw DataException.NotFound("User $uid does not exist")
-}
-
-/** A session already restored to [profile] (or signed out when null). The fakes never suspend, so this completes at once. */
-@OptIn(ExperimentalCoroutinesApi::class)
-fun sessionOf(profile: UserProfile?): SessionManager {
-    val auth = FakeAuthManager(current = profile?.let { AppUser(it.uid, it.email) })
-    val session = SessionManager(auth, FakeUserRepository(*listOfNotNull(profile).toTypedArray()))
-    CoroutineScope(UnconfinedTestDispatcher()).launch { session.restore() }
-    return session
-}
+fun accountOf(account: Account?) =
+    FakeAccountRepository(if (account != null) AccountState.SignedIn(account) else AccountState.SignedOut())
 
 class FakeClientRepository(var client: Client = anna) : ClientRepository {
     var error: Exception? = null

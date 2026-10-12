@@ -9,15 +9,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import pl.ceranka.happypies.auth.SessionManager
-import pl.ceranka.happypies.auth.profileOrNull
+import pl.ceranka.happypies.data.account.AccountRepository
+import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.report.NewReport
 import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.ui.common.toUserMessage
 
 class ReportFormViewModel(
     private val reportRepository: ReportRepository,
-    private val sessionManager: SessionManager,
+    private val accountRepository: AccountRepository,
     private val clientId: String,
 ) : ViewModel() {
 
@@ -37,7 +37,7 @@ class ReportFormViewModel(
             _uiState.value = ReportFormUiState.Editing(titleError = "Podaj tytuł raportu")
             return
         }
-        val author = sessionManager.state.value.profileOrNull
+        val author = accountRepository.state.value.accountOrNull
         if (author == null) {
             _uiState.value = ReportFormUiState.Editing(saveError = "Sesja wygasła. Zaloguj się ponownie.")
             return

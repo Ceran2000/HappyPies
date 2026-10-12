@@ -12,14 +12,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import pl.ceranka.happypies.auth.SessionManager
-import pl.ceranka.happypies.auth.profileOrNull
+import pl.ceranka.happypies.data.account.AccountRepository
+import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.ui.common.toUserMessage
 
 class ClientListViewModel(
     private val clientRepository: ClientRepository,
-    sessionManager: SessionManager,
+    accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val log = Logger.withTag("ClientList")
@@ -29,8 +29,8 @@ class ClientListViewModel(
 
     init {
         viewModelScope.launch {
-            sessionManager.state
-                .map { it.profileOrNull?.uid }
+            accountRepository.state
+                .map { it.accountOrNull?.uid }
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collectLatest { trainerId ->

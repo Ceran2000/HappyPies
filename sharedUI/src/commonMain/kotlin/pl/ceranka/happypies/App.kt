@@ -19,8 +19,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
-import pl.ceranka.happypies.auth.SessionManager
-import pl.ceranka.happypies.auth.SessionState
+import pl.ceranka.happypies.data.account.AccountRepository
+import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.navigation.Route
 import pl.ceranka.happypies.navigation.requiredBackStack
 import pl.ceranka.happypies.navigation.routeSavedStateConfiguration
@@ -30,22 +30,22 @@ import pl.ceranka.happypies.screen.clienthome.ClientHomeScreen
 import pl.ceranka.happypies.screen.login.LoginScreen
 import pl.ceranka.happypies.screen.report_form.ReportFormScreen
 import pl.ceranka.happypies.ui.common.AuthenticatedScreen
+import pl.ceranka.happypies.ui.common.AccountUnavailableScreen
+import pl.ceranka.happypies.ui.common.toUserMessage
 
 //TODO: should have ViewModel?
 
 @Composable
 fun App() {
-    val sessionManager = koinInject<SessionManager>()
+    val accountRepository = koinInject<AccountRepository>()
     MaterialTheme {
-        // Restored after process death; kept as long as the session allows it.
+        // Restored after process death; kept as long as the account allows it.
         val backStack = rememberNavBackStack(routeSavedStateConfiguration, Route.Login)
-        val session by sessionManager.state.collectAsStateWithLifecycle()
+        val accountState by accountRepository.state.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
 
-        LaunchedEffect(Unit) { sessionManager.restore() }
-
-        // Navigation follows the session: signing in, signing out and restoring move the back stack.
-        val requiredStack = requiredBackStack(session, backStack)
+        // Navigation follows the account: signing in and out (also outside the app) moves the back stack.
+        val requiredStack = requiredBackStack(accountState, backStack)
         LaunchedEffect(requiredStack) {
             requiredStack?.let {
                 backStack.clear()
@@ -54,11 +54,18 @@ fun App() {
         }
 
         fun logout() {
-            scope.launch { sessionManager.signOut() }
+            scope.launch { accountRepository.signOut() }
         }
 
         Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            if (session == SessionState.Restoring || requiredStack != null) {
+            val state = accountState
+            if (state is AccountState.Unavailable) {
+                AccountUnavailableScreen(
+                    message = state.error.toUserMessage(),
+                    onRetry = accountRepository::retry,
+                    onLogout = ::logout,
+                )
+            } else if (state == AccountState.Loading || requiredStack != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }

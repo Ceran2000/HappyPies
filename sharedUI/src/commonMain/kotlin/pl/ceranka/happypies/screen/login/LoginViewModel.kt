@@ -8,13 +8,14 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
-import pl.ceranka.happypies.auth.SessionManager
-import pl.ceranka.happypies.data.DataException
-import pl.ceranka.happypies.ui.common.toUserMessage
+import pl.ceranka.happypies.data.account.AccountRepository
+import pl.ceranka.happypies.data.account.AccountState
 
 class LoginViewModel(
-    private val sessionManager: SessionManager,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val log = Logger.withTag("Login")
@@ -25,23 +26,30 @@ class LoginViewModel(
     private val _uiState = MutableStateFlow<LoginUiState>(LoginUiState.Idle)
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            accountRepository.state
+                .filterIsInstance<AccountState.SignedOut>()
+                .filter { it.rejected }
+                .collect {
+                    _uiState.value = LoginUiState.Error("Konto nie jest skonfigurowane. Skontaktuj się z trenerem.")
+                }
+        }
+    }
+
     fun onSignIn() {
         if (_uiState.value == LoginUiState.Loading) return
 
         _uiState.value = LoginUiState.Loading
         viewModelScope.launch {
             try {
-                sessionManager.signIn(emailState.text.toString(), passwordState.text.toString())
+                accountRepository.signIn(emailState.text.toString(), passwordState.text.toString())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 log.e(e) { "Sign-in failed" }
-                _uiState.value = LoginUiState.Error(e.toSignInMessage())
+                _uiState.value = LoginUiState.Error("Nie udało się zalogować. Sprawdź e-mail, hasło i połączenie z internetem.")
             }
         }
     }
 }
-
-private fun Throwable.toSignInMessage(): String =
-    if (this is DataException) toUserMessage()
-    else "Nie udało się zalogować. Sprawdź e-mail, hasło i połączenie z internetem."

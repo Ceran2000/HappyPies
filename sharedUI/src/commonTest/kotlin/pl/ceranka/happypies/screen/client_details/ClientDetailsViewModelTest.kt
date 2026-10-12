@@ -14,7 +14,7 @@ import pl.ceranka.happypies.fakes.FakeClientRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.anna
 import pl.ceranka.happypies.fakes.report
-import pl.ceranka.happypies.fakes.sessionOf
+import pl.ceranka.happypies.fakes.accountOf
 import pl.ceranka.happypies.fakes.trainer
 import pl.ceranka.happypies.fakes.video
 import kotlin.test.AfterTest
@@ -27,7 +27,7 @@ class ClientDetailsViewModelTest {
 
     private val clients = FakeClientRepository()
     private val reports = FakeReportRepository()
-    private val session = sessionOf(trainer)
+    private val account = accountOf(trainer)
     private val offline = "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."
 
     @BeforeTest
@@ -36,7 +36,7 @@ class ClientDetailsViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun createViewModel() = ClientDetailsViewModel(clients, reports, session, anna.id, TimeZone.UTC)
+    private fun createViewModel() = ClientDetailsViewModel(clients, reports, account, anna.id, TimeZone.UTC)
 
     private val ClientDetailsViewModel.reportIds get() = uiState.value.reports.map { it.id }
 
@@ -144,9 +144,9 @@ class ClientDetailsViewModelTest {
 
     @Test
     fun authorNameFallsBackToTheRole() {
-        assertEquals("Anna Kowalska", authorName(anna.id, UserRole.CLIENT, anna, profile = null))
+        assertEquals("Anna Kowalska", authorName(anna.id, UserRole.CLIENT, anna, account = null))
         assertEquals("Jan Trener", authorName(trainer.uid, UserRole.TRAINER, anna, trainer))
-        assertEquals("Trener", authorName("someone", UserRole.TRAINER, anna, profile = null))
-        assertEquals("Klient", authorName("someone", UserRole.CLIENT, anna, profile = null))
+        assertEquals("Trener", authorName("someone", UserRole.TRAINER, anna, account = null))
+        assertEquals("Klient", authorName("someone", UserRole.CLIENT, anna, account = null))
     }
 }

@@ -6,11 +6,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
-import pl.ceranka.happypies.auth.SessionManager
-import pl.ceranka.happypies.auth.SessionState
-import pl.ceranka.happypies.fakes.FakeAuthManager
-import pl.ceranka.happypies.fakes.FakeUserRepository
-import pl.ceranka.happypies.fakes.trainer
+import pl.ceranka.happypies.data.account.AccountState
+import pl.ceranka.happypies.fakes.FakeAccountRepository
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -19,7 +16,8 @@ import kotlin.test.assertEquals
 @OptIn(ExperimentalCoroutinesApi::class)
 class LoginViewModelTest {
 
-    private val auth = FakeAuthManager()
+    private val accounts = FakeAccountRepository(AccountState.SignedOut())
+    private val rejected = LoginUiState.Error("Konto nie jest skonfigurowane. Skontaktuj się z trenerem.")
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -27,37 +25,43 @@ class LoginViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun signIn(session: SessionManager): LoginViewModel = LoginViewModel(session).apply {
+    private fun signIn(): LoginViewModel = LoginViewModel(accounts).apply {
         emailState.setTextAndPlaceCursorAtEnd("jan@przyklad.pl")
         passwordState.setTextAndPlaceCursorAtEnd("secret")
         onSignIn()
     }
 
     @Test
-    fun successfulSignInSignsTheSessionIn() {
-        val session = SessionManager(auth, FakeUserRepository(trainer))
+    fun signsInWithTheTypedCredentials() {
+        val viewModel = signIn()
 
-        signIn(session)
-
-        assertEquals(SessionState.SignedIn(trainer), session.state.value)
+        assertEquals(listOf("jan@przyklad.pl" to "secret"), accounts.signIns)
+        assertEquals(LoginUiState.Loading, viewModel.uiState.value)
     }
 
     @Test
-    fun missingProfileShowsAMessageAndStaysSignedOut() {
-        val session = SessionManager(auth, FakeUserRepository())
+    fun rejectedAccountAfterSignInShowsTheRejection() {
+        accounts.rejectSignIn = true
 
-        val viewModel = signIn(session)
+        val viewModel = signIn()
 
-        assertEquals(LoginUiState.Error("Nie znaleziono danych. Mogły zostać usunięte."), viewModel.uiState.value)
-        assertEquals(null, auth.current)
+        assertEquals(rejected, viewModel.uiState.value)
+    }
+
+    @Test
+    fun accountRejectedAtStartShowsTheRejection() {
+        accounts.state.value = AccountState.SignedOut(rejected = true)
+
+        val viewModel = LoginViewModel(accounts)
+
+        assertEquals(rejected, viewModel.uiState.value)
     }
 
     @Test
     fun authErrorShowsASignInMessageWithoutTechnicalText() {
-        auth.signInError = IllegalStateException("The password is invalid or the user does not have a password.")
-        val session = SessionManager(auth, FakeUserRepository(trainer))
+        accounts.signInError = IllegalStateException("The password is invalid or the user does not have a password.")
 
-        val viewModel = signIn(session)
+        val viewModel = signIn()
 
         assertEquals(
             LoginUiState.Error("Nie udało się zalogować. Sprawdź e-mail, hasło i połączenie z internetem."),
