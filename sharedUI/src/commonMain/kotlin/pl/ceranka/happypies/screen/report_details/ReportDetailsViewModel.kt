@@ -23,13 +23,12 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.accountOrNull
-import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.ui.common.ClientSpacePeople
 import pl.ceranka.happypies.ui.common.formatDateTime
-import pl.ceranka.happypies.ui.common.personName
 import pl.ceranka.happypies.ui.common.toUserMessage
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -84,12 +83,12 @@ class ReportDetailsViewModel(
 
     private fun load(): Flow<ReportDetailsUiState> =
         flow {
-            val client = clientRepository.getClient(clientId)
+            val people = ClientSpacePeople(clientRepository.getClient(clientId), accountRepository.state.value.accountOrNull)
             emitAll(reportRepository.observeReport(reportId).map { report ->
                 if (report == null) {
                     ReportDetailsUiState(report = uiState.value.report, isDeleted = true)
                 } else {
-                    ReportDetailsUiState(report = report.toItem(client))
+                    ReportDetailsUiState(report = report.toItem(people))
                 }
             })
         }
@@ -99,26 +98,21 @@ class ReportDetailsViewModel(
                 emit(uiState.value.copy(error = e.toUserMessage()))
             }
 
-    private fun Report.toItem(client: Client): ReportDetailsItem {
-        val account = accountRepository.state.value.accountOrNull
-        // Only the client and their trainer work in the client's space.
-        val editorRole = if (lastEditedBy == client.id) UserRole.CLIENT else UserRole.TRAINER
-        return ReportDetailsItem(
-            title = title,
-            description = description,
-            addedBy = "${personName(authorId, authorRole, client, account)} · ${formatDateTime(createdAt, timeZone)}",
-            editedBy = if (updatedAt > createdAt) {
-                "${personName(lastEditedBy, editorRole, client, account)} · ${formatDateTime(updatedAt, timeZone)}"
-            } else {
-                null
-            },
-            comment = comment?.let {
-                CommentItem(
-                    label = if (it.authorRole == UserRole.TRAINER) "Komentarz trenera" else "Komentarz klienta",
-                    text = it.text,
-                    date = formatDateTime(it.updatedAt, timeZone),
-                )
-            },
-        )
-    }
+    private fun Report.toItem(people: ClientSpacePeople) = ReportDetailsItem(
+        title = title,
+        description = description,
+        addedBy = "${people.nameOf(authorId)} · ${formatDateTime(createdAt, timeZone)}",
+        editedBy = if (updatedAt > createdAt) {
+            "${people.nameOf(lastEditedBy)} · ${formatDateTime(updatedAt, timeZone)}"
+        } else {
+            null
+        },
+        comment = comment?.let {
+            CommentItem(
+                label = if (it.authorRole == UserRole.TRAINER) "Komentarz trenera" else "Komentarz klienta",
+                text = it.text,
+                date = formatDateTime(it.updatedAt, timeZone),
+            )
+        },
+    )
 }

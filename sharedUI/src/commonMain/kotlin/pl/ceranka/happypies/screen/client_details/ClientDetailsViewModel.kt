@@ -19,12 +19,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.TimeZone
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.accountOrNull
-import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.ui.common.formatDateTime
-import pl.ceranka.happypies.ui.common.personName
+import pl.ceranka.happypies.ui.common.ClientSpacePeople
 import pl.ceranka.happypies.ui.common.toUserMessage
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -52,8 +51,9 @@ class ClientDetailsViewModel(
     private fun load(): Flow<ClientDetailsUiState> =
         flow {
             val client = clientRepository.getClient(clientId)
+            val people = ClientSpacePeople(client, accountRepository.state.value.accountOrNull)
             emitAll(reportRepository.observeReports(clientId).map { reports ->
-                ClientDetailsUiState(client = client, reports = reports.map { it.toListItem(client) })
+                ClientDetailsUiState(client = client, reports = reports.map { it.toListItem(people) })
             })
         }
             .onStart { emit(uiState.value.copy(error = null)) }
@@ -62,11 +62,11 @@ class ClientDetailsViewModel(
                 emit(uiState.value.copy(error = e.toUserMessage()))
             }
 
-    private fun Report.toListItem(client: Client) = ReportListItem(
+    private fun Report.toListItem(people: ClientSpacePeople) = ReportListItem(
         id = id,
         title = title,
         createdAt = formatDateTime(createdAt, timeZone),
-        authorName = personName(authorId, authorRole, client, accountRepository.state.value.accountOrNull),
+        authorName = people.nameOf(authorId),
         mediaCount = media.size,
         hasComment = comment != null,
     )
