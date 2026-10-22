@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.runTest
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthUser
 import pl.ceranka.happypies.auth.AuthStateListener
-import pl.ceranka.happypies.auth.ListenerHandle
+import pl.ceranka.happypies.core.ListenerHandle
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway
 import pl.ceranka.happypies.data.firestore.FirestoreDocument

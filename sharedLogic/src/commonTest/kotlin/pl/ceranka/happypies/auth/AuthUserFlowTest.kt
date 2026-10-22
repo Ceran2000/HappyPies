@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import pl.ceranka.happypies.core.ListenerHandle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

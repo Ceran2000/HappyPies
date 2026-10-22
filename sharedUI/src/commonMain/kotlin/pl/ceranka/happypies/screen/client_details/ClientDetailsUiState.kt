@@ -5,7 +5,6 @@ import pl.ceranka.happypies.data.client.Client
 data class ClientDetailsUiState(
     val client: Client? = null,
     val reports: List<ReportListItem> = emptyList(),
-    val isRefreshing: Boolean = false,
     val error: String? = null,
 )
 

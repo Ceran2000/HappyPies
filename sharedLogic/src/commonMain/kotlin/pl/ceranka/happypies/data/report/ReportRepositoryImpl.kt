@@ -1,9 +1,7 @@
 package pl.ceranka.happypies.data.report
 
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import pl.ceranka.happypies.data.firestore.CollectionQuery
 import pl.ceranka.happypies.data.firestore.DocumentReader
 import pl.ceranka.happypies.data.firestore.FirestoreDocument
@@ -14,10 +12,10 @@ import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
 import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
 import pl.ceranka.happypies.data.firestore.OrderBy
-import pl.ceranka.happypies.data.firestore.WriteResult
+import pl.ceranka.happypies.data.firestore.documentFlow
 import pl.ceranka.happypies.data.firestore.documentIdOrThrow
 import pl.ceranka.happypies.data.firestore.documentOrThrow
-import pl.ceranka.happypies.data.firestore.documentsOrThrow
+import pl.ceranka.happypies.data.firestore.queryFlow
 import pl.ceranka.happypies.data.firestore.toFirestoreValue
 import pl.ceranka.happypies.data.user.UserRole
 
@@ -25,24 +23,24 @@ private typealias Fields = ReportFirestoreFields
 
 class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportRepository {
 
-    private val _changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    override val changes: Flow<Unit> = _changes.asSharedFlow()
-
-    override suspend fun getReports(clientId: String): List<Report> {
+    override fun observeReports(clientId: String): Flow<List<Report>> {
         val query = CollectionQuery(
             collection = Fields.COLLECTION,
             whereEqualTo = mapOf(Fields.CLIENT_ID to StringValue(clientId)),
             orderBy = listOf(OrderBy(Fields.CREATED_AT, descending = true)),
         )
-        return gateway.query(query).documentsOrThrow().map { it.toReport() }
+        return gateway.queryFlow(query).map { documents -> documents.map { it.toReport() } }
     }
+
+    override fun observeReport(reportId: String): Flow<Report?> =
+        gateway.documentFlow(Fields.COLLECTION, reportId).map { it?.toReport() }
 
     override suspend fun getReport(reportId: String): Report {
         return gateway.getDocument(Fields.COLLECTION, reportId).documentOrThrow { "Report $reportId does not exist" }.toReport()
     }
 
     override suspend fun createReport(report: NewReport): String =
-        gateway.add(Fields.COLLECTION, report.toFields()).notifyOnSuccess()
+        gateway.add(Fields.COLLECTION, report.toFields()).documentIdOrThrow()
 
     override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) {
         val fields = mapOf(
@@ -51,7 +49,7 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
             Fields.LAST_EDITED_BY to StringValue(editorId),
             Fields.UPDATED_AT to ServerTimestamp,
         )
-        gateway.update(Fields.COLLECTION, reportId, fields).notifyOnSuccess()
+        gateway.update(Fields.COLLECTION, reportId, fields).documentIdOrThrow()
     }
 
     override suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole) {
@@ -63,21 +61,15 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
                 Fields.COMMENT_UPDATED_AT to ServerTimestamp,
             )
         )
-        gateway.update(Fields.COLLECTION, reportId, mapOf(Fields.COMMENT to comment)).notifyOnSuccess()
+        gateway.update(Fields.COLLECTION, reportId, mapOf(Fields.COMMENT to comment)).documentIdOrThrow()
     }
 
     override suspend fun deleteComment(reportId: String) {
-        gateway.update(Fields.COLLECTION, reportId, mapOf(Fields.COMMENT to FirestoreValue.Delete)).notifyOnSuccess()
+        gateway.update(Fields.COLLECTION, reportId, mapOf(Fields.COMMENT to FirestoreValue.Delete)).documentIdOrThrow()
     }
 
     override suspend fun deleteReport(reportId: String) {
-        gateway.delete(Fields.COLLECTION, reportId).notifyOnSuccess()
-    }
-
-    private fun WriteResult.notifyOnSuccess(): String {
-        val id = documentIdOrThrow()
-        _changes.tryEmit(Unit)
-        return id
+        gateway.delete(Fields.COLLECTION, reportId).documentIdOrThrow()
     }
 }
 

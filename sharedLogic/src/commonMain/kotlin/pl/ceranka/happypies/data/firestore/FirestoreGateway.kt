@@ -1,5 +1,10 @@
 package pl.ceranka.happypies.data.firestore
 
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
+import pl.ceranka.happypies.core.ListenerHandle
 import pl.ceranka.happypies.data.DataException
 
 data class FirestoreDocument(val id: String, val fields: Map<String, FirestoreValue>)
@@ -47,7 +52,11 @@ sealed class WriteResult {
  * Every error except cancellation is returned as `Failure`, never thrown, on both platforms:
  * what Kotlin receives when a Swift implementation throws is not documented by Kotlin/Native,
  * so each platform classifies the error into a [DataException] and passes it as data. Errors that
- * are not Firestore's (e.g. a value the SDK rejects) become [DataException.Unknown]. Documents are read with pending server timestamps estimated.
+ * are not Firestore's (e.g. a value the SDK rejects) become [DataException.Unknown].
+ * Documents are read with pending server timestamps estimated.
+ *
+ * Listeners report errors as a `Failure` result and never throw. After a `Failure` no more
+ * results arrive. [ListenerHandle.remove] must be safe to call at any time, also after a `Failure`.
  */
 interface FirestoreGateway {
 
@@ -65,4 +74,40 @@ interface FirestoreGateway {
 
     @Throws(Exception::class)
     suspend fun delete(collection: String, id: String): WriteResult
+
+    fun addDocumentListener(collection: String, id: String, listener: DocumentListener): ListenerHandle
+
+    fun addQueryListener(query: CollectionQuery, listener: QueryListener): ListenerHandle
 }
+
+fun interface DocumentListener {
+    fun onDocumentResult(result: DocumentResult)
+}
+
+fun interface QueryListener {
+    fun onQueryResult(result: ReadResult)
+}
+
+fun FirestoreGateway.documentFlow(collection: String, id: String): Flow<FirestoreDocument?> =
+    callbackFlow {
+        val handle = addDocumentListener(collection, id) { result ->
+            when (result) {
+                is DocumentResult.Success -> trySend(result.document)
+                is DocumentResult.Failure -> close(result.error)
+            }
+        }
+        awaitClose { handle.remove() }
+    }
+        .conflate()
+
+fun FirestoreGateway.queryFlow(query: CollectionQuery): Flow<List<FirestoreDocument>> =
+    callbackFlow {
+        val handle = addQueryListener(query) { result ->
+            when (result) {
+                is ReadResult.Success -> trySend(result.documents)
+                is ReadResult.Failure -> close(result.error)
+            }
+        }
+        awaitClose { handle.remove() }
+    }
+        .conflate()

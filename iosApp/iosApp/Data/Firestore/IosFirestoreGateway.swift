@@ -20,17 +20,7 @@ final class IosFirestoreGateway: FirestoreGateway {
 
     func query(query: CollectionQuery) async throws -> ReadResult {
         do {
-            var request: Query = firestore.collection(query.collection)
-            for (field, value) in query.whereEqualTo {
-                request = request.whereField(field, isEqualTo: try toPlatform(value))
-            }
-            for order in query.orderBy {
-                request = request.order(by: order.field, descending: order.descending)
-            }
-            if let limit = query.limit {
-                request = request.limit(to: limit.intValue)
-            }
-            let snapshot = try await request.getDocuments()
+            let snapshot = try await platformQuery(query).getDocuments()
             return ReadResult.Success(documents: snapshot.documents.map(toFirestoreDocument))
         } catch {
             return ReadResult.Failure(error: try dataException(from: error))
@@ -63,11 +53,71 @@ final class IosFirestoreGateway: FirestoreGateway {
             return WriteResult.Failure(error: try dataException(from: error))
         }
     }
+
+    func addDocumentListener(collection: String, id: String, listener: DocumentListener) -> ListenerHandle {
+        let registration = firestore.collection(collection).document(id).addSnapshotListener { snapshot, error in
+            if let error {
+                listener.onDocumentResult(result: DocumentResult.Failure(error: classify(error)))
+            } else if let snapshot {
+                listener.onDocumentResult(result: DocumentResult.Success(document: snapshot.exists ? toFirestoreDocument(snapshot) : nil))
+            }
+        }
+        return FirestoreListenerHandle(registration: registration)
+    }
+
+    func addQueryListener(query: CollectionQuery, listener: QueryListener) -> ListenerHandle {
+        let request: Query
+        do {
+            request = try platformQuery(query)
+        } catch {
+            listener.onQueryResult(result: ReadResult.Failure(error: classify(error)))
+            return FirestoreListenerHandle(registration: nil)
+        }
+        let registration = request.addSnapshotListener { snapshot, error in
+            if let error {
+                listener.onQueryResult(result: ReadResult.Failure(error: classify(error)))
+            } else if let snapshot {
+                listener.onQueryResult(result: ReadResult.Success(documents: snapshot.documents.map(toFirestoreDocument)))
+            }
+        }
+        return FirestoreListenerHandle(registration: registration)
+    }
+
+    private func platformQuery(_ query: CollectionQuery) throws -> Query {
+        var request: Query = firestore.collection(query.collection)
+        for (field, value) in query.whereEqualTo {
+            request = request.whereField(field, isEqualTo: try toPlatform(value))
+        }
+        for order in query.orderBy {
+            request = request.order(by: order.field, descending: order.descending)
+        }
+        if let limit = query.limit {
+            request = request.limit(to: limit.intValue)
+        }
+        return request
+    }
+}
+
+private final class FirestoreListenerHandle: ListenerHandle {
+
+    private let registration: ListenerRegistration?
+
+    init(registration: ListenerRegistration?) {
+        self.registration = registration
+    }
+
+    func remove() {
+        registration?.remove()
+    }
 }
 
 // Cancellation is rethrown; every other error is returned as data (see FirestoreGateway in sharedLogic).
 private func dataException(from error: Error) throws -> DataException {
     if error is CancellationError { throw error }
+    return classify(error)
+}
+
+private func classify(_ error: Error) -> DataException {
     let nsError = error as NSError
     let message = nsError.localizedDescription
     guard nsError.domain == FirestoreErrorDomain else {

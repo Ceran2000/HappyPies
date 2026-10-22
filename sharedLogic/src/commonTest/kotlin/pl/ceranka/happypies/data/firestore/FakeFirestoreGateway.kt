@@ -1,5 +1,7 @@
 package pl.ceranka.happypies.data.firestore
 
+import pl.ceranka.happypies.core.ListenerHandle
+
 /** In-memory gateway: returns the configured results and records every call. */
 class FakeFirestoreGateway : FirestoreGateway {
 
@@ -11,6 +13,15 @@ class FakeFirestoreGateway : FirestoreGateway {
     val gets = mutableListOf<Pair<String, String>>()
     val queries = mutableListOf<CollectionQuery>()
     val writes = mutableListOf<Write>()
+
+    val documentListeners = mutableListOf<DocumentListener>()
+    val queryListeners = mutableListOf<QueryListener>()
+    val listenedDocuments = mutableListOf<Pair<String, String>>()
+    val listenedQueries = mutableListOf<CollectionQuery>()
+
+    fun emitDocument(result: DocumentResult) = documentListeners.toList().forEach { it.onDocumentResult(result) }
+
+    fun emitQuery(result: ReadResult) = queryListeners.toList().forEach { it.onQueryResult(result) }
 
     fun returnDocuments(vararg documents: FirestoreDocument) {
         readResult = ReadResult.Success(documents.toList())
@@ -42,5 +53,17 @@ class FakeFirestoreGateway : FirestoreGateway {
     override suspend fun delete(collection: String, id: String): WriteResult {
         writes += Write("delete", collection, id, null)
         return writeResult ?: WriteResult.Success(id)
+    }
+
+    override fun addDocumentListener(collection: String, id: String, listener: DocumentListener): ListenerHandle {
+        listenedDocuments += collection to id
+        documentListeners += listener
+        return ListenerHandle { documentListeners -= listener }
+    }
+
+    override fun addQueryListener(query: CollectionQuery, listener: QueryListener): ListenerHandle {
+        listenedQueries += query
+        queryListeners += listener
+        return ListenerHandle { queryListeners -= listener }
     }
 }

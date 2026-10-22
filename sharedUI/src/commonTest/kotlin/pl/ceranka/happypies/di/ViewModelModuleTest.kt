@@ -11,11 +11,13 @@ import org.koin.dsl.module
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthStateListener
 import pl.ceranka.happypies.auth.AuthUser
-import pl.ceranka.happypies.auth.ListenerHandle
+import pl.ceranka.happypies.core.ListenerHandle
 import pl.ceranka.happypies.data.firestore.CollectionQuery
+import pl.ceranka.happypies.data.firestore.DocumentListener
 import pl.ceranka.happypies.data.firestore.DocumentResult
 import pl.ceranka.happypies.data.firestore.FirestoreGateway
 import pl.ceranka.happypies.data.firestore.FirestoreValue
+import pl.ceranka.happypies.data.firestore.QueryListener
 import pl.ceranka.happypies.data.firestore.ReadResult
 import pl.ceranka.happypies.data.firestore.WriteResult
 import pl.ceranka.happypies.screen.client_details.ClientDetailsViewModel
@@ -80,4 +82,6 @@ private object FakeFirestoreGateway : FirestoreGateway {
     override suspend fun add(collection: String, fields: Map<String, FirestoreValue>) = WriteResult.Success("id")
     override suspend fun update(collection: String, id: String, fields: Map<String, FirestoreValue>) = WriteResult.Success(id)
     override suspend fun delete(collection: String, id: String) = WriteResult.Success(id)
+    override fun addDocumentListener(collection: String, id: String, listener: DocumentListener) = ListenerHandle {}
+    override fun addQueryListener(query: CollectionQuery, listener: QueryListener) = ListenerHandle {}
 }

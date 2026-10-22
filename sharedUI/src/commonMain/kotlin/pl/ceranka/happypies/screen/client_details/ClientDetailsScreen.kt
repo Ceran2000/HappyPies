@@ -11,12 +11,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -40,7 +38,7 @@ fun ClientDetailsScreen(
         uiState = uiState,
         onBack = onBack,
         onAddReport = onAddReport,
-        onRefresh = viewModel::onRefresh,
+        onRetry = viewModel::onRetry,
     )
 }
 
@@ -49,7 +47,7 @@ private fun ClientDetailsContent(
     uiState: ClientDetailsUiState,
     onBack: () -> Unit,
     onAddReport: () -> Unit,
-    onRefresh: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         TextButton(onClick = onBack, modifier = Modifier.padding(horizontal = 8.dp)) {
@@ -57,49 +55,42 @@ private fun ClientDetailsContent(
         }
         val client = uiState.client
         when {
-            client != null -> ClientWithReports(client, uiState, onAddReport, onRefresh)
-            uiState.error != null -> ErrorWithRetry(uiState.error, onRetry = onRefresh)
+            client != null -> ClientWithReports(client, uiState, onAddReport, onRetry)
+            uiState.error != null -> ErrorWithRetry(uiState.error, onRetry, Modifier.padding(16.dp))
             else -> CircularProgressIndicator(modifier = Modifier.padding(16.dp))
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ClientWithReports(
     client: Client,
     uiState: ClientDetailsUiState,
     onAddReport: () -> Unit,
-    onRefresh: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        PullToRefreshBox(
-            isRefreshing = uiState.isRefreshing,
-            onRefresh = onRefresh,
+        LazyColumn(
             modifier = Modifier.fillMaxSize(),
+            // Bottom padding keeps the last card above the "Nowy raport" button.
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                // Bottom padding keeps the last card above the "Nowy raport" button.
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                item { ClientDetailsFields(client) }
-                item {
-                    Text(
-                        text = "Raporty",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 16.dp),
-                    )
-                }
-                uiState.error?.let { message ->
-                    item { Text(text = message, color = MaterialTheme.colorScheme.error) }
-                }
-                if (uiState.reports.isEmpty()) {
-                    item { Text("Brak raportów. Dodaj pierwszy przyciskiem „Nowy raport”.") }
-                }
-                items(uiState.reports, key = { it.id }) { report -> ReportCard(report) }
+            item { ClientDetailsFields(client) }
+            item {
+                Text(
+                    text = "Raporty",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
             }
+            uiState.error?.let { message ->
+                item { ErrorWithRetry(message, onRetry) }
+            }
+            if (uiState.reports.isEmpty()) {
+                item { Text("Brak raportów. Dodaj pierwszy przyciskiem „Nowy raport”.") }
+            }
+            items(uiState.reports, key = { it.id }) { report -> ReportCard(report) }
         }
         ExtendedFloatingActionButton(
             onClick = onAddReport,
@@ -150,8 +141,8 @@ private fun ReportCard(report: ReportListItem) {
 }
 
 @Composable
-private fun ErrorWithRetry(message: String, onRetry: () -> Unit) {
-    Column(modifier = Modifier.padding(16.dp)) {
+private fun ErrorWithRetry(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
         Text(text = message, color = MaterialTheme.colorScheme.error)
         TextButton(onClick = onRetry) {
             Text("Spróbuj ponownie")

@@ -1,6 +1,5 @@
 package pl.ceranka.happypies.screen.client_details
 
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -68,22 +67,23 @@ class ClientDetailsViewModelTest {
     }
 
     @Test
-    fun clientErrorShowsTheMessageAndRefreshLoadsAgain() {
+    fun clientErrorShowsTheMessageAndRetryLoadsAgain() {
         clients.error = DataException.Unavailable("offline")
         val viewModel = createViewModel()
         assertEquals(ClientDetailsUiState(error = offline), viewModel.uiState.value)
 
         clients.error = null
         reports.reports = listOf(report("r1"))
-        viewModel.onRefresh()
+        viewModel.onRetry()
 
         assertEquals(anna, viewModel.uiState.value.client)
         assertEquals(listOf("r1"), viewModel.reportIds)
+        assertEquals(null, viewModel.uiState.value.error)
     }
 
     @Test
     fun reportsErrorShowsTheMessage() {
-        reports.reportsError = DataException.PermissionDenied("denied")
+        reports.failReports(DataException.PermissionDenied("denied"))
 
         val viewModel = createViewModel()
 
@@ -91,55 +91,32 @@ class ClientDetailsViewModelTest {
     }
 
     @Test
-    fun refreshReplacesTheList() {
+    fun showsReportChangesLive() {
         reports.reports = listOf(report("r1"))
         val viewModel = createViewModel()
 
         reports.reports = listOf(report("r2"), report("r1"))
-        viewModel.onRefresh()
 
         assertEquals(listOf("r2", "r1"), viewModel.reportIds)
-        assertEquals(false, viewModel.uiState.value.isRefreshing)
     }
 
     @Test
-    fun failedRefreshKeepsTheShownData() {
+    fun failureWhileObservingKeepsTheShownDataUntilRetry() {
         reports.reports = listOf(report("r1"))
         val viewModel = createViewModel()
 
-        reports.reportsError = DataException.Unavailable("offline")
-        viewModel.onRefresh()
+        reports.failReports(DataException.Unavailable("offline"))
 
         val state = viewModel.uiState.value
         assertEquals(anna, state.client)
         assertEquals(listOf("r1"), viewModel.reportIds)
         assertEquals(offline, state.error)
-        assertEquals(false, state.isRefreshing)
-    }
 
-    @Test
-    fun newerLoadWinsOverAnOlderOneStillRunning() {
-        val slowFirstLoad = CompletableDeferred<Unit>()
-        reports.reports = listOf(report("old"))
-        reports.reportsGate = slowFirstLoad
-        val viewModel = createViewModel()
+        reports.reports = listOf(report("r2"))
+        viewModel.onRetry()
 
-        reports.reportsGate = null
-        reports.reports = listOf(report("new"))
-        viewModel.onRefresh()
-        slowFirstLoad.complete(Unit)
-
-        assertEquals(listOf("new"), viewModel.reportIds)
-    }
-
-    @Test
-    fun reloadsAfterAReportChange() {
-        val viewModel = createViewModel()
-        reports.reports = listOf(report("new"))
-
-        reports.changes.tryEmit(Unit)
-
-        assertEquals(listOf("new"), viewModel.reportIds)
+        assertEquals(listOf("r2"), viewModel.reportIds)
+        assertEquals(null, viewModel.uiState.value.error)
     }
 
     @Test

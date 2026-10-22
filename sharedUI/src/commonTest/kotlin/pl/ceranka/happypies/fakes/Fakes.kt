@@ -1,12 +1,13 @@
 package pl.ceranka.happypies.fakes
 
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthStateListener
 import pl.ceranka.happypies.auth.AuthUser
-import pl.ceranka.happypies.auth.ListenerHandle
+import pl.ceranka.happypies.core.ListenerHandle
 import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountState
@@ -92,13 +93,18 @@ class FakeClientRepository(var client: Client = anna) : ClientRepository {
 }
 
 class FakeReportRepository : ReportRepository {
-    override val changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    // The live reports: a list, or the error that ends every collection until a new list is set.
+    private val liveReports = MutableStateFlow<Result<List<Report>>>(Result.success(emptyList()))
 
-    var reports: List<Report> = emptyList()
-    var reportsError: Exception? = null
+    var reports: List<Report>
+        get() = liveReports.value.getOrThrow()
+        set(value) {
+            liveReports.value = Result.success(value)
+        }
 
-    /** When set, getReports answers with the reports it saw on the call, but only after the gate opens. */
-    var reportsGate: CompletableDeferred<Unit>? = null
+    fun failReports(error: Exception) {
+        liveReports.value = Result.failure(error)
+    }
 
     val created = mutableListOf<NewReport>()
     var createError: Exception? = null
@@ -106,12 +112,7 @@ class FakeReportRepository : ReportRepository {
     /** When set, createReport waits for it, so a test can act while saving is in progress. */
     var createGate: CompletableDeferred<Unit>? = null
 
-    override suspend fun getReports(clientId: String): List<Report> {
-        reportsError?.let { throw it }
-        val answer = reports
-        reportsGate?.await()
-        return answer
-    }
+    override fun observeReports(clientId: String): Flow<List<Report>> = liveReports.map { it.getOrThrow() }
 
     override suspend fun createReport(report: NewReport): String {
         created += report
@@ -120,6 +121,7 @@ class FakeReportRepository : ReportRepository {
         return "new-id"
     }
 
+    override fun observeReport(reportId: String): Flow<Report?> = error("Not used")
     override suspend fun getReport(reportId: String): Report = error("Not used")
     override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) = error("Not used")
     override suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole) = error("Not used")

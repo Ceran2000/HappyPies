@@ -10,6 +10,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
+import pl.ceranka.happypies.core.ListenerHandle
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.BooleanValue
@@ -32,14 +33,7 @@ class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : Firest
     }
 
     override suspend fun query(query: CollectionQuery): ReadResult = catching({ ReadResult.Failure(it) }) {
-        var request: Query = firestore.collection(query.collection)
-        query.whereEqualTo.forEach { (field, value) -> request = request.whereEqualTo(field, value.toPlatform()) }
-        query.orderBy.forEach { order ->
-            val direction = if (order.descending) Query.Direction.DESCENDING else Query.Direction.ASCENDING
-            request = request.orderBy(order.field, direction)
-        }
-        query.limit?.let { request = request.limit(it.toLong()) }
-        ReadResult.Success(request.get().await().documents.map { it.toFirestoreDocument() })
+        ReadResult.Success(query.toPlatformQuery().get().await().documents.map { it.toFirestoreDocument() })
     }
 
     override suspend fun add(collection: String, fields: Map<String, FirestoreValue>): WriteResult = write {
@@ -54,6 +48,39 @@ class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : Firest
     override suspend fun delete(collection: String, id: String): WriteResult = write {
         firestore.collection(collection).document(id).delete().await()
         id
+    }
+
+    override fun addDocumentListener(collection: String, id: String, listener: DocumentListener): ListenerHandle {
+        val registration = firestore.collection(collection).document(id).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                listener.onDocumentResult(DocumentResult.Failure(error.toDataException()))
+            } else if (snapshot != null) {
+                listener.onDocumentResult(DocumentResult.Success(if (snapshot.exists()) snapshot.toFirestoreDocument() else null))
+            }
+        }
+        return ListenerHandle { registration.remove() }
+    }
+
+    override fun addQueryListener(query: CollectionQuery, listener: QueryListener): ListenerHandle {
+        val registration = query.toPlatformQuery().addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                listener.onQueryResult(ReadResult.Failure(error.toDataException()))
+            } else if (snapshot != null) {
+                listener.onQueryResult(ReadResult.Success(snapshot.documents.map { it.toFirestoreDocument() }))
+            }
+        }
+        return ListenerHandle { registration.remove() }
+    }
+
+    private fun CollectionQuery.toPlatformQuery(): Query {
+        var request: Query = firestore.collection(collection)
+        whereEqualTo.forEach { (field, value) -> request = request.whereEqualTo(field, value.toPlatform()) }
+        orderBy.forEach { order ->
+            val direction = if (order.descending) Query.Direction.DESCENDING else Query.Direction.ASCENDING
+            request = request.orderBy(order.field, direction)
+        }
+        limit?.let { request = request.limit(it.toLong()) }
+        return request
     }
 }
 

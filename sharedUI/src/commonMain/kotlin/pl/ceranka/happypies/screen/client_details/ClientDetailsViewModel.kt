@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -39,31 +38,33 @@ class ClientDetailsViewModel(
     private val _uiState = MutableStateFlow(ClientDetailsUiState())
     val uiState: StateFlow<ClientDetailsUiState> = _uiState.asStateFlow()
 
-    private val reloadRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+    private val retries = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
 
     init {
         viewModelScope.launch {
-            merge(reloadRequests, reportRepository.changes)
+            retries
                 .onStart { emit(Unit) }
                 .collectLatest { load() }
         }
     }
 
-    fun onRefresh() {
-        _uiState.update { it.copy(isRefreshing = true, error = null) }
-        reloadRequests.tryEmit(Unit)
+    fun onRetry() {
+        _uiState.update { it.copy(error = null) }
+        retries.tryEmit(Unit)
     }
 
+    // Runs until a read fails: the reports are live, so a failure ends it and only a retry starts it again.
     private suspend fun load() {
-        _uiState.value = try {
+        try {
             val client = clientRepository.getClient(clientId)
-            val reports = reportRepository.getReports(clientId).map { it.toListItem(client) }
-            ClientDetailsUiState(client = client, reports = reports)
+            reportRepository.observeReports(clientId).collect { reports ->
+                _uiState.value = ClientDetailsUiState(client = client, reports = reports.map { it.toListItem(client) })
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             log.e(e) { "Loading client $clientId failed" }
-            _uiState.value.copy(isRefreshing = false, error = e.toUserMessage())
+            _uiState.update { it.copy(error = e.toUserMessage()) }
         }
     }
 

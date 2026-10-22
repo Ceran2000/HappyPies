@@ -1,11 +1,17 @@
 package pl.ceranka.happypies.data.report
 
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.plus
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.firestore.CollectionQuery
+import pl.ceranka.happypies.data.firestore.DocumentResult
 import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway
 import pl.ceranka.happypies.data.firestore.FirestoreDocument
 import pl.ceranka.happypies.data.firestore.FirestoreValue
@@ -24,9 +30,11 @@ import pl.ceranka.happypies.data.user.UserRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReportRepositoryImplTest {
 
     private val gateway = FakeFirestoreGateway()
@@ -70,6 +78,12 @@ class ReportRepositoryImplTest {
         return repository.getReport("r1")
     }
 
+    private fun <T> TestScope.collect(flow: Flow<T>): List<T> {
+        val seen = mutableListOf<T>()
+        flow.onEach { seen += it }.launchIn(backgroundScope + UnconfinedTestDispatcher(testScheduler))
+        return seen
+    }
+
     @Test
     fun mapsACompleteDocument() = runTest {
         assertEquals(
@@ -92,7 +106,7 @@ class ReportRepositoryImplTest {
 
     @Test
     fun queriesTheClientsReportsNewestFirst() = runTest {
-        repository.getReports("client-1")
+        collect(repository.observeReports("client-1"))
 
         assertEquals(
             CollectionQuery(
@@ -100,15 +114,39 @@ class ReportRepositoryImplTest {
                 whereEqualTo = mapOf(ReportFirestoreFields.CLIENT_ID to StringValue("client-1")),
                 orderBy = listOf(OrderBy(ReportFirestoreFields.CREATED_AT, descending = true)),
             ),
-            gateway.queries.single(),
+            gateway.listenedQueries.single(),
         )
     }
 
     @Test
-    fun returnsTheReportsInTheQueryOrder() = runTest {
-        gateway.returnDocuments(reportDocument("r2", 2_000), reportDocument("r1", 1_000))
+    fun emitsTheReportsInTheQueryOrderOnEveryChange() = runTest {
+        val seen = collect(repository.observeReports("client-1"))
 
-        assertEquals(listOf("r2", "r1"), repository.getReports("client-1").map { it.id })
+        gateway.emitQuery(ReadResult.Success(listOf(reportDocument("r1", 1_000))))
+        gateway.emitQuery(ReadResult.Success(listOf(reportDocument("r2", 2_000), reportDocument("r1", 1_000))))
+
+        assertEquals(listOf(listOf("r1"), listOf("r2", "r1")), seen.map { reports -> reports.map { it.id } })
+    }
+
+    @Test
+    fun observesASingleReportUntilItIsDeleted() = runTest {
+        val seen = collect(repository.observeReport("r1"))
+
+        gateway.emitDocument(DocumentResult.Success(FirestoreDocument("r1", validFields)))
+        gateway.emitDocument(DocumentResult.Success(null))
+
+        assertEquals(listOf("r1", null), seen.map { it?.id })
+        assertEquals("reports" to "r1", gateway.listenedDocuments.single())
+    }
+
+    @Test
+    fun malformedDocumentEndsTheReportFlow() = runTest {
+        val collected = async(UnconfinedTestDispatcher(testScheduler)) { runCatching { repository.observeReport("r1").collect {} } }
+
+        gateway.emitDocument(DocumentResult.Success(FirestoreDocument("r1", validFields - ReportFirestoreFields.TITLE)))
+
+        assertIs<DataException.MalformedData>(collected.await().exceptionOrNull())
+        assertTrue(gateway.documentListeners.isEmpty())
     }
 
     @Test
@@ -172,9 +210,12 @@ class ReportRepositoryImplTest {
     }
 
     @Test
-    fun readFailureBecomesDomainException() = runTest {
-        gateway.readResult = ReadResult.Failure(DataException.PermissionDenied("denied"))
-        assertFailsWith<DataException.PermissionDenied> { repository.getReports("client-1") }
+    fun readFailureEndsTheReportsFlow() = runTest {
+        val collected = async(UnconfinedTestDispatcher(testScheduler)) { runCatching { repository.observeReports("client-1").collect {} } }
+
+        gateway.emitQuery(ReadResult.Failure(DataException.PermissionDenied("denied")))
+
+        assertIs<DataException.PermissionDenied>(collected.await().exceptionOrNull())
     }
 
     @Test
@@ -235,22 +276,4 @@ class ReportRepositoryImplTest {
         assertEquals(mapOf(ReportFirestoreFields.COMMENT to Delete), gateway.writes.single().fields)
     }
 
-    @Test
-    fun successfulWriteNotifiesChanges() = runTest {
-        val notified = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { repository.changes.first() }
-
-        repository.createReport(NewReport("client-1", "Tytuł", null, "trainer-1", UserRole.TRAINER))
-
-        assertTrue(notified.isCompleted)
-    }
-
-    @Test
-    fun failedWriteDoesNotNotifyChanges() = runTest {
-        val notified = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { repository.changes.first() }
-        gateway.writeResult = WriteResult.Failure(DataException.Unavailable("offline"))
-
-        assertFailsWith<DataException.Unavailable> { repository.deleteReport("r1") }
-
-        assertTrue(notified.isActive)
-    }
 }

@@ -1,14 +1,16 @@
 package pl.ceranka.happypies.data.report
 
 import kotlinx.coroutines.flow.Flow
+import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.user.UserRole
 
 interface ReportRepository {
 
-    val changes: Flow<Unit>
+    /** The client's reports, newest first, updated live. Ends with a [DataException] on a read error. */
+    fun observeReports(clientId: String): Flow<List<Report>>
 
-    @Throws(Exception::class)
-    suspend fun getReports(clientId: String): List<Report>
+    /** The report, updated live; `null` once it no longer exists. Ends with a [DataException] on a read error. */
+    fun observeReport(reportId: String): Flow<Report?>
 
     @Throws(Exception::class)
     suspend fun getReport(reportId: String): Report

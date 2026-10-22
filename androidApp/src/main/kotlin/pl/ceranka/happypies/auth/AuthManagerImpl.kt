@@ -3,6 +3,7 @@ package pl.ceranka.happypies.auth
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.tasks.await
+import pl.ceranka.happypies.core.ListenerHandle
 
 class AuthManagerImpl(private val auth: FirebaseAuth) : AuthManager {
 
