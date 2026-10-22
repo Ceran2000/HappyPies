@@ -30,6 +30,7 @@ fun ClientDetailsScreen(
     clientId: String,
     onBack: () -> Unit,
     onAddReport: () -> Unit,
+    onReportClick: (reportId: String) -> Unit,
 ) {
     val viewModel = koinViewModel<ClientDetailsViewModel> { parametersOf(clientId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -38,6 +39,7 @@ fun ClientDetailsScreen(
         uiState = uiState,
         onBack = onBack,
         onAddReport = onAddReport,
+        onReportClick = onReportClick,
         onRetry = viewModel::onRetry,
     )
 }
@@ -47,6 +49,7 @@ private fun ClientDetailsContent(
     uiState: ClientDetailsUiState,
     onBack: () -> Unit,
     onAddReport: () -> Unit,
+    onReportClick: (reportId: String) -> Unit,
     onRetry: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -55,7 +58,7 @@ private fun ClientDetailsContent(
         }
         val client = uiState.client
         when {
-            client != null -> ClientWithReports(client, uiState, onAddReport, onRetry)
+            client != null -> ClientWithReports(client, uiState, onAddReport, onReportClick, onRetry)
             uiState.error != null -> ErrorWithRetry(uiState.error, onRetry, Modifier.padding(16.dp))
             else -> CircularProgressIndicator(modifier = Modifier.padding(16.dp))
         }
@@ -67,6 +70,7 @@ private fun ClientWithReports(
     client: Client,
     uiState: ClientDetailsUiState,
     onAddReport: () -> Unit,
+    onReportClick: (reportId: String) -> Unit,
     onRetry: () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -90,7 +94,9 @@ private fun ClientWithReports(
             if (uiState.reports.isEmpty()) {
                 item { Text("Brak raportów. Dodaj pierwszy przyciskiem „Nowy raport”.") }
             }
-            items(uiState.reports, key = { it.id }) { report -> ReportCard(report) }
+            items(uiState.reports, key = { it.id }) { report ->
+                ReportCard(report, onClick = { onReportClick(report.id) })
+            }
         }
         ExtendedFloatingActionButton(
             onClick = onAddReport,
@@ -123,8 +129,8 @@ private fun ClientDetailsFields(client: Client) {
 }
 
 @Composable
-private fun ReportCard(report: ReportListItem) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(text = report.title, style = MaterialTheme.typography.titleMedium)
             Text(

@@ -31,6 +31,7 @@ import pl.ceranka.happypies.screen.client_details.ClientDetailsScreen
 import pl.ceranka.happypies.screen.client_list.ClientListScreen
 import pl.ceranka.happypies.screen.clienthome.ClientHomeScreen
 import pl.ceranka.happypies.screen.login.LoginScreen
+import pl.ceranka.happypies.screen.report_details.ReportDetailsScreen
 import pl.ceranka.happypies.screen.report_form.ReportFormScreen
 import pl.ceranka.happypies.ui.common.AuthenticatedScreen
 import pl.ceranka.happypies.ui.common.AccountUnavailableScreen
@@ -104,6 +105,17 @@ fun App() {
                                 clientId = route.clientId,
                                 onBack = { backStack.removeLastOrNull() },
                                 onAddReport = { backStack.add(Route.ReportForm(route.clientId)) },
+                                onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
+                            )
+                        }
+                    }
+                    entry<Route.ReportDetail> { route ->
+                        AuthenticatedScreen(onLogout = ::logout) {
+                            ReportDetailsScreen(
+                                clientId = route.clientId,
+                                reportId = route.reportId,
+                                onBack = { backStack.removeLastOrNull() },
+                                onDeleted = { backStack.removeLastOrNull() },
                             )
                         }
                     }

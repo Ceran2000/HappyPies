@@ -4,6 +4,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthStateListener
 import pl.ceranka.happypies.auth.AuthUser
@@ -106,13 +108,46 @@ class FakeReportRepository : ReportRepository {
         liveReports.value = Result.failure(error)
     }
 
+    // The live single report, like liveReports; null means it no longer exists.
+    private val liveReport = MutableStateFlow<Result<Report?>>(Result.success(null))
+
+    var report: Report?
+        get() = liveReport.value.getOrThrow()
+        set(value) {
+            liveReport.value = Result.success(value)
+        }
+
+    fun failReport(error: Exception) {
+        liveReport.value = Result.failure(error)
+    }
+
+    /** How many collections of observeReports / observeReport are running, i.e. open listeners. */
+    var activeListeners = 0
+        private set
+
+    val deleted = mutableListOf<String>()
+    var deleteError: Exception? = null
+
+    /** When set, deleteReport waits for it, so a test can act while deleting is in progress. */
+    var deleteGate: CompletableDeferred<Unit>? = null
+
     val created = mutableListOf<NewReport>()
     var createError: Exception? = null
 
     /** When set, createReport waits for it, so a test can act while saving is in progress. */
     var createGate: CompletableDeferred<Unit>? = null
 
-    override fun observeReports(clientId: String): Flow<List<Report>> = liveReports.map { it.getOrThrow() }
+    override fun observeReports(clientId: String): Flow<List<Report>> = liveReports.map { it.getOrThrow() }.counted()
+
+    override fun observeReport(reportId: String): Flow<Report?> = liveReport.map { it.getOrThrow() }.counted()
+
+    override suspend fun deleteReport(reportId: String) {
+        deleted += reportId
+        deleteGate?.await()
+        deleteError?.let { throw it }
+    }
+
+    private fun <T> Flow<T>.counted() = onStart { activeListeners++ }.onCompletion { activeListeners-- }
 
     override suspend fun createReport(report: NewReport): String {
         created += report
@@ -121,10 +156,8 @@ class FakeReportRepository : ReportRepository {
         return "new-id"
     }
 
-    override fun observeReport(reportId: String): Flow<Report?> = error("Not used")
     override suspend fun getReport(reportId: String): Report = error("Not used")
     override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) = error("Not used")
     override suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole) = error("Not used")
     override suspend fun deleteComment(reportId: String) = error("Not used")
-    override suspend fun deleteReport(reportId: String) = error("Not used")
 }

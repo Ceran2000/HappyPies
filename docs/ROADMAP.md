@@ -45,8 +45,8 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 - ✅ Krok 3. Formularz „Nowy raport”: tytuł (wymagany), opis (opcjonalny), autor z sesji. Przetestowane ręcznie na Androidzie, po review scommitowane (`dbd7091`) (FR-07, FR-29)
 - ✅ Konto wyprowadzane z Firebase Auth (dawniej „sesja reaktywna”, decyzja 2026-10-12, ADR 0009): `AccountRepository` bez własnego stanu sesji, jeden model `Account` (`uid`/`email` z Auth, `name`/`role` z `users/{uid}`); stan z listenera Firebase Auth (callback w moście `addUserListener`, `callbackFlow` w `commonMain`) i profilu `users/{uid}`. Trwały błąd profilu → wylogowanie i komunikat na logowaniu; chwilowy → ekran „Spróbuj ponownie / Wyloguj”. Custom claims odrzucone (plan Blaze). Po review scommitowane 2026-10-12
 - ⏳ Krok 4. Szczegóły raportu: edycja, usuwanie, „Dodany przez” i `lastEditedBy`, jeden komentarz drugiej strony (FR-13, FR-31, FR-32). Plan ustalony 2026-10-22, spec ekranu: `docs/design/report-details.md`; każdy etap osobnym commitem:
-  - 🔄 4a. Raporty na żywo (kod gotowy 2026-10-22, testy jednostkowe i build iOS przechodzą; czeka na review i test ręczny): w moście listenery `addDocumentListener` / `addQueryListener` (callback + `ListenerHandle`, ten sam wzorzec co `addAuthStateListener`), w `commonMain` `callbackFlow`; repozytorium wystawia `observeReports` / `observeReport`, znika `ReportRepository.changes`; szczegóły klienta zbierają flow (bez pull-to-refresh, „Spróbuj ponownie” po błędzie)
-  - ⏳ 4b. Ekran szczegółów raportu: trasa `ReportDetail` (dopisana w `RouteSerialization`), „Dodany przez” / „Edytowany przez”, usuwanie z potwierdzeniem, powrót gdy raport zniknie
+  - ✅ 4a. Raporty na żywo (`88e8842`, 2026-10-22): w moście listenery `addDocumentListener` / `addQueryListener` (callback + `ListenerHandle`, ten sam wzorzec co `addAuthStateListener`), w `commonMain` `callbackFlow`; repozytorium wystawia `observeReports` / `observeReport`, znika `ReportRepository.changes`; szczegóły klienta zbierają flow (bez pull-to-refresh, „Spróbuj ponownie” po błędzie)
+  - 🔄 4b. Ekran szczegółów raportu (kod gotowy 2026-10-22, testy i build iOS przechodzą; czeka na review i test ręczny; usuwanie na razie przyciskiem „Usuń”, ikony razem z motywem A): trasa `ReportDetail` (dopisana w `RouteSerialization`), „Dodany przez” / „Edytowany przez”, usuwanie z potwierdzeniem, powrót gdy raport zniknie. Ekran od razu ze stanem przez `stateIn(WhileSubscribed(5_000))`, żeby listener stawał, gdy ekran nie jest widoczny (koszty); `ClientDetailsViewModel` przechodzi na ten sam wzorzec
   - ⏳ 4c. Komentarz: tylko druga strona, edycja w karcie pod ikoną ołówka, usuwanie przez autora
   - ⏳ 4d. Edycja raportu przez formularz (`ReportForm` z opcjonalnym `reportId`); ten sam formularz dostanie potem media, także dla istniejących raportów
 - ⏳ Krok 5. Widok klienta: ekran startowy z listą jego raportów i dodawaniem własnych (FR-10, FR-29)
@@ -71,6 +71,7 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 - ⏳ Testy logiki ViewModeli (stany Loading/Success/Error) z fałszywymi repozytoriami
 - ⏳ Luka: brak testu, że `appModule` (Android) dostarcza wszystkie interfejsy
 - ⏳ Luka: brak testów kontraktu `FirestoreGateway`, które sprawdzałyby, że Android i iOS zachowują się tak samo (błąd → rodzaj, wartość → typ). Minimum: test instrumentowany Androida na emulatorze Firestore i spisana tabela zachowań w ADR 0006
+- ⏳ Alert budżetu w Google Cloud od razu po przejściu na plan Blaze (najtańsze zabezpieczenie przed niespodzianką w kosztach)
 - ⏳ Kompresja wideo na urządzeniu i limity rozmiaru: ustalamy na realnych filmach (kompromis jakość / koszt) (FR-16, NFR-05)
 
 ## Faza 2 — po MVP ⏳
@@ -103,6 +104,7 @@ Do uzgodnienia z trenerem po MVP.
 
 - **Zapisy czekają na potwierdzenie serwera.** Repozytoria czekają (`await`) na zapis w Firestore, więc offline zapis nie kończy się, dopóki nie wróci sieć, a UI pokaże wskaźnik ładowania. Firestore zapisuje lokalnie od razu, ale z tego trybu offline w MVP świadomie nie korzystamy.
 - **Odczyty offline nie mówią, że dane pochodzą z cache.** Domyślne `get()` bez sieci po cichu zwraca dane z cache, dla zapytań potencjalnie niepełne. UI nie pokazuje, że lista może być nieaktualna (przy stronicowaniu z kroku 7 dodatkowo ryzyko fałszywego „nie ma kolejnej strony”). Rozwiązanie na później: `fromCache` w wyniku gatewaya albo jawne źródło w zapytaniu.
+- **Listenery Firestore a koszty.** Start listenera kosztuje tyle co pełny odczyt wyników, kolejne zmiany tylko po 1 odczycie za zmieniony dokument. Po powrocie na ekran (listener zatrzymany przez `WhileSubscribed`) i przerwie dłuższej niż ok. 30 min płacimy znów za pełny odczyt. Do kroku 7 słuchamy całej historii raportów klienta, bez `limit`.
 - **Usunięcie raportu nie usuwa plików z Storage.** `deleteReport` kasuje tylko dokument. Do rozwiązania razem ze zdjęciami i filmem (F1-04), inaczej zostaną osierocone pliki.
 
 ## 🐞 Znane problemy

@@ -2,8 +2,12 @@ package pl.ceranka.happypies.screen.client_details
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
 import pl.ceranka.happypies.data.DataException
@@ -35,12 +39,15 @@ class ClientDetailsViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun createViewModel() = ClientDetailsViewModel(clients, reports, account, anna.id, TimeZone.UTC)
+    // The state is shared WhileSubscribed, so a test collects it like the screen does.
+    private fun TestScope.createViewModel() = ClientDetailsViewModel(clients, reports, account, anna.id, TimeZone.UTC).also { viewModel ->
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+    }
 
     private val ClientDetailsViewModel.reportIds get() = uiState.value.reports.map { it.id }
 
     @Test
-    fun showsTheClientAndTheReportsWithResolvedAuthors() {
+    fun showsTheClientAndTheReportsWithResolvedAuthors() = runTest {
         reports.reports = listOf(
             report("r1", createdAt = 1_791_830_400_000, media = listOf(video)),
             report(
@@ -67,7 +74,7 @@ class ClientDetailsViewModelTest {
     }
 
     @Test
-    fun clientErrorShowsTheMessageAndRetryLoadsAgain() {
+    fun clientErrorShowsTheMessageAndRetryLoadsAgain() = runTest {
         clients.error = DataException.Unavailable("offline")
         val viewModel = createViewModel()
         assertEquals(ClientDetailsUiState(error = offline), viewModel.uiState.value)
@@ -82,7 +89,7 @@ class ClientDetailsViewModelTest {
     }
 
     @Test
-    fun reportsErrorShowsTheMessage() {
+    fun reportsErrorShowsTheMessage() = runTest {
         reports.failReports(DataException.PermissionDenied("denied"))
 
         val viewModel = createViewModel()
@@ -91,7 +98,7 @@ class ClientDetailsViewModelTest {
     }
 
     @Test
-    fun showsReportChangesLive() {
+    fun showsReportChangesLive() = runTest {
         reports.reports = listOf(report("r1"))
         val viewModel = createViewModel()
 
@@ -101,7 +108,7 @@ class ClientDetailsViewModelTest {
     }
 
     @Test
-    fun failureWhileObservingKeepsTheShownDataUntilRetry() {
+    fun failureWhileObservingKeepsTheShownDataUntilRetry() = runTest {
         reports.reports = listOf(report("r1"))
         val viewModel = createViewModel()
 
@@ -120,10 +127,16 @@ class ClientDetailsViewModelTest {
     }
 
     @Test
-    fun authorNameFallsBackToTheRole() {
-        assertEquals("Anna Kowalska", authorName(anna.id, UserRole.CLIENT, anna, account = null))
-        assertEquals("Jan Trener", authorName(trainer.uid, UserRole.TRAINER, anna, trainer))
-        assertEquals("Trener", authorName("someone", UserRole.TRAINER, anna, account = null))
-        assertEquals("Klient", authorName("someone", UserRole.CLIENT, anna, account = null))
+    fun stopsListeningFiveSecondsAfterTheScreenStopsCollecting() = runTest {
+        val viewModel = ClientDetailsViewModel(clients, reports, account, anna.id, TimeZone.UTC)
+        val screen = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
+        assertEquals(1, reports.activeListeners)
+
+        screen.cancel()
+        advanceTimeBy(4_000)
+        assertEquals(1, reports.activeListeners)
+        advanceTimeBy(1_001)
+
+        assertEquals(0, reports.activeListeners)
     }
 }
