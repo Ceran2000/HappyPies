@@ -1,5 +1,7 @@
 package pl.ceranka.happypies.data.firestore
 
+import pl.ceranka.happypies.data.DataException
+
 data class FirestoreDocument(val id: String, val fields: Map<String, FirestoreValue>)
 
 data class OrderBy(val field: String, val descending: Boolean = false)
@@ -19,27 +21,24 @@ data class CollectionQuery(
 private fun FirestoreValue.isQueryable(): Boolean = when (this) {
     is FirestoreValue.ArrayValue -> values.all { it.isQueryable() }
     is FirestoreValue.MapValue -> fields.values.all { it.isQueryable() }
+    is FirestoreValue.StringValue, is FirestoreValue.LongValue, is FirestoreValue.DoubleValue, is FirestoreValue.BooleanValue,
+    is FirestoreValue.TimestampValue, FirestoreValue.NullValue -> true
     FirestoreValue.ServerTimestamp, FirestoreValue.Delete, is FirestoreValue.Unsupported -> false
-    else -> true
 }
-
-enum class DataErrorKind { NOT_FOUND, PERMISSION_DENIED, UNAUTHENTICATED, UNAVAILABLE, FAILED_PRECONDITION, OTHER }
-
-data class GatewayError(val kind: DataErrorKind, val message: String)
 
 sealed class DocumentResult {
     data class Success(val document: FirestoreDocument?) : DocumentResult()
-    data class Failure(val error: GatewayError) : DocumentResult()
+    data class Failure(val error: DataException) : DocumentResult()
 }
 
 sealed class ReadResult {
     data class Success(val documents: List<FirestoreDocument>) : ReadResult()
-    data class Failure(val error: GatewayError) : ReadResult()
+    data class Failure(val error: DataException) : ReadResult()
 }
 
 sealed class WriteResult {
     data class Success(val documentId: String) : WriteResult()
-    data class Failure(val error: GatewayError) : WriteResult()
+    data class Failure(val error: DataException) : WriteResult()
 }
 
 /**
@@ -47,8 +46,8 @@ sealed class WriteResult {
  *
  * Every error except cancellation is returned as `Failure`, never thrown, on both platforms:
  * what Kotlin receives when a Swift implementation throws is not documented by Kotlin/Native,
- * so the classification travels as data. Errors that are not Firestore's (e.g. a value the SDK
- * rejects) become [DataErrorKind.OTHER]. Documents are read with pending server timestamps estimated.
+ * so each platform classifies the error into a [DataException] and passes it as data. Errors that
+ * are not Firestore's (e.g. a value the SDK rejects) become [DataException.Unknown]. Documents are read with pending server timestamps estimated.
  */
 interface FirestoreGateway {
 

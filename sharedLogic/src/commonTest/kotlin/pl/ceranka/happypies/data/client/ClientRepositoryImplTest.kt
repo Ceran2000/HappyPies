@@ -14,21 +14,19 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-private typealias F = UserFirestoreFields
-
 class ClientRepositoryImplTest {
 
     private val gateway = FakeFirestoreGateway()
     private val repository = ClientRepositoryImpl(gateway)
 
-    private val bala = MapValue(mapOf(F.DOG_NAME to StringValue("Bala"), F.DOG_BREED to StringValue("border collie")))
+    private val bala = MapValue(mapOf(UserFirestoreFields.DOG_NAME to StringValue("Bala"), UserFirestoreFields.DOG_BREED to StringValue("border collie")))
 
     private val validFields: Map<String, FirestoreValue> = mapOf(
-        F.ROLE to StringValue("CLIENT"),
-        F.TRAINER_ID to StringValue("trainer-1"),
-        F.NAME to StringValue("Anna Kowalska"),
-        F.EMAIL to StringValue("anna@przyklad.pl"),
-        F.DOGS to ArrayValue(listOf(bala)),
+        UserFirestoreFields.ROLE to StringValue("CLIENT"),
+        UserFirestoreFields.TRAINER_ID to StringValue("trainer-1"),
+        UserFirestoreFields.NAME to StringValue("Anna Kowalska"),
+        UserFirestoreFields.EMAIL to StringValue("anna@przyklad.pl"),
+        UserFirestoreFields.DOGS to ArrayValue(listOf(bala)),
     )
 
     private suspend fun readClient(fields: Map<String, FirestoreValue>): Client {
@@ -52,7 +50,7 @@ class ClientRepositoryImplTest {
         assertEquals(
             CollectionQuery(
                 collection = "users",
-                whereEqualTo = mapOf(F.TRAINER_ID to StringValue("trainer-1"), F.ROLE to StringValue("CLIENT")),
+                whereEqualTo = mapOf(UserFirestoreFields.TRAINER_ID to StringValue("trainer-1"), UserFirestoreFields.ROLE to StringValue("CLIENT")),
             ),
             gateway.queries.single(),
         )
@@ -60,18 +58,18 @@ class ClientRepositoryImplTest {
 
     @Test
     fun trainerIsNotAClient() = runTest {
-        assertFailsWith<DataException.NotFound> { readClient(validFields + (F.ROLE to StringValue("TRAINER"))) }
+        assertFailsWith<DataException.NotFound> { readClient(validFields + (UserFirestoreFields.ROLE to StringValue("TRAINER"))) }
     }
 
     @Test
     fun missingDogsIsMalformed() = runTest {
-        assertFailsWith<DataException.MalformedData> { readClient(validFields - F.DOGS) }
+        assertFailsWith<DataException.MalformedData> { readClient(validFields - UserFirestoreFields.DOGS) }
     }
 
     @Test
     fun dogWithoutBreedIsMalformed() = runTest {
-        val incomplete = MapValue(mapOf(F.DOG_NAME to StringValue("Rex")))
-        assertFailsWith<DataException.MalformedData> { readClient(validFields + (F.DOGS to ArrayValue(listOf(incomplete)))) }
+        val incomplete = MapValue(mapOf(UserFirestoreFields.DOG_NAME to StringValue("Rex")))
+        assertFailsWith<DataException.MalformedData> { readClient(validFields + (UserFirestoreFields.DOGS to ArrayValue(listOf(incomplete)))) }
     }
 
     @Test

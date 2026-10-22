@@ -14,7 +14,7 @@ final class IosFirestoreGateway: FirestoreGateway {
             let snapshot = try await firestore.collection(collection).document(id).getDocument()
             return DocumentResult.Success(document: snapshot.exists ? toFirestoreDocument(snapshot) : nil)
         } catch {
-            return DocumentResult.Failure(error: try gatewayError(from: error))
+            return DocumentResult.Failure(error: try dataException(from: error))
         }
     }
 
@@ -33,7 +33,7 @@ final class IosFirestoreGateway: FirestoreGateway {
             let snapshot = try await request.getDocuments()
             return ReadResult.Success(documents: snapshot.documents.map(toFirestoreDocument))
         } catch {
-            return ReadResult.Failure(error: try gatewayError(from: error))
+            return ReadResult.Failure(error: try dataException(from: error))
         }
     }
 
@@ -42,7 +42,7 @@ final class IosFirestoreGateway: FirestoreGateway {
             let reference = try await firestore.collection(collection).addDocument(data: try toPlatform(fields))
             return WriteResult.Success(documentId: reference.documentID)
         } catch {
-            return WriteResult.Failure(error: try gatewayError(from: error))
+            return WriteResult.Failure(error: try dataException(from: error))
         }
     }
 
@@ -51,7 +51,7 @@ final class IosFirestoreGateway: FirestoreGateway {
             try await firestore.collection(collection).document(id).updateData(try toPlatform(fields))
             return WriteResult.Success(documentId: id)
         } catch {
-            return WriteResult.Failure(error: try gatewayError(from: error))
+            return WriteResult.Failure(error: try dataException(from: error))
         }
     }
 
@@ -60,28 +60,25 @@ final class IosFirestoreGateway: FirestoreGateway {
             try await firestore.collection(collection).document(id).delete()
             return WriteResult.Success(documentId: id)
         } catch {
-            return WriteResult.Failure(error: try gatewayError(from: error))
+            return WriteResult.Failure(error: try dataException(from: error))
         }
     }
 }
 
 // Cancellation is rethrown; every other error is returned as data (see FirestoreGateway in sharedLogic).
-private func gatewayError(from error: Error) throws -> GatewayError {
+private func dataException(from error: Error) throws -> DataException {
     if error is CancellationError { throw error }
     let nsError = error as NSError
+    let message = nsError.localizedDescription
     guard nsError.domain == FirestoreErrorDomain else {
-        return GatewayError(kind: .other, message: nsError.localizedDescription)
+        return DataException.Unknown(message: message)
     }
-    let kind: DataErrorKind
     switch FirestoreErrorCode.Code(rawValue: nsError.code) {
-    case .notFound: kind = .notFound
-    case .permissionDenied: kind = .permissionDenied
-    case .unauthenticated: kind = .unauthenticated
-    case .unavailable, .deadlineExceeded: kind = .unavailable
-    case .failedPrecondition: kind = .failedPrecondition
-    default: kind = .other
+    case .notFound: return DataException.NotFound(message: message)
+    case .permissionDenied, .unauthenticated: return DataException.PermissionDenied(message: message)
+    case .unavailable, .deadlineExceeded: return DataException.Unavailable(message: message)
+    default: return DataException.Unknown(message: message)
     }
-    return GatewayError(kind: kind, message: nsError.localizedDescription)
 }
 
 // .estimate: a document just written by this device still has a pending server timestamp.

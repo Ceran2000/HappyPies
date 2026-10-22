@@ -10,6 +10,7 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
+import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.BooleanValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.Delete
@@ -59,31 +60,25 @@ class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : Firest
 private inline fun write(block: () -> String): WriteResult =
     catching({ WriteResult.Failure(it) }) { WriteResult.Success(block()) }
 
-private inline fun <T> catching(failure: (GatewayError) -> T, block: () -> T): T =
+private inline fun <T> catching(failure: (DataException) -> T, block: () -> T): T =
     try {
         block()
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        failure(e.toGatewayError())
+        failure(e.toDataException())
     }
 
-private fun Exception.toGatewayError(): GatewayError =
-    if (this is FirebaseFirestoreException) {
-        GatewayError(code.toErrorKind(), message ?: code.name)
-    } else {
-        GatewayError(DataErrorKind.OTHER, message ?: this::class.java.simpleName)
+private fun Exception.toDataException(): DataException {
+    val message = message ?: this::class.java.simpleName
+    if (this !is FirebaseFirestoreException) return DataException.Unknown(message)
+    return when (code) {
+        Code.NOT_FOUND -> DataException.NotFound(message)
+        Code.PERMISSION_DENIED, Code.UNAUTHENTICATED -> DataException.PermissionDenied(message)
+        Code.UNAVAILABLE, Code.DEADLINE_EXCEEDED -> DataException.Unavailable(message)
+        else -> DataException.Unknown(message)
     }
-
-private fun Code.toErrorKind(): DataErrorKind =
-    when (this) {
-        Code.NOT_FOUND -> DataErrorKind.NOT_FOUND
-        Code.PERMISSION_DENIED -> DataErrorKind.PERMISSION_DENIED
-        Code.UNAUTHENTICATED -> DataErrorKind.UNAUTHENTICATED
-        Code.UNAVAILABLE, Code.DEADLINE_EXCEEDED -> DataErrorKind.UNAVAILABLE
-        Code.FAILED_PRECONDITION -> DataErrorKind.FAILED_PRECONDITION
-        else -> DataErrorKind.OTHER
-    }
+}
 
 // ESTIMATE: a document just written by this device still has a pending server timestamp.
 private fun DocumentSnapshot.toFirestoreDocument() = FirestoreDocument(

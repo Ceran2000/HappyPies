@@ -7,7 +7,6 @@ object UserFirestoreFields {
     const val NAME = "name"
     const val EMAIL = "email"
 
-    // Client only
     const val TRAINER_ID = "trainerId"
     const val DOGS = "dogs"
     const val DOG_NAME = "name"

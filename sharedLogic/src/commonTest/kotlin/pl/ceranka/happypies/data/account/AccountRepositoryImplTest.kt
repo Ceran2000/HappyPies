@@ -10,20 +10,16 @@ import pl.ceranka.happypies.auth.AuthUser
 import pl.ceranka.happypies.auth.AuthStateListener
 import pl.ceranka.happypies.auth.ListenerHandle
 import pl.ceranka.happypies.data.DataException
-import pl.ceranka.happypies.data.firestore.DataErrorKind
 import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway
 import pl.ceranka.happypies.data.firestore.FirestoreDocument
 import pl.ceranka.happypies.data.firestore.FirestoreValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.GatewayError
 import pl.ceranka.happypies.data.firestore.ReadResult
 import pl.ceranka.happypies.data.user.UserFirestoreFields
 import pl.ceranka.happypies.data.user.UserRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-
-private typealias F = UserFirestoreFields
 
 /** Notifies listeners at once on every change of [authUser], like Firebase Auth. */
 private class FakeAuthManager : AuthManager {
@@ -61,9 +57,9 @@ class AccountRepositoryImplTest {
     private val account = Account("uid-1", "jan@przyklad.pl", "Jan Trener", UserRole.TRAINER)
 
     private val trainerFields: Map<String, FirestoreValue> = mapOf(
-        F.ROLE to StringValue("TRAINER"),
-        F.NAME to StringValue("Jan Trener"),
-        F.EMAIL to StringValue("jan@przyklad.pl"),
+        UserFirestoreFields.ROLE to StringValue("TRAINER"),
+        UserFirestoreFields.NAME to StringValue("Jan Trener"),
+        UserFirestoreFields.EMAIL to StringValue("jan@przyklad.pl"),
     )
 
     private fun TestScope.repository() =
@@ -97,7 +93,7 @@ class AccountRepositoryImplTest {
     @Test
     fun emailComesFromFirebaseAuth() = runTest {
         auth.authUser = jan
-        userDocument(trainerFields + (F.EMAIL to StringValue("old@przyklad.pl")))
+        userDocument(trainerFields + (UserFirestoreFields.EMAIL to StringValue("old@przyklad.pl")))
 
         assertEquals("jan@przyklad.pl", repository().state.value.accountOrNull?.email)
     }
@@ -112,18 +108,18 @@ class AccountRepositoryImplTest {
 
     @Test
     fun missingNameIsRejected() = runTest {
-        rejectedWith(trainerFields - F.NAME)
+        rejectedWith(trainerFields - UserFirestoreFields.NAME)
     }
 
     @Test
     fun invalidRoleIsRejected() = runTest {
-        rejectedWith(trainerFields + (F.ROLE to StringValue("ADMIN")))
+        rejectedWith(trainerFields + (UserFirestoreFields.ROLE to StringValue("ADMIN")))
     }
 
     @Test
     fun offlineKeepsTheFirebaseUserAndRetryLoadsTheAccount() = runTest {
         auth.authUser = jan
-        gateway.readResult = ReadResult.Failure(GatewayError(DataErrorKind.UNAVAILABLE, "offline"))
+        gateway.readResult = ReadResult.Failure(DataException.Unavailable("offline"))
         val repository = repository()
         assertIs<DataException.Unavailable>(assertIs<AccountState.Unavailable>(repository.state.value).error)
         assertEquals(0, auth.signOutCount)
@@ -137,7 +133,7 @@ class AccountRepositoryImplTest {
     @Test
     fun retryAfterTheUserSignedOutChangesNothing() = runTest {
         auth.authUser = jan
-        gateway.readResult = ReadResult.Failure(GatewayError(DataErrorKind.UNAVAILABLE, "offline"))
+        gateway.readResult = ReadResult.Failure(DataException.Unavailable("offline"))
         val repository = repository()
         auth.authUser = null
 

@@ -6,7 +6,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.firestore.CollectionQuery
-import pl.ceranka.happypies.data.firestore.DataErrorKind
 import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway
 import pl.ceranka.happypies.data.firestore.FirestoreDocument
 import pl.ceranka.happypies.data.firestore.FirestoreValue
@@ -18,7 +17,6 @@ import pl.ceranka.happypies.data.firestore.FirestoreValue.NullValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
 import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.TimestampValue
-import pl.ceranka.happypies.data.firestore.GatewayError
 import pl.ceranka.happypies.data.firestore.OrderBy
 import pl.ceranka.happypies.data.firestore.ReadResult
 import pl.ceranka.happypies.data.firestore.WriteResult
@@ -29,8 +27,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private typealias F = ReportFirestoreFields
-
 class ReportRepositoryImplTest {
 
     private val gateway = FakeFirestoreGateway()
@@ -38,36 +34,36 @@ class ReportRepositoryImplTest {
 
     private val comment = MapValue(
         mapOf(
-            F.COMMENT_AUTHOR_ID to StringValue("trainer-1"),
-            F.COMMENT_AUTHOR_ROLE to StringValue("TRAINER"),
-            F.COMMENT_TEXT to StringValue("Dobra robota"),
-            F.COMMENT_UPDATED_AT to TimestampValue(3_000),
+            ReportFirestoreFields.COMMENT_AUTHOR_ID to StringValue("trainer-1"),
+            ReportFirestoreFields.COMMENT_AUTHOR_ROLE to StringValue("TRAINER"),
+            ReportFirestoreFields.COMMENT_TEXT to StringValue("Dobra robota"),
+            ReportFirestoreFields.COMMENT_UPDATED_AT to TimestampValue(3_000),
         )
     )
 
     private val video = MapValue(
         mapOf(
-            F.MEDIA_TYPE to StringValue("VIDEO"),
-            F.MEDIA_STORAGE_PATH to StringValue("reports/r1/video.mp4"),
-            F.MEDIA_SIZE_BYTES to LongValue(24_000_000),
+            ReportFirestoreFields.MEDIA_TYPE to StringValue("VIDEO"),
+            ReportFirestoreFields.MEDIA_STORAGE_PATH to StringValue("reports/r1/video.mp4"),
+            ReportFirestoreFields.MEDIA_SIZE_BYTES to LongValue(24_000_000),
         )
     )
 
     private val validFields: Map<String, FirestoreValue> = mapOf(
-        F.CLIENT_ID to StringValue("client-1"),
-        F.TITLE to StringValue("Przywołanie w parku"),
-        F.DESCRIPTION to StringValue("Trzy próby"),
-        F.AUTHOR_ID to StringValue("client-1"),
-        F.AUTHOR_ROLE to StringValue("CLIENT"),
-        F.LAST_EDITED_BY to StringValue("client-1"),
-        F.CREATED_AT to TimestampValue(1_000),
-        F.UPDATED_AT to TimestampValue(2_000),
-        F.COMMENT to comment,
-        F.MEDIA to ArrayValue(listOf(video)),
+        ReportFirestoreFields.CLIENT_ID to StringValue("client-1"),
+        ReportFirestoreFields.TITLE to StringValue("Przywołanie w parku"),
+        ReportFirestoreFields.DESCRIPTION to StringValue("Trzy próby"),
+        ReportFirestoreFields.AUTHOR_ID to StringValue("client-1"),
+        ReportFirestoreFields.AUTHOR_ROLE to StringValue("CLIENT"),
+        ReportFirestoreFields.LAST_EDITED_BY to StringValue("client-1"),
+        ReportFirestoreFields.CREATED_AT to TimestampValue(1_000),
+        ReportFirestoreFields.UPDATED_AT to TimestampValue(2_000),
+        ReportFirestoreFields.COMMENT to comment,
+        ReportFirestoreFields.MEDIA to ArrayValue(listOf(video)),
     )
 
     private fun reportDocument(id: String, createdAt: Long) =
-        FirestoreDocument(id, validFields + (F.CREATED_AT to TimestampValue(createdAt)))
+        FirestoreDocument(id, validFields + (ReportFirestoreFields.CREATED_AT to TimestampValue(createdAt)))
 
     private suspend fun readReport(fields: Map<String, FirestoreValue>): Report {
         gateway.returnDocuments(FirestoreDocument("r1", fields))
@@ -101,8 +97,8 @@ class ReportRepositoryImplTest {
         assertEquals(
             CollectionQuery(
                 collection = "reports",
-                whereEqualTo = mapOf(F.CLIENT_ID to StringValue("client-1")),
-                orderBy = listOf(OrderBy(F.CREATED_AT, descending = true)),
+                whereEqualTo = mapOf(ReportFirestoreFields.CLIENT_ID to StringValue("client-1")),
+                orderBy = listOf(OrderBy(ReportFirestoreFields.CREATED_AT, descending = true)),
             ),
             gateway.queries.single(),
         )
@@ -117,57 +113,57 @@ class ReportRepositoryImplTest {
 
     @Test
     fun missingRequiredFieldIsMalformed() = runTest {
-        val error = assertFailsWith<DataException.MalformedData> { readReport(validFields - F.TITLE) }
+        val error = assertFailsWith<DataException.MalformedData> { readReport(validFields - ReportFirestoreFields.TITLE) }
         assertTrue(error.message!!.contains("'title'"))
         assertTrue(error.message!!.contains("reports/r1"))
     }
 
     @Test
     fun wrongTypeIsMalformed() = runTest {
-        assertFailsWith<DataException.MalformedData> { readReport(validFields + (F.TITLE to LongValue(1))) }
+        assertFailsWith<DataException.MalformedData> { readReport(validFields + (ReportFirestoreFields.TITLE to LongValue(1))) }
     }
 
     @Test
     fun invalidRoleIsMalformed() = runTest {
-        assertFailsWith<DataException.MalformedData> { readReport(validFields + (F.AUTHOR_ROLE to StringValue("ADMIN"))) }
+        assertFailsWith<DataException.MalformedData> { readReport(validFields + (ReportFirestoreFields.AUTHOR_ROLE to StringValue("ADMIN"))) }
     }
 
     @Test
     fun missingOrNullDescriptionIsNull() = runTest {
-        assertNull(readReport(validFields - F.DESCRIPTION).description)
-        assertNull(readReport(validFields + (F.DESCRIPTION to NullValue)).description)
+        assertNull(readReport(validFields - ReportFirestoreFields.DESCRIPTION).description)
+        assertNull(readReport(validFields + (ReportFirestoreFields.DESCRIPTION to NullValue)).description)
     }
 
     @Test
     fun missingCommentIsNull() = runTest {
-        assertNull(readReport(validFields - F.COMMENT).comment)
+        assertNull(readReport(validFields - ReportFirestoreFields.COMMENT).comment)
     }
 
     @Test
     fun commentOfWrongTypeIsMalformed() = runTest {
-        assertFailsWith<DataException.MalformedData> { readReport(validFields + (F.COMMENT to StringValue("x"))) }
+        assertFailsWith<DataException.MalformedData> { readReport(validFields + (ReportFirestoreFields.COMMENT to StringValue("x"))) }
     }
 
     @Test
     fun incompleteCommentIsMalformed() = runTest {
-        val incomplete = MapValue(comment.fields - F.COMMENT_TEXT)
-        val error = assertFailsWith<DataException.MalformedData> { readReport(validFields + (F.COMMENT to incomplete)) }
+        val incomplete = MapValue(comment.fields - ReportFirestoreFields.COMMENT_TEXT)
+        val error = assertFailsWith<DataException.MalformedData> { readReport(validFields + (ReportFirestoreFields.COMMENT to incomplete)) }
         assertTrue(error.message!!.contains("reports/r1.comment"))
     }
 
     @Test
     fun emptyMediaIsAllowedButMissingMediaIsMalformed() = runTest {
-        assertEquals(emptyList(), readReport(validFields + (F.MEDIA to ArrayValue(emptyList()))).media)
-        assertFailsWith<DataException.MalformedData> { readReport(validFields - F.MEDIA) }
+        assertEquals(emptyList(), readReport(validFields + (ReportFirestoreFields.MEDIA to ArrayValue(emptyList()))).media)
+        assertFailsWith<DataException.MalformedData> { readReport(validFields - ReportFirestoreFields.MEDIA) }
     }
 
     @Test
     fun invalidMediaEntryIsMalformed() = runTest {
         assertFailsWith<DataException.MalformedData> {
-            readReport(validFields + (F.MEDIA to ArrayValue(listOf(StringValue("video.mp4")))))
+            readReport(validFields + (ReportFirestoreFields.MEDIA to ArrayValue(listOf(StringValue("video.mp4")))))
         }
-        val badType = MapValue(video.fields + (F.MEDIA_TYPE to StringValue("AUDIO")))
-        assertFailsWith<DataException.MalformedData> { readReport(validFields + (F.MEDIA to ArrayValue(listOf(badType)))) }
+        val badType = MapValue(video.fields + (ReportFirestoreFields.MEDIA_TYPE to StringValue("AUDIO")))
+        assertFailsWith<DataException.MalformedData> { readReport(validFields + (ReportFirestoreFields.MEDIA to ArrayValue(listOf(badType)))) }
     }
 
     @Test
@@ -177,13 +173,13 @@ class ReportRepositoryImplTest {
 
     @Test
     fun readFailureBecomesDomainException() = runTest {
-        gateway.readResult = ReadResult.Failure(GatewayError(DataErrorKind.PERMISSION_DENIED, "denied"))
+        gateway.readResult = ReadResult.Failure(DataException.PermissionDenied("denied"))
         assertFailsWith<DataException.PermissionDenied> { repository.getReports("client-1") }
     }
 
     @Test
     fun writeFailureBecomesDomainException() = runTest {
-        gateway.writeResult = WriteResult.Failure(GatewayError(DataErrorKind.UNAVAILABLE, "offline"))
+        gateway.writeResult = WriteResult.Failure(DataException.Unavailable("offline"))
         assertFailsWith<DataException.Unavailable> { repository.deleteReport("r1") }
     }
 
@@ -196,12 +192,12 @@ class ReportRepositoryImplTest {
         assertEquals("add", write.operation)
         assertEquals("reports", write.collection)
         val fields = write.fields!!
-        assertEquals(ServerTimestamp, fields[F.CREATED_AT])
-        assertEquals(ServerTimestamp, fields[F.UPDATED_AT])
-        assertEquals(NullValue, fields[F.DESCRIPTION])
-        assertEquals(ArrayValue(emptyList()), fields[F.MEDIA])
-        assertEquals(StringValue("TRAINER"), fields[F.AUTHOR_ROLE])
-        assertEquals(StringValue("trainer-1"), fields[F.LAST_EDITED_BY])
+        assertEquals(ServerTimestamp, fields[ReportFirestoreFields.CREATED_AT])
+        assertEquals(ServerTimestamp, fields[ReportFirestoreFields.UPDATED_AT])
+        assertEquals(NullValue, fields[ReportFirestoreFields.DESCRIPTION])
+        assertEquals(ArrayValue(emptyList()), fields[ReportFirestoreFields.MEDIA])
+        assertEquals(StringValue("TRAINER"), fields[ReportFirestoreFields.AUTHOR_ROLE])
+        assertEquals(StringValue("trainer-1"), fields[ReportFirestoreFields.LAST_EDITED_BY])
     }
 
     @Test
@@ -213,10 +209,10 @@ class ReportRepositoryImplTest {
         assertEquals("r1", write.id)
         assertEquals(
             mapOf(
-                F.TITLE to StringValue("Nowy tytuł"),
-                F.DESCRIPTION to StringValue("Opis"),
-                F.LAST_EDITED_BY to StringValue("client-1"),
-                F.UPDATED_AT to ServerTimestamp,
+                ReportFirestoreFields.TITLE to StringValue("Nowy tytuł"),
+                ReportFirestoreFields.DESCRIPTION to StringValue("Opis"),
+                ReportFirestoreFields.LAST_EDITED_BY to StringValue("client-1"),
+                ReportFirestoreFields.UPDATED_AT to ServerTimestamp,
             ),
             write.fields,
         )
@@ -226,17 +222,17 @@ class ReportRepositoryImplTest {
     fun setCommentWritesTheWholeCommentWithServerTimestamp() = runTest {
         repository.setComment("r1", "Super", "trainer-1", UserRole.TRAINER)
 
-        val written = gateway.writes.single().fields!![F.COMMENT] as MapValue
-        assertEquals(StringValue("Super"), written.fields[F.COMMENT_TEXT])
-        assertEquals(StringValue("TRAINER"), written.fields[F.COMMENT_AUTHOR_ROLE])
-        assertEquals(ServerTimestamp, written.fields[F.COMMENT_UPDATED_AT])
+        val written = gateway.writes.single().fields!![ReportFirestoreFields.COMMENT] as MapValue
+        assertEquals(StringValue("Super"), written.fields[ReportFirestoreFields.COMMENT_TEXT])
+        assertEquals(StringValue("TRAINER"), written.fields[ReportFirestoreFields.COMMENT_AUTHOR_ROLE])
+        assertEquals(ServerTimestamp, written.fields[ReportFirestoreFields.COMMENT_UPDATED_AT])
     }
 
     @Test
     fun deleteCommentRemovesTheField() = runTest {
         repository.deleteComment("r1")
 
-        assertEquals(mapOf(F.COMMENT to Delete), gateway.writes.single().fields)
+        assertEquals(mapOf(ReportFirestoreFields.COMMENT to Delete), gateway.writes.single().fields)
     }
 
     @Test
@@ -251,7 +247,7 @@ class ReportRepositoryImplTest {
     @Test
     fun failedWriteDoesNotNotifyChanges() = runTest {
         val notified = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { repository.changes.first() }
-        gateway.writeResult = WriteResult.Failure(GatewayError(DataErrorKind.UNAVAILABLE, "offline"))
+        gateway.writeResult = WriteResult.Failure(DataException.Unavailable("offline"))
 
         assertFailsWith<DataException.Unavailable> { repository.deleteReport("r1") }
 

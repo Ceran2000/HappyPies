@@ -36,18 +36,11 @@ class AccountRepositoryImpl(
             authManager.authUserFlow.collectLatest { user ->
                 if (user == null) {
                     // Keeps SignedOut(rejected): the sign-out after a rejection also ends up here.
-                    if (_state.value !is AccountState.SignedOut) _state.value = AccountState.SignedOut()
+                    if (state.value !is AccountState.SignedOut) _state.value = AccountState.SignedOut()
                 } else {
                     load(user)
                 }
             }
-        }
-    }
-
-    override fun retry() {
-        scope.launch {
-            val user = authManager.authUser ?: return@launch     //TODO: handle null
-            load(user)
         }
     }
 
@@ -59,9 +52,9 @@ class AccountRepositoryImpl(
             throw e
         } catch (e: Exception) {
             log.w(e) { "Loading the account of ${user.uid} failed" }
-            val unusable = e is DataException.NotFound || e is DataException.MalformedData || e is DataException.PermissionDenied
-            if (unusable) AccountState.SignedOut(rejected = true) else AccountState.Unavailable(e)
+            if (e.unusable) AccountState.SignedOut(rejected = true) else AccountState.Unavailable(e)
         }
+
         // A retry can finish after the user changed (e.g. signed out meanwhile); its result is stale then.
         if (user != authManager.authUser) return
         _state.value = loaded
@@ -69,7 +62,8 @@ class AccountRepositoryImpl(
     }
 
     private suspend fun fetchAccount(user: AuthUser): Account {
-        val document = gateway.getDocument(Fields.COLLECTION, user.uid).documentOrThrow { "User ${user.uid} does not exist" }
+        val document = gateway.getDocument(Fields.COLLECTION, user.uid)
+            .documentOrThrow { "User ${user.uid} does not exist" }
         val reader = DocumentReader(Fields.COLLECTION, document)
         return Account(
             uid = user.uid,
@@ -77,6 +71,13 @@ class AccountRepositoryImpl(
             name = reader.requireString(Fields.NAME),
             role = reader.requireEnum(Fields.ROLE, UserRole.entries),
         )
+    }
+
+    override fun retry() {
+        scope.launch {
+            val user = authManager.authUser ?: return@launch     //TODO: handle null
+            load(user)
+        }
     }
 
     private suspend fun signOutOfFirebase() {
@@ -89,3 +90,5 @@ class AccountRepositoryImpl(
         }
     }
 }
+
+private val Exception.unusable: Boolean get() = this is DataException.NotFound || this is DataException.MalformedData || this is DataException.PermissionDenied

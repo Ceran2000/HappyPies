@@ -3,24 +3,31 @@ package pl.ceranka.happypies.data.firestore
 import pl.ceranka.happypies.data.DataException
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
+import kotlin.test.assertFailsWith
+import kotlin.test.assertSame
 
 class GatewayResultsTest {
 
-    private fun exceptionFor(kind: DataErrorKind) = GatewayError(kind, "boom").toDataException()
+    private val error = DataException.Unavailable("offline")
+    private val document = FirestoreDocument("abc", emptyMap())
 
     @Test
-    fun mapsEveryErrorKindToADataException() {
-        assertIs<DataException.NotFound>(exceptionFor(DataErrorKind.NOT_FOUND))
-        assertIs<DataException.PermissionDenied>(exceptionFor(DataErrorKind.PERMISSION_DENIED))
-        assertIs<DataException.PermissionDenied>(exceptionFor(DataErrorKind.UNAUTHENTICATED))
-        assertIs<DataException.Unavailable>(exceptionFor(DataErrorKind.UNAVAILABLE))
-        assertIs<DataException.Unknown>(exceptionFor(DataErrorKind.FAILED_PRECONDITION))
-        assertIs<DataException.Unknown>(exceptionFor(DataErrorKind.OTHER))
+    fun throwsTheGatewayErrorAsIs() {
+        assertSame(error, assertFailsWith<DataException> { DocumentResult.Failure(error).documentOrThrow { "missing" } })
+        assertSame(error, assertFailsWith<DataException> { ReadResult.Failure(error).documentsOrThrow() })
+        assertSame(error, assertFailsWith<DataException> { WriteResult.Failure(error).documentIdOrThrow() })
     }
 
     @Test
-    fun keepsTheOriginalMessage() {
-        assertEquals("boom", exceptionFor(DataErrorKind.FAILED_PRECONDITION).message)
+    fun missingDocumentIsNotFound() {
+        val exception = assertFailsWith<DataException.NotFound> { DocumentResult.Success(null).documentOrThrow { "missing" } }
+        assertEquals("missing", exception.message)
+    }
+
+    @Test
+    fun returnsTheSuccessValue() {
+        assertEquals(document, DocumentResult.Success(document).documentOrThrow { "missing" })
+        assertEquals(listOf(document), ReadResult.Success(listOf(document)).documentsOrThrow())
+        assertEquals("abc", WriteResult.Success("abc").documentIdOrThrow())
     }
 }
