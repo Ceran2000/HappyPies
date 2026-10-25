@@ -17,6 +17,7 @@ koin = "4.2.1"
 kotlin = "2.4.0"
 kotlinxCoroutines = "1.11.0"
 material3 = "1.11.0-alpha07"
+materialIcons = "1.7.3"
 navigation3Runtime = "1.1.5"
 navigation3Ui = "1.1.1"
 kotlinxSerialization = "1.11.0"
@@ -39,6 +40,7 @@ androidx-lifecycle-viewmodelNavigation3 = { module = "org.jetbrains.androidx.lif
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+compose-materialIconsExtended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "materialIcons" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 compose-uiToolingPreview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }

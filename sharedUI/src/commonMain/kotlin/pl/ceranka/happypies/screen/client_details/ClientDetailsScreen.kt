@@ -9,12 +9,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -54,8 +58,8 @@ private fun ClientDetailsContent(
     onRetry: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        TextButton(onClick = onBack, modifier = Modifier.padding(horizontal = 8.dp)) {
-            Text("← Wstecz")
+        IconButton(onClick = onBack, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Wstecz")
         }
         val client = uiState.client
         when {
@@ -101,10 +105,10 @@ private fun ClientWithReports(
         }
         ExtendedFloatingActionButton(
             onClick = onAddReport,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        ) {
-            Text("+ Nowy raport")
-        }
+            icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
+            text = { Text("Nowy raport") },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+        )
     }
 }
 

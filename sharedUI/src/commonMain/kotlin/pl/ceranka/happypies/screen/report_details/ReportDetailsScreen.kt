@@ -13,10 +13,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -98,12 +104,12 @@ private fun ReportDetailsContent(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            TextButton(onClick = onBack) {
-                Text("← Wstecz")
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Wstecz")
             }
             if (uiState.showDeleteReportButton) {
-                TextButton(onClick = { showDeleteReportDialog = true }, enabled = uiState.deleteReportButtonEnabled) {
-                    Text("Usuń")
+                IconButton(onClick = { showDeleteReportDialog = true }, enabled = uiState.deleteReportButtonEnabled) {
+                    Icon(Icons.Rounded.Delete, contentDescription = "Usuń raport")
                 }
             }
         }
@@ -204,10 +210,9 @@ private fun CommentEditorCard(editor: CommentEditor, showDeleteButton: Boolean, 
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // A trash icon once theme A brings an icon set.
                 if (showDeleteButton) {
-                    TextButton(onClick = { showDeleteCommentDialog = true }, enabled = editor.deleteButtonEnabled) {
-                        Text("Usuń", color = MaterialTheme.colorScheme.error)
+                    IconButton(onClick = { showDeleteCommentDialog = true }, enabled = editor.deleteButtonEnabled) {
+                        Icon(Icons.Rounded.Delete, contentDescription = "Usuń komentarz", tint = MaterialTheme.colorScheme.error)
                     }
                 }
                 Spacer(Modifier.weight(1f))
@@ -255,11 +260,10 @@ private fun CommentCard(comment: CommentItem, onEdit: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(text = comment.label.uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                // A pencil icon once theme A brings an icon set.
+                Text(text = comment.label.uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
                 if (comment.showEditButton) {
-                    TextButton(onClick = onEdit) {
-                        Text("Edytuj")
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Rounded.Edit, contentDescription = "Edytuj komentarz", tint = MaterialTheme.colorScheme.secondary)
                     }
                 }
             }

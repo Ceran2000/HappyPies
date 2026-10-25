@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,6 +38,7 @@ import pl.ceranka.happypies.screen.report_form.EditReportScreen
 import pl.ceranka.happypies.ui.common.AuthenticatedScreen
 import pl.ceranka.happypies.ui.common.AccountUnavailableScreen
 import pl.ceranka.happypies.ui.common.toUserMessage
+import pl.ceranka.happypies.ui.theme.HappyPiesTheme
 
 //TODO: should have ViewModel?
 
@@ -44,7 +46,7 @@ import pl.ceranka.happypies.ui.common.toUserMessage
 fun App() {
     val authManager = koinInject<AuthManager>()
     val accountRepository = koinInject<AccountRepository>()
-    MaterialTheme {
+    HappyPiesTheme {
         // Restored after process death; kept as long as the account allows it.
         val backStack = rememberNavBackStack(routeSavedStateConfiguration, Route.Login)
         val accountState by accountRepository.state.collectAsStateWithLifecycle()
@@ -71,81 +73,83 @@ fun App() {
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
-            val state = accountState
-            if (state is AccountState.Unavailable) {
-                AccountUnavailableScreen(
-                    message = state.error.toUserMessage(),
-                    onRetry = accountRepository::retry,
-                    onLogout = ::logout,
+        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.safeDrawingPadding()) {
+                val state = accountState
+                if (state is AccountState.Unavailable) {
+                    AccountUnavailableScreen(
+                        message = state.error.toUserMessage(),
+                        onRetry = accountRepository::retry,
+                        onLogout = ::logout,
+                    )
+                } else if (state == AccountState.Loading || requiredStack != null) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else NavDisplay(
+                    backStack = backStack,
+                    entryDecorators = listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                    ),
+                    entryProvider = entryProvider {
+                        entry<Route.Login> {
+                            LoginScreen()
+                        }
+                        entry<Route.ClientList> {
+                            AuthenticatedScreen(onLogout = ::logout) {
+                                ClientListScreen(
+                                    onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) }
+                                )
+                            }
+                        }
+                        entry<Route.ClientDetail> { route ->
+                            AuthenticatedScreen(onLogout = ::logout) {
+                                ClientDetailsScreen(
+                                    clientId = route.clientId,
+                                    onBack = { backStack.removeLastOrNull() },
+                                    onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
+                                    onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
+                                )
+                            }
+                        }
+                        entry<Route.ReportDetail> { route ->
+                            AuthenticatedScreen(onLogout = ::logout) {
+                                ReportDetailsScreen(
+                                    clientId = route.clientId,
+                                    reportId = route.reportId,
+                                    onBack = { backStack.removeLastOrNull() },
+                                    onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
+                                    onDeleted = { backStack.removeLastOrNull() },
+                                )
+                            }
+                        }
+                        entry<Route.AddReport> { route ->
+                            AuthenticatedScreen(onLogout = ::logout) {
+                                AddReportScreen(
+                                    clientId = route.clientId,
+                                    onSaved = { backStack.removeLastOrNull() },
+                                    onCancel = { backStack.removeLastOrNull() }
+                                )
+                            }
+                        }
+                        entry<Route.EditReport> { route ->
+                            AuthenticatedScreen(onLogout = ::logout) {
+                                EditReportScreen(
+                                    reportId = route.reportId,
+                                    onSaved = { backStack.removeLastOrNull() },
+                                    onCancel = { backStack.removeLastOrNull() }
+                                )
+                            }
+                        }
+                        entry<Route.ClientHome> {
+                            AuthenticatedScreen(onLogout = ::logout) {
+                                ClientHomeScreen()
+                            }
+                        }
+                    }
                 )
-            } else if (state == AccountState.Loading || requiredStack != null) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            } else NavDisplay(
-                backStack = backStack,
-                entryDecorators = listOf(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator(),
-                ),
-                entryProvider = entryProvider {
-                    entry<Route.Login> {
-                        LoginScreen()
-                    }
-                    entry<Route.ClientList> {
-                        AuthenticatedScreen(onLogout = ::logout) {
-                            ClientListScreen(
-                                onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) }
-                            )
-                        }
-                    }
-                    entry<Route.ClientDetail> { route ->
-                        AuthenticatedScreen(onLogout = ::logout) {
-                            ClientDetailsScreen(
-                                clientId = route.clientId,
-                                onBack = { backStack.removeLastOrNull() },
-                                onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
-                                onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
-                            )
-                        }
-                    }
-                    entry<Route.ReportDetail> { route ->
-                        AuthenticatedScreen(onLogout = ::logout) {
-                            ReportDetailsScreen(
-                                clientId = route.clientId,
-                                reportId = route.reportId,
-                                onBack = { backStack.removeLastOrNull() },
-                                onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
-                                onDeleted = { backStack.removeLastOrNull() },
-                            )
-                        }
-                    }
-                    entry<Route.AddReport> { route ->
-                        AuthenticatedScreen(onLogout = ::logout) {
-                            AddReportScreen(
-                                clientId = route.clientId,
-                                onSaved = { backStack.removeLastOrNull() },
-                                onCancel = { backStack.removeLastOrNull() }
-                            )
-                        }
-                    }
-                    entry<Route.EditReport> { route ->
-                        AuthenticatedScreen(onLogout = ::logout) {
-                            EditReportScreen(
-                                reportId = route.reportId,
-                                onSaved = { backStack.removeLastOrNull() },
-                                onCancel = { backStack.removeLastOrNull() }
-                            )
-                        }
-                    }
-                    entry<Route.ClientHome> {
-                        AuthenticatedScreen(onLogout = ::logout) {
-                            ClientHomeScreen()
-                        }
-                    }
-                }
-            )
+            }
         }
     }
 }
