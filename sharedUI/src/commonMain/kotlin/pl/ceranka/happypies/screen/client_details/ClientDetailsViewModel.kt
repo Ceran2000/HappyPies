@@ -18,11 +18,10 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.TimeZone
 import pl.ceranka.happypies.data.client.ClientRepository
-import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.data.trainer.TrainerRepository
-import pl.ceranka.happypies.ui.common.formatDateTime
 import pl.ceranka.happypies.ui.common.ClientSpacePeople
+import pl.ceranka.happypies.ui.common.toListItem
 import pl.ceranka.happypies.ui.common.toUserMessage
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -52,7 +51,7 @@ class ClientDetailsViewModel(
             val client = clientRepository.getClient(clientId)
             val people = ClientSpacePeople(client, trainerRepository.getTrainer(client.trainerId))
             emitAll(reportRepository.observeReports(clientId).map { reports ->
-                ClientDetailsUiState(client = client, reports = reports.map { it.toListItem(people) })
+                ClientDetailsUiState(client = client, reports = reports.map { it.toListItem(people, timeZone) })
             })
         }
             .onStart { emit(uiState.value.copy(error = null)) }
@@ -60,13 +59,4 @@ class ClientDetailsViewModel(
                 log.e(e) { "Loading client $clientId failed" }
                 emit(uiState.value.copy(error = e.toUserMessage()))
             }
-
-    private fun Report.toListItem(people: ClientSpacePeople) = ReportListItem(
-        id = id,
-        title = title,
-        createdAt = formatDateTime(createdAt, timeZone),
-        authorName = people.nameOf(authorId),
-        mediaCount = media.size,
-        hasComment = comment != null,
-    )
 }

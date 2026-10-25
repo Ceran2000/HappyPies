@@ -20,6 +20,7 @@ import pl.ceranka.happypies.fakes.anna
 import pl.ceranka.happypies.fakes.report
 import pl.ceranka.happypies.fakes.trainer
 import pl.ceranka.happypies.fakes.video
+import pl.ceranka.happypies.ui.common.ReportListItem
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

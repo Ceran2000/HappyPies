@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -29,6 +28,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
+import pl.ceranka.happypies.ui.common.ReportCard
 
 @Composable
 fun ClientDetailsScreen(
@@ -129,24 +129,6 @@ private fun ClientDetailsFields(client: Client) {
             client.dogs.forEach { dog ->
                 Text("${dog.name} (${dog.breed})", modifier = Modifier.padding(vertical = 4.dp))
             }
-        }
-    }
-}
-
-@Composable
-private fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(text = report.title, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = "${report.createdAt} · Dodany przez: ${report.authorName}",
-                style = MaterialTheme.typography.bodySmall,
-            )
-            val details = buildList {
-                if (report.mediaCount > 0) add("Media: ${report.mediaCount}")
-                add(if (report.hasComment) "Jest komentarz" else "Bez komentarza")
-            }
-            Text(text = details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
