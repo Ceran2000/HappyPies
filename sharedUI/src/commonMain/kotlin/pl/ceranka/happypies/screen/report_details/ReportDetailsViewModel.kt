@@ -1,5 +1,9 @@
 package pl.ceranka.happypies.screen.report_details
 
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
@@ -16,11 +20,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
+import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.client.ClientRepository
@@ -43,54 +51,38 @@ class ReportDetailsViewModel(
 
     private val log = Logger.withTag("ReportDetails")
 
-    private data class Deletion(val inProgress: Boolean = false, val finished: Boolean = false, val error: String? = null)
-
     private val retries = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-    private val deletion = MutableStateFlow(Deletion())
+    private val deletionState = MutableStateFlow(DeletionState())
+    private val commentEditor = MutableStateFlow(CommentEditor())
+
+    val commentText = TextFieldState()
 
     val uiState: StateFlow<ReportDetailsUiState> = combine(
         retries.onStart { emit(Unit) }.flatMapLatest { load() },
-        deletion,
-    ) { content, deletion ->
+        deletionState,
+        commentEditor
+    ) { content, deletion, commentEditor ->
         content.copy(
             isDeleted = content.isDeleted && !deletion.inProgress && !deletion.finished,
             isDeleting = deletion.inProgress,
             isDeleteFinished = deletion.finished,
             deleteError = deletion.error,
+            commentEditor = commentEditor
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReportDetailsUiState())
 
-    fun onRetry() {
-        retries.tryEmit(Unit)
-    }
-
-    fun onDelete() {
-        if (deletion.value.inProgress || deletion.value.finished) return
-
-        deletion.value = Deletion(inProgress = true)
-        viewModelScope.launch {
-            deletion.value = try {
-                reportRepository.deleteReport(reportId)
-                Deletion(finished = true)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                log.e(e) { "Deleting report $reportId failed" }
-                Deletion(error = e.toUserMessage())
-            }
-        }
-    }
-
     private fun load(): Flow<ReportDetailsUiState> =
         flow {
-            val people = ClientSpacePeople(clientRepository.getClient(clientId), accountRepository.state.value.accountOrNull)
-            emitAll(reportRepository.observeReport(reportId).map { report ->
+            val viewer = accountRepository.state.value.accountOrNull
+            val people = ClientSpacePeople(clientRepository.getClient(clientId), viewer)
+            val report = reportRepository.observeReport(reportId).map { report ->
                 if (report == null) {
                     ReportDetailsUiState(report = uiState.value.report, isDeleted = true)
                 } else {
-                    ReportDetailsUiState(report = report.toItem(people))
+                    ReportDetailsUiState(report = report.toItem(people, viewer, timeZone))
                 }
-            })
+            }
+            emitAll(report)
         }
             .onStart { emit(uiState.value.copy(error = null)) }
             .catch { e ->
@@ -98,21 +90,114 @@ class ReportDetailsViewModel(
                 emit(uiState.value.copy(error = e.toUserMessage()))
             }
 
-    private fun Report.toItem(people: ClientSpacePeople) = ReportDetailsItem(
-        title = title,
-        description = description,
-        addedBy = "${people.nameOf(authorId)} · ${formatDateTime(createdAt, timeZone)}",
-        editedBy = if (updatedAt > createdAt) {
-            "${people.nameOf(lastEditedBy)} · ${formatDateTime(updatedAt, timeZone)}"
-        } else {
-            null
-        },
-        comment = comment?.let {
-            CommentItem(
-                label = if (it.authorRole == UserRole.TRAINER) "Komentarz trenera" else "Komentarz klienta",
-                text = it.text,
-                date = formatDateTime(it.updatedAt, timeZone),
-            )
-        },
-    )
+    fun onRetry() {
+        retries.tryEmit(Unit)
+    }
+
+    fun onDelete() {
+        if (deletionState.value.inProgress || deletionState.value.finished) return
+
+        deletionState.update { DeletionState(inProgress = true) }
+        viewModelScope.launch {
+            try {
+                reportRepository.deleteReport(reportId)
+                deletionState.update { DeletionState(finished = true) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.e(e) { "Deleting report $reportId failed" }
+                deletionState.update { DeletionState(error = e.toUserMessage()) }
+            }
+        }
+    }
+
+    fun onAddComment() {
+        val report = uiState.value.report ?: return
+        if (!report.viewerCanAddComment) return
+
+        commentText.clearText()
+        commentEditor.update { CommentEditor(isOpen = true) }
+    }
+
+    fun onEditComment() {
+        val comment = uiState.value.report?.comment ?: return
+        if (!comment.viewerCanEdit) return
+
+        commentText.setTextAndPlaceCursorAtEnd(comment.text)
+        commentEditor.update { CommentEditor(isOpen = true) }
+    }
+
+    fun onCancelComment() {
+        commentEditor.update { if (it.isSaving) it else CommentEditor() }
+    }
+
+    fun onSaveComment() {
+        val editor = commentEditor.value
+        if (!editor.isOpen || editor.isSaving) return
+
+        val text = commentText.text.toString().trim()
+        if (text.isEmpty()) {
+            commentEditor.update { it.copy(error = "Komentarz nie może być pusty.") }
+            return
+        }
+        val viewer = accountRepository.state.value.accountOrNull ?: return
+
+        writeComment(failureLog = "Saving comment on report $reportId failed") {
+            reportRepository.setComment(reportId, text, viewer.uid, viewer.role)
+        }
+    }
+
+    fun onDeleteComment() {
+        val editor = commentEditor.value
+        if (uiState.value.report?.comment == null || !editor.isOpen || editor.isSaving) return
+
+        writeComment(failureLog = "Deleting comment on report $reportId failed") {
+            reportRepository.deleteComment(reportId)
+        }
+    }
+
+    /** Locks the editor for the write; closes it on success, keeps it open with the error on failure. */
+    private fun writeComment(failureLog: String, write: suspend () -> Unit) {
+        commentEditor.update { it.copy(isSaving = true, error = null) }
+
+        viewModelScope.launch {
+            try {
+                write()
+                commentEditor.update { CommentEditor() }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.e(e) { failureLog }
+                commentEditor.update { it.copy(isSaving = false, error = e.toUserMessage()) }
+            }
+        }
+    }
+
+    init {
+        snapshotFlow { commentText.text.toString() }
+            .onEach { commentEditor.update { it.copy(error = null) } }
+            .launchIn(viewModelScope)
+    }
 }
+
+private data class DeletionState(val inProgress: Boolean = false, val finished: Boolean = false, val error: String? = null)
+
+private fun Report.toItem(people: ClientSpacePeople, viewer: Account?, timeZone: TimeZone) = ReportDetailsItem(
+    title = title,
+    description = description,
+    addedBy = "${people.nameOf(authorId)} · ${formatDateTime(createdAt, timeZone)}",
+    editedBy = if (updatedAt > createdAt) {
+        "${people.nameOf(lastEditedBy)} · ${formatDateTime(updatedAt, timeZone)}"
+    } else {
+        null
+    },
+    comment = comment?.let {
+        CommentItem(
+            label = if (it.authorRole == UserRole.TRAINER) "Komentarz trenera" else "Komentarz klienta",
+            text = it.text,
+            date = formatDateTime(it.updatedAt, timeZone),
+            viewerCanEdit = viewer != null && it.authorId == viewer.uid,
+        )
+    },
+    viewerCanAddComment = comment == null && viewer != null && viewer.role != authorRole,
+)

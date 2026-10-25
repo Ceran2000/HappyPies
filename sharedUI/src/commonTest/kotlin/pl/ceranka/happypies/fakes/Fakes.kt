@@ -137,6 +137,15 @@ class FakeReportRepository : ReportRepository {
     /** When set, createReport waits for it, so a test can act while saving is in progress. */
     var createGate: CompletableDeferred<Unit>? = null
 
+    data class SavedComment(val reportId: String, val text: String, val authorId: String, val authorRole: UserRole)
+
+    val savedComments = mutableListOf<SavedComment>()
+    val deletedComments = mutableListOf<String>()
+    var commentError: Exception? = null
+
+    /** When set, setComment and deleteComment wait for it, so a test can act while the write is in progress. */
+    var commentGate: CompletableDeferred<Unit>? = null
+
     override fun observeReports(clientId: String): Flow<List<Report>> = liveReports.map { it.getOrThrow() }.counted()
 
     override fun observeReport(reportId: String): Flow<Report?> = liveReport.map { it.getOrThrow() }.counted()
@@ -158,6 +167,15 @@ class FakeReportRepository : ReportRepository {
 
     override suspend fun getReport(reportId: String): Report = error("Not used")
     override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) = error("Not used")
-    override suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole) = error("Not used")
-    override suspend fun deleteComment(reportId: String) = error("Not used")
+    override suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole) {
+        savedComments += SavedComment(reportId, text, authorId, authorRole)
+        commentGate?.await()
+        commentError?.let { throw it }
+    }
+
+    override suspend fun deleteComment(reportId: String) {
+        deletedComments += reportId
+        commentGate?.await()
+        commentError?.let { throw it }
+    }
 }
