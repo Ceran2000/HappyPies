@@ -142,10 +142,13 @@ fun App() {
                                 )
                             }
                         }
-                        entry<Route.ClientHome> {
-                            AuthenticatedScreen(onLogout = ::logout) {
-                                ClientHomeScreen()
-                            }
+                        entry<Route.ClientHome> { route ->
+                            ClientHomeScreen(
+                                clientId = route.clientId,
+                                onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
+                                onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
+                                onLogout = ::logout
+                            )
                         }
                     }
                 )

@@ -16,7 +16,7 @@ internal fun requiredBackStack(state: AccountState, backStack: List<NavKey>): Li
         listOf(
             when (state.account.role) {
                 UserRole.TRAINER -> Route.ClientList
-                UserRole.CLIENT -> Route.ClientHome
+                UserRole.CLIENT -> Route.ClientHome(state.account.uid)
             }
         )
     } else {

@@ -41,7 +41,7 @@ class SessionNavigationTest {
     fun signedInOnLoginGoesToTheRolesStartScreen() {
         assertEquals(listOf(Route.ClientList), requiredBackStack(AccountState.SignedIn(trainer), stackOf(Route.Login)))
         val client = Account("client-1", "anna@przyklad.pl", "Anna", UserRole.CLIENT)
-        assertEquals(listOf(Route.ClientHome), requiredBackStack(AccountState.SignedIn(client), stackOf(Route.Login)))
+        assertEquals(listOf(Route.ClientHome(client.uid)), requiredBackStack(AccountState.SignedIn(client), stackOf(Route.Login)))
     }
 
     @Test

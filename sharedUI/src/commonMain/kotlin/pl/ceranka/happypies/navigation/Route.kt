@@ -12,7 +12,7 @@ sealed interface Route : NavKey {
     data object ClientList : Route
 
     @Serializable
-    data object ClientHome : Route
+    data class ClientHome(val clientId: String) : Route
 
     @Serializable
     data class ClientDetail(val clientId: String) : Route

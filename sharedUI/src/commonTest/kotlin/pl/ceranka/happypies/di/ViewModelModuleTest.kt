@@ -22,6 +22,7 @@ import pl.ceranka.happypies.data.firestore.ReadResult
 import pl.ceranka.happypies.data.firestore.WriteResult
 import pl.ceranka.happypies.screen.client_details.ClientDetailsViewModel
 import pl.ceranka.happypies.screen.client_list.ClientListViewModel
+import pl.ceranka.happypies.screen.clienthome.ClientHomeViewModel
 import pl.ceranka.happypies.screen.login.LoginViewModel
 import pl.ceranka.happypies.screen.report_details.ReportDetailsViewModel
 import pl.ceranka.happypies.screen.report_form.AddReportViewModel
@@ -60,6 +61,11 @@ class ViewModelModuleTest {
     @Test
     fun resolvesClientDetailsViewModelWithClientId() {
         assertNotNull(koin.get<ClientDetailsViewModel> { parametersOf("client-1") })
+    }
+
+    @Test
+    fun resolvesClientHomeViewModelWithClientId() {
+        assertNotNull(koin.get<ClientHomeViewModel> { parametersOf("client-1") })
     }
 
     @Test
