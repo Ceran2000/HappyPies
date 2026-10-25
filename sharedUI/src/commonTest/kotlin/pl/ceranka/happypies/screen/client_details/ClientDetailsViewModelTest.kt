@@ -14,10 +14,10 @@ import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.report.ReportComment
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.FakeClientRepository
+import pl.ceranka.happypies.fakes.FakeTrainerRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.anna
 import pl.ceranka.happypies.fakes.report
-import pl.ceranka.happypies.fakes.accountOf
 import pl.ceranka.happypies.fakes.trainer
 import pl.ceranka.happypies.fakes.video
 import kotlin.test.AfterTest
@@ -30,7 +30,6 @@ class ClientDetailsViewModelTest {
 
     private val clients = FakeClientRepository()
     private val reports = FakeReportRepository()
-    private val account = accountOf(trainer)
     private val offline = "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."
 
     @BeforeTest
@@ -40,7 +39,7 @@ class ClientDetailsViewModelTest {
     fun tearDown() = Dispatchers.resetMain()
 
     // The state is shared WhileSubscribed, so a test collects it like the screen does.
-    private fun TestScope.createViewModel() = ClientDetailsViewModel(clients, reports, account, anna.id, TimeZone.UTC).also { viewModel ->
+    private fun TestScope.createViewModel() = ClientDetailsViewModel(clients, FakeTrainerRepository(), reports, anna.id, TimeZone.UTC).also { viewModel ->
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
     }
 
@@ -128,7 +127,7 @@ class ClientDetailsViewModelTest {
 
     @Test
     fun stopsListeningFiveSecondsAfterTheScreenStopsCollecting() = runTest {
-        val viewModel = ClientDetailsViewModel(clients, reports, account, anna.id, TimeZone.UTC)
+        val viewModel = ClientDetailsViewModel(clients, FakeTrainerRepository(), reports, anna.id, TimeZone.UTC)
         val screen = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
         assertEquals(1, reports.activeListeners)
 

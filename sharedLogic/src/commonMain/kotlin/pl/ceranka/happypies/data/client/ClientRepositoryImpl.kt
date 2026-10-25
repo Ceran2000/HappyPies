@@ -41,6 +41,7 @@ internal fun FirestoreDocument.toClient(): Client {
         id = id,
         name = reader.requireString(Fields.NAME),
         email = reader.requireString(Fields.EMAIL),
+        trainerId = reader.requireString(Fields.TRAINER_ID),
         dogs = reader.requireMapArray(Fields.DOGS).map { dog ->
             Dog(name = dog.requireString(Fields.DOG_NAME), breed = dog.requireString(Fields.DOG_BREED))
         },

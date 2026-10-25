@@ -37,7 +37,7 @@ class ClientRepositoryImplTest {
     @Test
     fun mapsAClientWithDogs() = runTest {
         assertEquals(
-            Client("client-1", "Anna Kowalska", "anna@przyklad.pl", listOf(Dog("Bala", "border collie"))),
+            Client("client-1", "Anna Kowalska", "anna@przyklad.pl", trainerId = "trainer-1", listOf(Dog("Bala", "border collie"))),
             readClient(validFields),
         )
         assertEquals("users" to "client-1", gateway.gets.single())
@@ -59,6 +59,11 @@ class ClientRepositoryImplTest {
     @Test
     fun trainerIsNotAClient() = runTest {
         assertFailsWith<DataException.NotFound> { readClient(validFields + (UserFirestoreFields.ROLE to StringValue("TRAINER"))) }
+    }
+
+    @Test
+    fun missingTrainerIsMalformed() = runTest {
+        assertFailsWith<DataException.MalformedData> { readClient(validFields - UserFirestoreFields.TRAINER_ID) }
     }
 
     @Test

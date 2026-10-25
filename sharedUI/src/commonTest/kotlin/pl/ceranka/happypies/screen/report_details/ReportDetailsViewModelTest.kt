@@ -17,6 +17,7 @@ import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.report.ReportComment
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.FakeClientRepository
+import pl.ceranka.happypies.fakes.FakeTrainerRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository.SavedComment
 import pl.ceranka.happypies.fakes.accountOf
@@ -51,7 +52,7 @@ class ReportDetailsViewModelTest {
 
     // The state is shared WhileSubscribed, so a test collects it like the screen does.
     private fun TestScope.createViewModel(viewer: Account = trainer) =
-        ReportDetailsViewModel(reports, clients, accountOf(viewer), anna.id, "r1", TimeZone.UTC).also { viewModel ->
+        ReportDetailsViewModel(reports, clients, FakeTrainerRepository(), accountOf(viewer), anna.id, "r1", TimeZone.UTC).also { viewModel ->
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
         }
 

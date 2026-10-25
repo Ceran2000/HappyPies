@@ -17,11 +17,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.datetime.TimeZone
-import pl.ceranka.happypies.data.account.AccountRepository
-import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
+import pl.ceranka.happypies.data.trainer.TrainerRepository
 import pl.ceranka.happypies.ui.common.formatDateTime
 import pl.ceranka.happypies.ui.common.ClientSpacePeople
 import pl.ceranka.happypies.ui.common.toUserMessage
@@ -29,10 +28,10 @@ import pl.ceranka.happypies.ui.common.toUserMessage
 @OptIn(ExperimentalCoroutinesApi::class)
 class ClientDetailsViewModel(
     private val clientRepository: ClientRepository,
+    private val trainerRepository: TrainerRepository,
     private val reportRepository: ReportRepository,
-    private val accountRepository: AccountRepository,
     private val clientId: String,
-    private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) : ViewModel() {
 
     private val log = Logger.withTag("ClientDetails")
@@ -51,7 +50,7 @@ class ClientDetailsViewModel(
     private fun load(): Flow<ClientDetailsUiState> =
         flow {
             val client = clientRepository.getClient(clientId)
-            val people = ClientSpacePeople(client, accountRepository.state.value.accountOrNull)
+            val people = ClientSpacePeople(client, trainerRepository.getTrainer(client.trainerId))
             emitAll(reportRepository.observeReports(clientId).map { reports ->
                 ClientDetailsUiState(client = client, reports = reports.map { it.toListItem(people) })
             })

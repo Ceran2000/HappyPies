@@ -34,6 +34,7 @@ import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
+import pl.ceranka.happypies.data.trainer.TrainerRepository
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.ui.common.ClientSpacePeople
 import pl.ceranka.happypies.ui.common.formatDateTime
@@ -43,10 +44,11 @@ import pl.ceranka.happypies.ui.common.toUserMessage
 class ReportDetailsViewModel(
     private val reportRepository: ReportRepository,
     private val clientRepository: ClientRepository,
+    private val trainerRepository: TrainerRepository,
     private val accountRepository: AccountRepository,
     private val clientId: String,
     private val reportId: String,
-    private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) : ViewModel() {
 
     private val log = Logger.withTag("ReportDetails")
@@ -74,7 +76,8 @@ class ReportDetailsViewModel(
     private fun load(): Flow<ReportDetailsUiState> =
         flow {
             val viewer = accountRepository.state.value.accountOrNull
-            val people = ClientSpacePeople(clientRepository.getClient(clientId), viewer)
+            val client = clientRepository.getClient(clientId)
+            val people = ClientSpacePeople(client, trainerRepository.getTrainer(client.trainerId))
             val report = reportRepository.observeReport(reportId).map { report ->
                 if (report == null) {
                     ReportDetailsUiState(report = uiState.value.report, isDeleted = true)

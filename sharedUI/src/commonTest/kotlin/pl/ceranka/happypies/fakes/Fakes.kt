@@ -22,10 +22,13 @@ import pl.ceranka.happypies.data.report.NewReport
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportComment
 import pl.ceranka.happypies.data.report.ReportRepository
+import pl.ceranka.happypies.data.trainer.Trainer
+import pl.ceranka.happypies.data.trainer.TrainerRepository
 import pl.ceranka.happypies.data.user.UserRole
 
-val anna = Client("client-1", "Anna Kowalska", "anna@przyklad.pl", listOf(Dog("Bala", "border collie")))
+val anna = Client("client-1", "Anna Kowalska", "anna@przyklad.pl", trainerId = "trainer-1", listOf(Dog("Bala", "border collie")))
 val trainer = Account("trainer-1", "jan@przyklad.pl", "Jan Trener", UserRole.TRAINER)
+val annasTrainer = Trainer(trainer.uid, trainer.name)
 
 fun report(
     id: String,
@@ -91,6 +94,15 @@ class FakeClientRepository(var client: Client = anna) : ClientRepository {
     override suspend fun getClient(clientId: String): Client {
         error?.let { throw it }
         return client
+    }
+}
+
+class FakeTrainerRepository(var trainer: Trainer = annasTrainer) : TrainerRepository {
+    var error: Exception? = null
+
+    override suspend fun getTrainer(trainerId: String): Trainer {
+        error?.let { throw it }
+        return trainer
     }
 }
 
