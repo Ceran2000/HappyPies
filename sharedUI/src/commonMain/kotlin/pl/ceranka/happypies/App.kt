@@ -32,7 +32,8 @@ import pl.ceranka.happypies.screen.client_list.ClientListScreen
 import pl.ceranka.happypies.screen.clienthome.ClientHomeScreen
 import pl.ceranka.happypies.screen.login.LoginScreen
 import pl.ceranka.happypies.screen.report_details.ReportDetailsScreen
-import pl.ceranka.happypies.screen.report_form.ReportFormScreen
+import pl.ceranka.happypies.screen.report_form.AddReportScreen
+import pl.ceranka.happypies.screen.report_form.EditReportScreen
 import pl.ceranka.happypies.ui.common.AuthenticatedScreen
 import pl.ceranka.happypies.ui.common.AccountUnavailableScreen
 import pl.ceranka.happypies.ui.common.toUserMessage
@@ -104,7 +105,7 @@ fun App() {
                             ClientDetailsScreen(
                                 clientId = route.clientId,
                                 onBack = { backStack.removeLastOrNull() },
-                                onAddReport = { backStack.add(Route.ReportForm(route.clientId)) },
+                                onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
                                 onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
                             )
                         }
@@ -115,16 +116,26 @@ fun App() {
                                 clientId = route.clientId,
                                 reportId = route.reportId,
                                 onBack = { backStack.removeLastOrNull() },
+                                onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
                                 onDeleted = { backStack.removeLastOrNull() },
                             )
                         }
                     }
-                    entry<Route.ReportForm> { route ->
+                    entry<Route.AddReport> { route ->
                         AuthenticatedScreen(onLogout = ::logout) {
-                            ReportFormScreen(
+                            AddReportScreen(
                                 clientId = route.clientId,
                                 onSaved = { backStack.removeLastOrNull() },
-                                onCancel = { backStack.removeLastOrNull() },
+                                onCancel = { backStack.removeLastOrNull() }
+                            )
+                        }
+                    }
+                    entry<Route.EditReport> { route ->
+                        AuthenticatedScreen(onLogout = ::logout) {
+                            EditReportScreen(
+                                reportId = route.reportId,
+                                onSaved = { backStack.removeLastOrNull() },
+                                onCancel = { backStack.removeLastOrNull() }
                             )
                         }
                     }

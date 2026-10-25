@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.data.client.Client
+import pl.ceranka.happypies.ui.common.ErrorWithRetry
 
 @Composable
 fun ClientDetailsScreen(
@@ -142,16 +143,6 @@ private fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
                 add(if (report.hasComment) "Jest komentarz" else "Bez komentarza")
             }
             Text(text = details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-@Composable
-private fun ErrorWithRetry(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(text = message, color = MaterialTheme.colorScheme.error)
-        TextButton(onClick = onRetry) {
-            Text("Spróbuj ponownie")
         }
     }
 }

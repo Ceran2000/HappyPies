@@ -24,7 +24,8 @@ import pl.ceranka.happypies.screen.client_details.ClientDetailsViewModel
 import pl.ceranka.happypies.screen.client_list.ClientListViewModel
 import pl.ceranka.happypies.screen.login.LoginViewModel
 import pl.ceranka.happypies.screen.report_details.ReportDetailsViewModel
-import pl.ceranka.happypies.screen.report_form.ReportFormViewModel
+import pl.ceranka.happypies.screen.report_form.AddReportViewModel
+import pl.ceranka.happypies.screen.report_form.EditReportViewModel
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -67,8 +68,13 @@ class ViewModelModuleTest {
     }
 
     @Test
-    fun resolvesReportFormViewModelWithClientId() {
-        assertNotNull(koin.get<ReportFormViewModel> { parametersOf("client-1") })
+    fun resolvesAddReportViewModelWithClientId() {
+        assertNotNull(koin.get<AddReportViewModel> { parametersOf("client-1") })
+    }
+
+    @Test
+    fun resolvesEditReportViewModelWithReportId() {
+        assertNotNull(koin.get<EditReportViewModel> { parametersOf("r1") })
     }
 }
 

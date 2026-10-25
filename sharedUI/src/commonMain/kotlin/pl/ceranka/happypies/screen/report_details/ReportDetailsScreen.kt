@@ -34,12 +34,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import pl.ceranka.happypies.ui.common.ErrorWithRetry
 
 @Composable
 fun ReportDetailsScreen(
     clientId: String,
     reportId: String,
     onBack: () -> Unit,
+    onEditReport: () -> Unit,
     onDeleted: () -> Unit,
 ) {
     val viewModel = koinViewModel<ReportDetailsViewModel> { parametersOf(clientId, reportId) }
@@ -52,6 +54,7 @@ fun ReportDetailsScreen(
     ReportDetailsContent(
         uiState = uiState,
         onBack = onBack,
+        onEditReport = onEditReport,
         onDelete = viewModel::onDelete,
         onRetry = viewModel::onRetry,
         commentText = viewModel.commentText,
@@ -77,6 +80,7 @@ private class CommentActions(
 private fun ReportDetailsContent(
     uiState: ReportDetailsUiState,
     onBack: () -> Unit,
+    onEditReport: () -> Unit,
     onDelete: () -> Unit,
     onRetry: () -> Unit,
     commentText: TextFieldState,
@@ -106,7 +110,7 @@ private fun ReportDetailsContent(
 
         when {
             uiState.isDeleted -> ReportDeletedNotice(onBack)
-            report != null -> LoadedReport(report, uiState, commentText, commentActions, onRetry)
+            report != null -> LoadedReport(report, uiState, commentText, commentActions, onEditReport, onRetry)
             uiState.error != null -> ErrorWithRetry(uiState.error, onRetry)
             else -> CircularProgressIndicator()
         }
@@ -148,6 +152,7 @@ private fun LoadedReport(
     uiState: ReportDetailsUiState,
     commentText: TextFieldState,
     commentActions: CommentActions,
+    onEditReport: () -> Unit,
     onRetry: () -> Unit,
 ) {
     ReportBody(report)
@@ -155,6 +160,9 @@ private fun LoadedReport(
     if (uiState.showReportDeletionProgress) ReportDeletionProgress()
     uiState.deleteError?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
     uiState.error?.let { ErrorWithRetry(it, onRetry) }
+    Button(onClick = onEditReport, enabled = uiState.editReportButtonEnabled, modifier = Modifier.fillMaxWidth()) {
+        Text("Edytuj raport")
+    }
 }
 
 @Composable
@@ -277,15 +285,5 @@ private fun ReportDeletionProgress() {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
         Text("Usuwanie…")
-    }
-}
-
-@Composable
-private fun ErrorWithRetry(message: String, onRetry: () -> Unit) {
-    Column {
-        Text(text = message, color = MaterialTheme.colorScheme.error)
-        TextButton(onClick = onRetry) {
-            Text("Spróbuj ponownie")
-        }
     }
 }

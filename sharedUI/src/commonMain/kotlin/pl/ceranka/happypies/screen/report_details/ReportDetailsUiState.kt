@@ -14,6 +14,7 @@ data class ReportDetailsUiState(
     val showDeleteReportButton: Boolean get() = report != null && !isDeleted
     val deleteReportButtonEnabled: Boolean get() = !isDeleting
     val showReportDeletionProgress: Boolean get() = isDeleting
+    val editReportButtonEnabled: Boolean get() = !isDeleting
 }
 
 data class ReportDetailsItem(

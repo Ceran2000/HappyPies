@@ -165,8 +165,25 @@ class FakeReportRepository : ReportRepository {
         return "new-id"
     }
 
-    override suspend fun getReport(reportId: String): Report = error("Not used")
-    override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) = error("Not used")
+    /** What getReport returns; getError makes it fail instead. */
+    val stored = mutableMapOf<String, Report>()
+    var getError: Exception? = null
+
+    data class Update(val reportId: String, val title: String, val description: String?, val editorId: String)
+
+    val updated = mutableListOf<Update>()
+    var updateError: Exception? = null
+
+    override suspend fun getReport(reportId: String): Report {
+        getError?.let { throw it }
+        return stored.getValue(reportId)
+    }
+
+    override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) {
+        updated += Update(reportId, title, description, editorId)
+        updateError?.let { throw it }
+    }
+
     override suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole) {
         savedComments += SavedComment(reportId, text, authorId, authorRole)
         commentGate?.await()

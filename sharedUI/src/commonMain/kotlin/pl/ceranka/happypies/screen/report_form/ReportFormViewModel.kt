@@ -6,63 +6,64 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.accountOrNull
-import pl.ceranka.happypies.data.report.NewReport
-import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.ui.common.toUserMessage
 
-class ReportFormViewModel(
-    private val reportRepository: ReportRepository,
-    private val accountRepository: AccountRepository,
-    private val clientId: String,
-) : ViewModel() {
+abstract class ReportFormViewModel(private val accountRepository: AccountRepository) : ViewModel() {
 
-    private val log = Logger.withTag("ReportForm")
+    protected val log = Logger.withTag("ReportForm")
 
     val titleState = TextFieldState()
     val descriptionState = TextFieldState()
 
-    private val _uiState = MutableStateFlow<ReportFormUiState>(ReportFormUiState.Editing())
-    val uiState: StateFlow<ReportFormUiState> = _uiState.asStateFlow()
+    protected val formState = MutableStateFlow(ReportFormUiState())
+
+    /** Names the saved report in the error log, e.g. "report r1". */
+    protected abstract val reportForLog: String
 
     fun onSave() {
-        // Ignore taps while saving or after saving (no double submit).
-        if (_uiState.value !is ReportFormUiState.Editing) return
+        // Ignore taps while saving and after saving (no double submit).
+        val form = formState.value
+        if (!canSave() || form.isSaving || form.isSaved) return
+
         val title = titleState.text.toString().trim()
         if (title.isEmpty()) {
-            _uiState.value = ReportFormUiState.Editing(titleError = "Podaj tytuł raportu")
+            formState.update { it.copy(titleError = "Podaj tytuł raportu", saveError = null) }
             return
         }
-        val author = accountRepository.state.value.accountOrNull
-        if (author == null) {
-            _uiState.value = ReportFormUiState.Editing(saveError = "Sesja wygasła. Zaloguj się ponownie.")
+        val viewer = accountRepository.state.value.accountOrNull
+        if (viewer == null) {
+            formState.update { it.copy(titleError = null, saveError = "Sesja wygasła. Zaloguj się ponownie.") }
             return
         }
         val description = descriptionState.text.toString().trim().ifEmpty { null }
 
-        _uiState.value = ReportFormUiState.Saving
+        if (!hasChanges(title, description)) {
+            formState.update { it.copy(isSaved = true) }
+            return
+        }
+
+        formState.update { it.copy(isSaving = true, titleError = null, saveError = null) }
         viewModelScope.launch {
-            _uiState.value = try {
-                reportRepository.createReport(
-                    NewReport(
-                        clientId = clientId,
-                        title = title,
-                        description = description,
-                        authorId = author.uid,
-                        authorRole = author.role,
-                    )
-                )
-                ReportFormUiState.Saved
+            try {
+                save(title, description, viewer)
+                formState.update { it.copy(isSaving = false, isSaved = true) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                log.e(e) { "Creating a report for client $clientId failed" }
-                ReportFormUiState.Editing(saveError = e.toUserMessage())
+                log.e(e) { "Saving $reportForLog failed" }
+                formState.update { it.copy(isSaving = false, saveError = e.toUserMessage()) }
             }
         }
     }
+
+    protected open fun canSave(): Boolean = true
+
+    protected open fun hasChanges(title: String, description: String?): Boolean = true
+
+    protected abstract suspend fun save(title: String, description: String?, viewer: Account)
 }

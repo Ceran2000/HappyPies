@@ -13,7 +13,8 @@ val routeSavedStateConfiguration: SavedStateConfiguration = SavedStateConfigurat
             subclass(Route.ClientHome::class, Route.ClientHome.serializer())
             subclass(Route.ClientDetail::class, Route.ClientDetail.serializer())
             subclass(Route.ReportDetail::class, Route.ReportDetail.serializer())
-            subclass(Route.ReportForm::class, Route.ReportForm.serializer())
+            subclass(Route.AddReport::class, Route.AddReport.serializer())
+            subclass(Route.EditReport::class, Route.EditReport.serializer())
         }
     }
 }
