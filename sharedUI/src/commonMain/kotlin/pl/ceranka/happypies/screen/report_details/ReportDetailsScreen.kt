@@ -3,10 +3,12 @@ package pl.ceranka.happypies.screen.report_details
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -15,19 +17,26 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +45,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
@@ -48,7 +65,7 @@ fun ReportDetailsScreen(
     reportId: String,
     onBack: () -> Unit,
     onEditReport: () -> Unit,
-    onDeleted: () -> Unit,
+    onDeleted: () -> Unit
 ) {
     val viewModel = koinViewModel<ReportDetailsViewModel> { parametersOf(clientId, reportId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,8 +86,8 @@ fun ReportDetailsScreen(
             onEdit = viewModel::onEditComment,
             onSave = viewModel::onSaveComment,
             onCancel = viewModel::onCancelComment,
-            onDelete = viewModel::onDeleteComment,
-        ),
+            onDelete = viewModel::onDeleteComment
+        )
     )
 }
 
@@ -79,9 +96,10 @@ private class CommentActions(
     val onEdit: () -> Unit,
     val onSave: () -> Unit,
     val onCancel: () -> Unit,
-    val onDelete: () -> Unit,
+    val onDelete: () -> Unit
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReportDetailsContent(
     uiState: ReportDetailsUiState,
@@ -90,35 +108,58 @@ private fun ReportDetailsContent(
     onDelete: () -> Unit,
     onRetry: () -> Unit,
     commentText: TextFieldState,
-    commentActions: CommentActions,
+    commentActions: CommentActions
 ) {
     var showDeleteReportDialog by rememberSaveable { mutableStateOf(false) }
     val report = uiState.report
 
-    Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Wstecz")
-            }
-            if (uiState.showDeleteReportButton) {
-                IconButton(onClick = { showDeleteReportDialog = true }, enabled = uiState.deleteReportButtonEnabled) {
-                    Icon(Icons.Rounded.Delete, contentDescription = "Usuń raport")
-                }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Wstecz")
+                    }
+                },
+                actions = {
+                    if (uiState.showDeleteReportButton) {
+                        FilledTonalIconButton(
+                            onClick = { showDeleteReportDialog = true },
+                            enabled = uiState.deleteReportButtonEnabled,
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            ),
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Icon(Icons.Rounded.Delete, contentDescription = "Usuń raport")
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
+        },
+        bottomBar = {
+            if (report != null && !uiState.isDeleted) {
+                ReportFooter(report, uiState.editReportButtonEnabled, onEditReport)
             }
         }
-
-        when {
-            uiState.isDeleted -> ReportDeletedNotice(onBack)
-            report != null -> LoadedReport(report, uiState, commentText, commentActions, onEditReport, onRetry)
-            uiState.error != null -> ErrorWithRetry(uiState.error, onRetry)
-            else -> CircularProgressIndicator()
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            when {
+                uiState.isDeleted -> ReportDeletedNotice(onBack)
+                report != null -> LoadedReport(report, uiState, commentText, commentActions, onRetry)
+                uiState.error != null -> ErrorWithRetry(uiState.error, onRetry)
+                else -> CircularProgressIndicator()
+            }
         }
     }
 
@@ -139,7 +180,7 @@ private fun ReportDetailsContent(
                 TextButton(onClick = { showDeleteReportDialog = false }) {
                     Text("Anuluj")
                 }
-            },
+            }
         )
     }
 }
@@ -158,27 +199,44 @@ private fun LoadedReport(
     uiState: ReportDetailsUiState,
     commentText: TextFieldState,
     commentActions: CommentActions,
-    onEditReport: () -> Unit,
-    onRetry: () -> Unit,
+    onRetry: () -> Unit
 ) {
-    ReportBody(report)
+    Text(text = report.title, style = MaterialTheme.typography.titleLarge)
+    report.description?.let { Text(text = it, style = MaterialTheme.typography.bodyLarge) }
+    Spacer(Modifier.height(4.dp))
     CommentSection(report, uiState.commentEditor, commentText, commentActions)
     if (uiState.showReportDeletionProgress) ReportDeletionProgress()
     uiState.deleteError?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
     uiState.error?.let { ErrorWithRetry(it, onRetry) }
-    Button(onClick = onEditReport, enabled = uiState.editReportButtonEnabled, modifier = Modifier.fillMaxWidth()) {
-        Text("Edytuj raport")
-    }
 }
 
 @Composable
-private fun ReportBody(report: ReportDetailsItem) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(text = report.title, style = MaterialTheme.typography.headlineSmall)
-        Text(text = "Dodany przez: ${report.addedBy}", style = MaterialTheme.typography.bodySmall)
-        report.editedBy?.let { Text(text = "Edytowany przez: $it", style = MaterialTheme.typography.bodySmall) }
+private fun ReportFooter(report: ReportDetailsItem, editButtonEnabled: Boolean, onEditReport: () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 16.dp)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text = "Dodany przez: ${report.addedBy}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            report.editedBy?.let {
+                Text(
+                    text = "Edytowany przez: $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        Button(
+            onClick = onEditReport,
+            enabled = editButtonEnabled,
+            contentPadding = PaddingValues(vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Edytuj raport", style = MaterialTheme.typography.titleMedium)
+        }
     }
-    report.description?.let { Text(text = it, style = MaterialTheme.typography.bodyLarge) }
 }
 
 @Composable
@@ -187,7 +245,7 @@ private fun CommentSection(report: ReportDetailsItem, editor: CommentEditor, com
     when {
         editor.isOpen -> CommentEditorCard(editor, report.showDeleteCommentButton, commentText, actions)
         comment != null -> CommentCard(comment, onEdit = actions.onEdit)
-        report.showAddCommentButton -> AddCommentCard(onAdd = actions.onAdd)
+        report.showAddCommentButton -> AddCommentButton(onAdd = actions.onAdd)
     }
 }
 
@@ -195,7 +253,7 @@ private fun CommentSection(report: ReportDetailsItem, editor: CommentEditor, com
 private fun CommentEditorCard(editor: CommentEditor, showDeleteButton: Boolean, commentText: TextFieldState, actions: CommentActions) {
     var showDeleteCommentDialog by rememberSaveable { mutableStateOf(false) }
 
-    OutlinedCard(modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth(), border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(
                 state = commentText,
@@ -204,11 +262,11 @@ private fun CommentEditorCard(editor: CommentEditor, showDeleteButton: Boolean, 
                 label = { Text("Komentarz") },
                 isError = editor.error != null,
                 supportingText = editor.error?.let { { Text(it) } },
-                lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3),
+                lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3)
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 if (showDeleteButton) {
                     IconButton(onClick = { showDeleteCommentDialog = true }, enabled = editor.deleteButtonEnabled) {
@@ -246,19 +304,19 @@ private fun CommentEditorCard(editor: CommentEditor, showDeleteButton: Boolean, 
                 TextButton(onClick = { showDeleteCommentDialog = false }) {
                     Text("Anuluj")
                 }
-            },
+            }
         )
     }
 }
 
 @Composable
 private fun CommentCard(comment: CommentItem, onEdit: () -> Unit) {
-    OutlinedCard(modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    OutlinedCard(modifier = Modifier.fillMaxWidth(), border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary)) {
+        Column(modifier = Modifier.padding(start = 18.dp, end = 8.dp, top = 8.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = comment.label.uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
                 if (comment.showEditButton) {
@@ -267,20 +325,27 @@ private fun CommentCard(comment: CommentItem, onEdit: () -> Unit) {
                     }
                 }
             }
-            Text(text = comment.text, style = MaterialTheme.typography.bodyLarge)
-            Text(text = comment.date, style = MaterialTheme.typography.bodySmall)
+            Text(text = comment.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(end = 10.dp))
+            Text(
+                text = "Ostatnia zmiana: ${comment.date}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
 
 @Composable
-private fun AddCommentCard(onAdd: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = onAdd) {
-                Text("Dodaj komentarz")
-            }
-        }
+private fun AddCommentButton(onAdd: () -> Unit) {
+    val borderColor = MaterialTheme.colorScheme.outline
+    TextButton(
+        onClick = onAdd,
+        contentPadding = PaddingValues(vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth().dashedBorder(borderColor, cornerRadius = 26.dp)
+    ) {
+        Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+        Spacer(Modifier.size(8.dp))
+        Text("Dodaj komentarz", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
     }
 }
 
@@ -290,4 +355,15 @@ private fun ReportDeletionProgress() {
         CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
         Text("Usuwanie…")
     }
+}
+
+private fun Modifier.dashedBorder(color: Color, cornerRadius: Dp): Modifier = drawBehind {
+    val strokeWidth = 2.dp.toPx()
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
+        size = Size(size.width - strokeWidth, size.height - strokeWidth),
+        cornerRadius = CornerRadius(cornerRadius.toPx()),
+        style = Stroke(width = strokeWidth, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())))
+    )
 }

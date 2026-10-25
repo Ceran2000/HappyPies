@@ -35,7 +35,6 @@ import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.data.trainer.TrainerRepository
-import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.ui.common.ClientSpacePeople
 import pl.ceranka.happypies.ui.common.formatDateTime
 import pl.ceranka.happypies.ui.common.toUserMessage
@@ -196,7 +195,7 @@ private fun Report.toItem(people: ClientSpacePeople, viewer: Account?, timeZone:
     },
     comment = comment?.let {
         CommentItem(
-            label = if (it.authorRole == UserRole.TRAINER) "Komentarz trenera" else "Komentarz klienta",
+            label = "Komentarz: ${people.nameOf(it.authorId)}",
             text = it.text,
             date = formatDateTime(it.updatedAt, timeZone),
             viewerCanEdit = viewer != null && it.authorId == viewer.uid,

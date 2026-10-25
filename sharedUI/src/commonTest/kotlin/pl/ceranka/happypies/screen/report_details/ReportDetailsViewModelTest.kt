@@ -69,7 +69,7 @@ class ReportDetailsViewModelTest {
                     description = "Trzy próby",
                     addedBy = "Anna Kowalska · 05.10.2026, 09:05",
                     editedBy = null,
-                    comment = CommentItem("Komentarz trenera", "Dobra robota", "12.10.2026, 18:40", viewerCanEdit = true),
+                    comment = CommentItem("Komentarz: Jan Trener", "Dobra robota", "12.10.2026, 18:40", viewerCanEdit = true),
                     viewerCanAddComment = false,
                 ),
             ),

@@ -104,43 +104,35 @@ fun App() {
                             }
                         }
                         entry<Route.ClientDetail> { route ->
-                            AuthenticatedScreen(onLogout = ::logout) {
-                                ClientDetailsScreen(
-                                    clientId = route.clientId,
-                                    onBack = { backStack.removeLastOrNull() },
-                                    onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
-                                    onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
-                                )
-                            }
+                            ClientDetailsScreen(
+                                clientId = route.clientId,
+                                onBack = { backStack.removeLastOrNull() },
+                                onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
+                                onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) }
+                            )
                         }
                         entry<Route.ReportDetail> { route ->
-                            AuthenticatedScreen(onLogout = ::logout) {
-                                ReportDetailsScreen(
-                                    clientId = route.clientId,
-                                    reportId = route.reportId,
-                                    onBack = { backStack.removeLastOrNull() },
-                                    onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
-                                    onDeleted = { backStack.removeLastOrNull() },
-                                )
-                            }
+                            ReportDetailsScreen(
+                                clientId = route.clientId,
+                                reportId = route.reportId,
+                                onBack = { backStack.removeLastOrNull() },
+                                onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
+                                onDeleted = { backStack.removeLastOrNull() }
+                            )
                         }
                         entry<Route.AddReport> { route ->
-                            AuthenticatedScreen(onLogout = ::logout) {
-                                AddReportScreen(
-                                    clientId = route.clientId,
-                                    onSaved = { backStack.removeLastOrNull() },
-                                    onCancel = { backStack.removeLastOrNull() }
-                                )
-                            }
+                            AddReportScreen(
+                                clientId = route.clientId,
+                                onSaved = { backStack.removeLastOrNull() },
+                                onCancel = { backStack.removeLastOrNull() }
+                            )
                         }
                         entry<Route.EditReport> { route ->
-                            AuthenticatedScreen(onLogout = ::logout) {
-                                EditReportScreen(
-                                    reportId = route.reportId,
-                                    onSaved = { backStack.removeLastOrNull() },
-                                    onCancel = { backStack.removeLastOrNull() }
-                                )
-                            }
+                            EditReportScreen(
+                                reportId = route.reportId,
+                                onSaved = { backStack.removeLastOrNull() },
+                                onCancel = { backStack.removeLastOrNull() }
+                            )
                         }
                         entry<Route.ClientHome> { route ->
                             ClientHomeScreen(

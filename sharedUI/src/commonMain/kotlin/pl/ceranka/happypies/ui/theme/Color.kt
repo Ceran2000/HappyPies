@@ -34,7 +34,9 @@ internal val LightColors = lightColorScheme(
     outline = Color(0xFF9C8664),
     outlineVariant = Color(0xFFE8D9B8),
     error = Color(0xFF9A2B1A),
-    onError = Color(0xFFFFFFFF)
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFF7E1DC),
+    onErrorContainer = Color(0xFF9A2B1A)
 )
 
 internal val DarkColors = darkColorScheme(
@@ -65,5 +67,7 @@ internal val DarkColors = darkColorScheme(
     outline = Color(0xFF857559),
     outlineVariant = Color(0xFF3A3123),
     error = Color(0xFFFFB4A6),
-    onError = Color(0xFF1B1610)
+    onError = Color(0xFF1B1610),
+    errorContainer = Color(0xFF4A2A22),
+    onErrorContainer = Color(0xFFFFB4A6)
 )
