@@ -16,7 +16,7 @@ Najbliższe kroki:
 5. ✅ Szczegóły raportu z komentarzem (krok 4: 4a–4d); test powrotu z tła na iOS przeniesiony na koniec kroku 5
 6. ✅ Motyw stylu A (`1cf0319`); mockup ekranu startowego klienta zaakceptowany
 7. ✅ Widok klienta (krok 5): 5a imię trenera u klienta, 5b wspólna karta raportu, 5c ekran startowy klienta wg mockupu; nowy wygląd szczegółów raportu. Został test powrotu z tła na iOS (z kroku 4)
-8. ⏳ Krok 6: sortowanie listy klientów i znaczniki (FR-33)
+8. ⏳ Krok 6: lista klientów wg mockupu, z sortowaniem i znacznikami (FR-33)
 
 Zakres MVP ustalony 2026-10-11: klient i trener dodają raporty (tytuł, opis, zdjęcia, film), druga strona zostawia jeden komentarz. Bez kalendarza, powiadomień push i encji psa. Szczegóły: Faza 1 poniżej.
 
@@ -57,7 +57,7 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
   - ✅ 5b. Wspólna karta raportu i jej mapowanie w `ui/common` (`67d9733`)
   - ✅ 5c. Ekran startowy klienta (`21b2a73`): powitanie, psy i trener, raporty, pusty stan, „Nowy raport”; inicjały wylogowują po potwierdzeniu. Tekst nagłówka liczony w modelu stanu z `client` i `trainer`
   - ✅ Nowy wygląd szczegółów raportu (`3064e74`): `Scaffold`, usuwanie jako ikona w pasku, tytuł nad opisem, etykieta „KOMENTARZ: {imię}”, przerywany przycisk „Dodaj komentarz”, stopka z „Dodany / Edytowany przez” nad „Edytuj raport”; wylogowanie tylko na ekranach startowych
-- ⏳ Krok 6. Lista klientów: sortowanie wg ostatniego raportu i znaczniki „nowy raport” / „bez komentarza” (FR-33)
+- ⏳ Krok 6. Lista klientów: sortowanie wg ostatniego raportu i znaczniki „nowy raport” / „bez komentarza” (FR-33); od razu układ ekranu wg mockupu (decyzja 2026-10-25), żeby nie przerabiać go drugi raz
 - ⏳ Krok 7 (decyzja 2026-10-12: na koniec brancha). Stronicowanie listy raportów od nowa: pierwsza wersja (kursor po 20) usunięta przed commitem. Wymagania z review: (1) bezstratny timestamp, bo `TimestampValue` w milisekundach przycina mikrosekundy Firestore i kursor pomijałby raporty z tej samej milisekundy, a tie-breaker po ID nic by nie dawał; kursor ma przechowywać dokładne wartości; (2) kursor jako mapa pole → wartość zamiast listy sparowanej pozycyjnie z `orderBy`, walidowany w `CollectionQuery`; (3) tie-breaker po ID dokumentu jako ostatni klucz sortowania; (4) uwaga na kursor z szacowanego `createdAt` świeżo dodanego raportu (`ESTIMATE`)
 
 **Zdjęcia i film** (osobny branch po zmergowaniu raportów, najbardziej ryzykowna część: upload przez bridge na iOS)
@@ -70,7 +70,7 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 
 **UI**
 - ✅ Motyw stylu A (`1cf0319`, 2026-10-25): `HappyPiesTheme` z paletą jasną i ciemną wg ustawień systemu (NFR-19), Nunito, zaokrąglenia, ikony z `material-icons-extended` zamiast przycisków tekstowych; kontrast wg WCAG 2.1 AA (NFR-17), obramowania pól ciemniejsze niż na mockupach
-- ⏳ Układ ekranów wg mockupów (po merge raportów): nagłówki, karty z cieniem, logo bez zmian, w trybie ciemnym na jasnym panelu
+- ⏳ Układ ekranów wg mockupów (po merge raportów, przed zdjęciami i filmem): logowanie (logo bez zmian, w trybie ciemnym na jasnym panelu), szczegóły klienta, formularz raportu; `Scaffold` i karty z cieniem na wszystkich ekranach. Już zrobione: start klienta, szczegóły raportu (krok 5), lista klientów (krok 6)
 
 **Na koniec MVP** (decyzja 2026-10-11; do tego czasu klient w demo zakładany ręcznie w konsoli Firebase)
 - ⏳ Zaproszenie klienta mailem: deep link → rejestracja (tylko po zaproszeniu), ważność 7 dni, ponowne wysłanie (FR-02, FR-25)
