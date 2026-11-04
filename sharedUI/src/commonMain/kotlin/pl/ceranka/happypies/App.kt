@@ -35,7 +35,6 @@ import pl.ceranka.happypies.screen.login.LoginScreen
 import pl.ceranka.happypies.screen.report_details.ReportDetailsScreen
 import pl.ceranka.happypies.screen.report_form.AddReportScreen
 import pl.ceranka.happypies.screen.report_form.EditReportScreen
-import pl.ceranka.happypies.ui.common.AuthenticatedScreen
 import pl.ceranka.happypies.ui.common.AccountUnavailableScreen
 import pl.ceranka.happypies.ui.common.toUserMessage
 import pl.ceranka.happypies.ui.theme.HappyPiesTheme
@@ -97,11 +96,10 @@ fun App() {
                             LoginScreen()
                         }
                         entry<Route.ClientList> {
-                            AuthenticatedScreen(onLogout = ::logout) {
-                                ClientListScreen(
-                                    onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) }
-                                )
-                            }
+                            ClientListScreen(
+                                onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) },
+                                onLogout = ::logout
+                            )
                         }
                         entry<Route.ClientDetail> { route ->
                             ClientDetailsScreen(

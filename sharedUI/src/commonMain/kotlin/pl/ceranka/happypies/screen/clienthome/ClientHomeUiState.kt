@@ -3,6 +3,7 @@ package pl.ceranka.happypies.screen.clienthome
 import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.data.trainer.Trainer
 import pl.ceranka.happypies.ui.common.ReportListItem
+import pl.ceranka.happypies.ui.common.initialsOf
 
 data class ClientHomeUiState(
     val client: Client? = null,
@@ -15,7 +16,7 @@ data class ClientHomeUiState(
     val reportCount: String get() = reports.size.toString()
 
     val greeting: String? get() = nameWords?.let { "Cześć, ${it.first()}" }
-    val initials: String? get() = nameWords?.take(2)?.joinToString("") { it.take(1).uppercase() }
+    val initials: String? get() = client?.name?.let(::initialsOf)
     val subtitle: String?
         get() {
             val client = client ?: return null
