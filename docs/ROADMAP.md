@@ -16,7 +16,8 @@ Najbliższe kroki:
 5. ✅ Szczegóły raportu z komentarzem (krok 4: 4a–4d); test powrotu z tła na iOS przeniesiony na koniec kroku 5
 6. ✅ Motyw stylu A (`1cf0319`); mockup ekranu startowego klienta zaakceptowany
 7. ✅ Widok klienta (krok 5): 5a imię trenera u klienta, 5b wspólna karta raportu, 5c ekran startowy klienta wg mockupu; nowy wygląd szczegółów raportu. Został test powrotu z tła na iOS (z kroku 4)
-8. ⏳ Krok 6: lista klientów wg mockupu, z sortowaniem i znacznikami (FR-33)
+8. ✅ Krok 6: lista klientów wg mockupu: nagłówek „Klienci”, karty z kolorowym awatarem i psami (bez sortowania i znaczników, FR-33 odłożone 2026-11-04). Test ręczny na Androidzie OK, iOS do sprawdzenia
+9. ⏳ Krok 7: stronicowanie listy raportów, potem merge `feature/reports`
 
 Zakres MVP ustalony 2026-10-11: klient i trener dodają raporty (tytuł, opis, zdjęcia, film), druga strona zostawia jeden komentarz. Bez kalendarza, powiadomień push i encji psa. Szczegóły: Faza 1 poniżej.
 
@@ -57,7 +58,7 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
   - ✅ 5b. Wspólna karta raportu i jej mapowanie w `ui/common` (`67d9733`)
   - ✅ 5c. Ekran startowy klienta (`21b2a73`): powitanie, psy i trener, raporty, pusty stan, „Nowy raport”; inicjały wylogowują po potwierdzeniu. Tekst nagłówka liczony w modelu stanu z `client` i `trainer`
   - ✅ Nowy wygląd szczegółów raportu (`3064e74`): `Scaffold`, usuwanie jako ikona w pasku, tytuł nad opisem, etykieta „KOMENTARZ: {imię}”, przerywany przycisk „Dodaj komentarz”, stopka z „Dodany / Edytowany przez” nad „Edytuj raport”; wylogowanie tylko na ekranach startowych
-- ⏳ Krok 6. Lista klientów: sortowanie wg ostatniego raportu i znaczniki „nowy raport” / „bez komentarza” (FR-33); od razu układ ekranu wg mockupu (decyzja 2026-10-25), żeby nie przerabiać go drugi raz
+- ✅ Krok 6. Lista klientów wg mockupu (2026-11-04): nagłówek „Klienci” z wylogowaniem po potwierdzeniu (zamiast `AuthenticatedScreen`), karty z awatarem z inicjałami (paleta `AvatarColors` w motywie, jasna i ciemna, kolor stały wg ID klienta) i psami pod imieniem; wspólne `initialsOf` w `ui/common`. Decyzja 2026-11-04: lista to po prostu lista klientów, bez daty ostatniego raportu, sortowania i znaczników; FR-33 do przemyślenia później (raporty nie mają `trainerId`, potrzebny pomysł na źródło danych: listener per klient, podsumowanie w `users/{clientId}` albo Cloud Function). Odpadły też wyszukiwarka, licznik i „Zaproś klienta” (zaproszenia na koniec MVP). Test ręczny na Androidzie OK, iOS do sprawdzenia
 - ⏳ Krok 7 (decyzja 2026-10-12: na koniec brancha). Stronicowanie listy raportów od nowa: pierwsza wersja (kursor po 20) usunięta przed commitem. Wymagania z review: (1) bezstratny timestamp, bo `TimestampValue` w milisekundach przycina mikrosekundy Firestore i kursor pomijałby raporty z tej samej milisekundy, a tie-breaker po ID nic by nie dawał; kursor ma przechowywać dokładne wartości; (2) kursor jako mapa pole → wartość zamiast listy sparowanej pozycyjnie z `orderBy`, walidowany w `CollectionQuery`; (3) tie-breaker po ID dokumentu jako ostatni klucz sortowania; (4) uwaga na kursor z szacowanego `createdAt` świeżo dodanego raportu (`ESTIMATE`)
 
 **Zdjęcia i film** (osobny branch po zmergowaniu raportów, najbardziej ryzykowna część: upload przez bridge na iOS)
@@ -70,7 +71,7 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 
 **UI**
 - ✅ Motyw stylu A (`1cf0319`, 2026-10-25): `HappyPiesTheme` z paletą jasną i ciemną wg ustawień systemu (NFR-19), Nunito, zaokrąglenia, ikony z `material-icons-extended` zamiast przycisków tekstowych; kontrast wg WCAG 2.1 AA (NFR-17), obramowania pól ciemniejsze niż na mockupach
-- ⏳ Układ ekranów wg mockupów (po merge raportów, przed zdjęciami i filmem): logowanie (logo bez zmian, w trybie ciemnym na jasnym panelu), szczegóły klienta, formularz raportu; `Scaffold` i karty z cieniem na wszystkich ekranach. Już zrobione: start klienta, szczegóły raportu (krok 5), lista klientów (krok 6)
+- ⏳ Układ ekranów wg mockupów (po merge raportów, przed zdjęciami i filmem): logowanie (logo bez zmian, w trybie ciemnym na jasnym panelu), szczegóły klienta, formularz raportu; `Scaffold` i karty z cieniem na wszystkich ekranach. Już zrobione: start klienta, szczegóły raportu (krok 5), lista klientów bez znaczników FR-33 (krok 6)
 
 **Na koniec MVP** (decyzja 2026-10-11; do tego czasu klient w demo zakładany ręcznie w konsoli Firebase)
 - ⏳ Zaproszenie klienta mailem: deep link → rejestracja (tylko po zaproszeniu), ważność 7 dni, ponowne wysłanie (FR-02, FR-25)
@@ -91,6 +92,7 @@ Do uzgodnienia z trenerem po MVP.
 - ⏳ Miniatury zdjęć i wideo (FR-17)
 - ⏳ Ekran „porządki” + kwartalne zbiorcze przypomnienie o starych filmach: usuń / zachowaj / nie przypominaj (FR-18–FR-20)
 - ⏳ Encja Pies (klient ma 1..n psów, raport wskazuje psa) (FR-27, FR-28)
+- ⏳ Lista klientów sortowana wg ostatniego raportu ze znacznikiem „Bez komentarza” (FR-33, odłożone 2026-11-04; „Nowy raport” odpada). Najpierw decyzja o źródle danych, bo raporty nie mają `trainerId`
 - ⏳ Wątek komentarzy zamiast jednego komentarza
 - ⏳ Zapisy offline (decyzja 2026-10-25): zapis nie czeka na serwer, formularz zamyka się po zapisie lokalnym; snackbar „Jesteś offline” na poziomie aplikacji (monitor łączności w moście: `ConnectivityManager` / `NWPathMonitor`); dialog, gdy zapis zostanie odrzucony po powrocie sieci (callback błędu zadania zapisu, tylko w tej samej sesji aplikacji); nowy raport z ID nadanym po stronie klienta (`document()` + `set()`), żeby ponowienie nie robiło duplikatów
 - ⏳ Dopracowanie UI/UX na obu platformach
@@ -154,3 +156,4 @@ Do uzgodnienia z trenerem po MVP.
 | 2026-10-25 | Krok 4d: edycja raportu (`34f6e2a`): osobne ekrany i ViewModele dodawania i edycji na wspólnej bazie formularza; `ErrorWithRetry` we wspólnym `ui/common`. Zasada: komponenty dostają tylko potrzebne dane, warianty jako osobne typy zamiast opcjonalnych parametrów |
 | 2026-10-25 | Krok 4 zamknięty (stany brzegowe: odczyt offline i obrót OK, zapisy offline przeniesione do Fazy 2). Mockup ekranu startowego klienta. Motyw stylu A (`1cf0319`): paleta, Nunito, ikony; NFR-17 (WCAG 2.1 AA) wiążące. Security Rules mają zabraniać zmiany `role` i `trainerId` |
 | 2026-10-25 | Krok 5: widok klienta (`4ced2df`, `67d9733`, `21b2a73`) i nowy wygląd szczegółów raportu (`3064e74`) wg mockupów; wylogowanie tylko na ekranach startowych. Ustalenie: tekst do wyświetlenia jako gettery w modelu stanu nad obiektami domenowymi, bez pośrednich klas |
+| 2026-11-04 | Krok 6: lista klientów wg mockupu z kolorowymi awatarami. Decyzja: bez daty ostatniego raportu, sortowania i znaczników; FR-33 odłożone do Fazy 2, znacznik „Nowy raport” odpada (zostaje tylko „Bez komentarza”). |
