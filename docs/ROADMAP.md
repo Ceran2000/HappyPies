@@ -94,6 +94,7 @@ Do uzgodnienia z trenerem po MVP.
 - ⏳ Wątek komentarzy zamiast jednego komentarza
 - ⏳ Zapisy offline (decyzja 2026-10-25): zapis nie czeka na serwer, formularz zamyka się po zapisie lokalnym; snackbar „Jesteś offline” na poziomie aplikacji (monitor łączności w moście: `ConnectivityManager` / `NWPathMonitor`); dialog, gdy zapis zostanie odrzucony po powrocie sieci (callback błędu zadania zapisu, tylko w tej samej sesji aplikacji); nowy raport z ID nadanym po stronie klienta (`document()` + `set()`), żeby ponowienie nie robiło duplikatów
 - ⏳ Dopracowanie UI/UX na obu platformach
+- 💤 Filmy instruktażowe trenera z ochroną przed pobraniem, nagrywaniem ekranu i dzieleniem konta, z App Check. Wymagania zgłoszone 2026-10-25, **niepotwierdzone**: analiza wariantów i kosztów w `docs/filmy-instruktazowe.md` (lokalnie), czeka na rozmowę z trenerem
 
 ## Faza 3 — dodatki (jeśli budżet pozwoli) ⏳
 
