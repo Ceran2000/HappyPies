@@ -1,11 +1,13 @@
 package pl.ceranka.happypies.fakes
 
+import androidx.paging.LoadState
+import androidx.paging.LoadStates
+import androidx.paging.PagingData
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onStart
 import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.auth.AuthStateListener
 import pl.ceranka.happypies.auth.AuthUser
@@ -107,18 +109,8 @@ class FakeTrainerRepository(var trainer: Trainer = annasTrainer) : TrainerReposi
 }
 
 class FakeReportRepository : ReportRepository {
-    // The live reports: a list, or the error that ends every collection until a new list is set.
-    private val liveReports = MutableStateFlow<Result<List<Report>>>(Result.success(emptyList()))
-
-    var reports: List<Report>
-        get() = liveReports.value.getOrThrow()
-        set(value) {
-            liveReports.value = Result.success(value)
-        }
-
-    fun failReports(error: Exception) {
-        liveReports.value = Result.failure(error)
-    }
+    /** The client's reports, all in one page. */
+    var reports: List<Report> = emptyList()
 
     // The live single report, like liveReports; null means it no longer exists.
     private val liveReport = MutableStateFlow<Result<Report?>>(Result.success(null))
@@ -132,10 +124,6 @@ class FakeReportRepository : ReportRepository {
     fun failReport(error: Exception) {
         liveReport.value = Result.failure(error)
     }
-
-    /** How many collections of observeReports / observeReport are running, i.e. open listeners. */
-    var activeListeners = 0
-        private set
 
     val deleted = mutableListOf<String>()
     var deleteError: Exception? = null
@@ -158,17 +146,19 @@ class FakeReportRepository : ReportRepository {
     /** When set, setComment and deleteComment wait for it, so a test can act while the write is in progress. */
     var commentGate: CompletableDeferred<Unit>? = null
 
-    override fun observeReports(clientId: String): Flow<List<Report>> = liveReports.map { it.getOrThrow() }.counted()
+    // Without load states asSnapshot never sees the load finish and waits forever.
+    override fun reports(clientId: String): Flow<PagingData<Report>> = flow {
+        val loaded = LoadState.NotLoading(endOfPaginationReached = true)
+        emit(PagingData.from(reports, sourceLoadStates = LoadStates(refresh = loaded, prepend = loaded, append = loaded)))
+    }
 
-    override fun observeReport(reportId: String): Flow<Report?> = liveReport.map { it.getOrThrow() }.counted()
+    override fun observeReport(reportId: String): Flow<Report?> = liveReport.map { it.getOrThrow() }
 
     override suspend fun deleteReport(reportId: String) {
         deleted += reportId
         deleteGate?.await()
         deleteError?.let { throw it }
     }
-
-    private fun <T> Flow<T>.counted() = onStart { activeListeners++ }.onCompletion { activeListeners-- }
 
     override suspend fun createReport(report: NewReport): String {
         created += report

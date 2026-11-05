@@ -17,16 +17,16 @@ import pl.ceranka.happypies.data.firestore.DocumentListener
 import pl.ceranka.happypies.data.firestore.DocumentResult
 import pl.ceranka.happypies.data.firestore.FirestoreGateway
 import pl.ceranka.happypies.data.firestore.FirestoreValue
-import pl.ceranka.happypies.data.firestore.QueryListener
+import pl.ceranka.happypies.data.firestore.PageResult
 import pl.ceranka.happypies.data.firestore.ReadResult
 import pl.ceranka.happypies.data.firestore.WriteResult
-import pl.ceranka.happypies.screen.client_details.ClientDetailsViewModel
-import pl.ceranka.happypies.screen.client_list.ClientListViewModel
-import pl.ceranka.happypies.screen.clienthome.ClientHomeViewModel
-import pl.ceranka.happypies.screen.login.LoginViewModel
-import pl.ceranka.happypies.screen.report_details.ReportDetailsViewModel
-import pl.ceranka.happypies.screen.report_form.AddReportViewModel
-import pl.ceranka.happypies.screen.report_form.EditReportViewModel
+import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
+import pl.ceranka.happypies.ui.screen.client_list.ClientListViewModel
+import pl.ceranka.happypies.ui.screen.client_home.ClientHomeViewModel
+import pl.ceranka.happypies.ui.screen.login.LoginViewModel
+import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsViewModel
+import pl.ceranka.happypies.ui.screen.report_form.AddReportViewModel
+import pl.ceranka.happypies.ui.screen.report_form.EditReportViewModel
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -101,5 +101,5 @@ private object FakeFirestoreGateway : FirestoreGateway {
     override suspend fun update(collection: String, id: String, fields: Map<String, FirestoreValue>) = WriteResult.Success(id)
     override suspend fun delete(collection: String, id: String) = WriteResult.Success(id)
     override fun addDocumentListener(collection: String, id: String, listener: DocumentListener) = ListenerHandle {}
-    override fun addQueryListener(query: CollectionQuery, listener: QueryListener) = ListenerHandle {}
+    override suspend fun queryPage(query: CollectionQuery) = PageResult.Success(emptyList(), null)
 }
