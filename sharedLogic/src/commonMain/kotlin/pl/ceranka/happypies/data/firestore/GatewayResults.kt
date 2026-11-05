@@ -12,6 +12,11 @@ internal fun ReadResult.documentsOrThrow(): List<FirestoreDocument> = when (this
     is ReadResult.Failure -> throw error
 }
 
+fun PageResult.pageOrThrow(): PageResult.Success = when (this) {
+    is PageResult.Success -> this
+    is PageResult.Failure -> throw error
+}
+
 internal fun WriteResult.documentIdOrThrow(): String = when (this) {
     is WriteResult.Success -> documentId
     is WriteResult.Failure -> throw error

@@ -1,13 +1,23 @@
 package pl.ceranka.happypies.data.firestore
 
 import pl.ceranka.happypies.core.ListenerHandle
+import pl.ceranka.happypies.data.DataException
 
 /** In-memory gateway: returns the configured results and records every call. */
 class FakeFirestoreGateway : FirestoreGateway {
 
     data class Write(val operation: String, val collection: String, val id: String?, val fields: Map<String, FirestoreValue>?)
 
+    /** A page read from [pageDocuments]: the index it starts at and how many documents it asks for. */
+    data class PageRequest(val from: Int, val limit: Int)
+
     var readResult: ReadResult = ReadResult.Success(emptyList())
+
+    /** What queryPage pages through; pageError makes it fail instead. */
+    var pageDocuments: List<FirestoreDocument> = emptyList()
+    var pageError: DataException? = null
+    val pageQueries = mutableListOf<CollectionQuery>()
+    val pageRequests = mutableListOf<PageRequest>()
     var writeResult: WriteResult? = null
 
     val gets = mutableListOf<Pair<String, String>>()
@@ -15,13 +25,9 @@ class FakeFirestoreGateway : FirestoreGateway {
     val writes = mutableListOf<Write>()
 
     val documentListeners = mutableListOf<DocumentListener>()
-    val queryListeners = mutableListOf<QueryListener>()
     val listenedDocuments = mutableListOf<Pair<String, String>>()
-    val listenedQueries = mutableListOf<CollectionQuery>()
 
     fun emitDocument(result: DocumentResult) = documentListeners.toList().forEach { it.onDocumentResult(result) }
-
-    fun emitQuery(result: ReadResult) = queryListeners.toList().forEach { it.onQueryResult(result) }
 
     fun returnDocuments(vararg documents: FirestoreDocument) {
         readResult = ReadResult.Success(documents.toList())
@@ -38,6 +44,22 @@ class FakeFirestoreGateway : FirestoreGateway {
     override suspend fun query(query: CollectionQuery): ReadResult {
         queries += query
         return readResult
+    }
+
+    override suspend fun queryPage(query: CollectionQuery): PageResult {
+        pageQueries += query
+        return page(from = 0, limit = query.limit!!)
+    }
+
+    private fun page(from: Int, limit: Int): PageResult {
+        pageRequests += PageRequest(from, limit)
+        pageError?.let { return PageResult.Failure(it) }
+        val documents = pageDocuments.drop(from).take(limit)
+        return PageResult.Success(documents, if (documents.isEmpty()) null else IndexCursor(from + documents.size))
+    }
+
+    private inner class IndexCursor(private val from: Int) : PageCursor {
+        override suspend fun nextPage(limit: Int): PageResult = page(from, limit)
     }
 
     override suspend fun add(collection: String, fields: Map<String, FirestoreValue>): WriteResult {
@@ -59,11 +81,5 @@ class FakeFirestoreGateway : FirestoreGateway {
         listenedDocuments += collection to id
         documentListeners += listener
         return ListenerHandle { documentListeners -= listener }
-    }
-
-    override fun addQueryListener(query: CollectionQuery, listener: QueryListener): ListenerHandle {
-        listenedQueries += query
-        queryListeners += listener
-        return ListenerHandle { queryListeners -= listener }
     }
 }

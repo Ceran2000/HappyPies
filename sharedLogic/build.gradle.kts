@@ -36,6 +36,7 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kermit)
+            api(libs.androidx.paging.common)
         }
         androidMain.dependencies {
             // put your Android-specific dependencies here
@@ -43,6 +44,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.androidx.paging.testing)
         }
     }
 }

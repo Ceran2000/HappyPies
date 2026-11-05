@@ -1,13 +1,14 @@
 package pl.ceranka.happypies.data.report
 
+import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.user.UserRole
 
 interface ReportRepository {
 
-    /** The client's reports, newest first, updated live. Ends with a [DataException] on a read error. */
-    fun observeReports(clientId: String): Flow<List<Report>>
+    /** The client's reports, newest first, in pages; reloaded after every write through this repository. */
+    fun reports(clientId: String): Flow<PagingData<Report>>
 
     /** The report, updated live; `null` once it no longer exists. Ends with a [DataException] on a read error. */
     fun observeReport(reportId: String): Flow<Report?>

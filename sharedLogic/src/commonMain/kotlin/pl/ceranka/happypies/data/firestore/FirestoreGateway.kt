@@ -41,6 +41,16 @@ sealed class ReadResult {
     data class Failure(val error: DataException) : ReadResult()
 }
 
+interface PageCursor {
+    @Throws(Exception::class)
+    suspend fun nextPage(limit: Int): PageResult
+}
+
+sealed class PageResult {
+    data class Success(val documents: List<FirestoreDocument>, val next: PageCursor?) : PageResult()
+    data class Failure(val error: DataException) : PageResult()
+}
+
 sealed class WriteResult {
     data class Success(val documentId: String) : WriteResult()
     data class Failure(val error: DataException) : WriteResult()
@@ -67,6 +77,9 @@ interface FirestoreGateway {
     suspend fun query(query: CollectionQuery): ReadResult
 
     @Throws(Exception::class)
+    suspend fun queryPage(query: CollectionQuery): PageResult
+
+    @Throws(Exception::class)
     suspend fun add(collection: String, fields: Map<String, FirestoreValue>): WriteResult
 
     @Throws(Exception::class)
@@ -76,16 +89,10 @@ interface FirestoreGateway {
     suspend fun delete(collection: String, id: String): WriteResult
 
     fun addDocumentListener(collection: String, id: String, listener: DocumentListener): ListenerHandle
-
-    fun addQueryListener(query: CollectionQuery, listener: QueryListener): ListenerHandle
 }
 
 fun interface DocumentListener {
     fun onDocumentResult(result: DocumentResult)
-}
-
-fun interface QueryListener {
-    fun onQueryResult(result: ReadResult)
 }
 
 fun FirestoreGateway.documentFlow(collection: String, id: String): Flow<FirestoreDocument?> =
@@ -94,18 +101,6 @@ fun FirestoreGateway.documentFlow(collection: String, id: String): Flow<Firestor
             when (result) {
                 is DocumentResult.Success -> trySend(result.document)
                 is DocumentResult.Failure -> close(result.error)
-            }
-        }
-        awaitClose { handle.remove() }
-    }
-        .conflate()
-
-fun FirestoreGateway.queryFlow(query: CollectionQuery): Flow<List<FirestoreDocument>> =
-    callbackFlow {
-        val handle = addQueryListener(query) { result ->
-            when (result) {
-                is ReadResult.Success -> trySend(result.documents)
-                is ReadResult.Failure -> close(result.error)
             }
         }
         awaitClose { handle.remove() }

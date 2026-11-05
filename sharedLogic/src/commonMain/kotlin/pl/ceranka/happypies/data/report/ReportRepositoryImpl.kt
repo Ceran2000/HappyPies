@@ -1,8 +1,16 @@
 package pl.ceranka.happypies.data.report
 
+import androidx.paging.InvalidatingPagingSourceFactory
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import pl.ceranka.happypies.data.firestore.CollectionQuery
+import kotlinx.coroutines.flow.onEach
 import pl.ceranka.happypies.data.firestore.DocumentReader
 import pl.ceranka.happypies.data.firestore.FirestoreDocument
 import pl.ceranka.happypies.data.firestore.FirestoreGateway
@@ -11,25 +19,24 @@ import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
 import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.OrderBy
 import pl.ceranka.happypies.data.firestore.documentFlow
 import pl.ceranka.happypies.data.firestore.documentIdOrThrow
 import pl.ceranka.happypies.data.firestore.documentOrThrow
-import pl.ceranka.happypies.data.firestore.queryFlow
 import pl.ceranka.happypies.data.firestore.toFirestoreValue
 import pl.ceranka.happypies.data.user.UserRole
 
 private typealias Fields = ReportFirestoreFields
 
+private val pagingConfig = PagingConfig(pageSize = 10, initialLoadSize = 20, enablePlaceholders = false)
+
 class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportRepository {
 
-    override fun observeReports(clientId: String): Flow<List<Report>> {
-        val query = CollectionQuery(
-            collection = Fields.COLLECTION,
-            whereEqualTo = mapOf(Fields.CLIENT_ID to StringValue(clientId)),
-            orderBy = listOf(OrderBy(Fields.CREATED_AT, descending = true)),
-        )
-        return gateway.queryFlow(query).map { documents -> documents.map { it.toReport() } }
+    private val reportsChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+    override fun reports(clientId: String): Flow<PagingData<Report>> = channelFlow {
+        val sources = InvalidatingPagingSourceFactory { ReportPagingSource(gateway, clientId) }
+        reportsChanged.onEach { sources.invalidate() }.launchIn(this)
+        Pager(pagingConfig) { sources() }.flow.collect { send(it) }
     }
 
     override fun observeReport(reportId: String): Flow<Report?> =
@@ -39,8 +46,11 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
         return gateway.getDocument(Fields.COLLECTION, reportId).documentOrThrow { "Report $reportId does not exist" }.toReport()
     }
 
-    override suspend fun createReport(report: NewReport): String =
-        gateway.add(Fields.COLLECTION, report.toFields()).documentIdOrThrow()
+    override suspend fun createReport(report: NewReport): String {
+        val id = gateway.add(Fields.COLLECTION, report.toFields()).documentIdOrThrow()
+        reportsChanged.tryEmit(Unit)
+        return id
+    }
 
     override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) {
         val fields = mapOf(
@@ -50,6 +60,7 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
             Fields.UPDATED_AT to ServerTimestamp,
         )
         gateway.update(Fields.COLLECTION, reportId, fields).documentIdOrThrow()
+        reportsChanged.tryEmit(Unit)
     }
 
     override suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole) {
@@ -62,14 +73,17 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
             )
         )
         gateway.update(Fields.COLLECTION, reportId, mapOf(Fields.COMMENT to comment)).documentIdOrThrow()
+        reportsChanged.tryEmit(Unit)
     }
 
     override suspend fun deleteComment(reportId: String) {
         gateway.update(Fields.COLLECTION, reportId, mapOf(Fields.COMMENT to FirestoreValue.Delete)).documentIdOrThrow()
+        reportsChanged.tryEmit(Unit)
     }
 
     override suspend fun deleteReport(reportId: String) {
         gateway.delete(Fields.COLLECTION, reportId).documentIdOrThrow()
+        reportsChanged.tryEmit(Unit)
     }
 }
 

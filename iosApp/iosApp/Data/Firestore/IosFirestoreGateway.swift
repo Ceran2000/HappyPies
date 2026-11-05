@@ -27,6 +27,13 @@ final class IosFirestoreGateway: FirestoreGateway {
         }
     }
 
+    func queryPage(query: CollectionQuery) async throws -> PageResult {
+        try await page {
+            guard query.limit != nil else { throw GatewayQueryError.missingLimit }
+            return try platformQuery(query)
+        }
+    }
+
     func add(collection: String, fields: [String: FirestoreValue]) async throws -> WriteResult {
         do {
             let reference = try await firestore.collection(collection).addDocument(data: try toPlatform(fields))
@@ -65,24 +72,6 @@ final class IosFirestoreGateway: FirestoreGateway {
         return FirestoreListenerHandle(registration: registration)
     }
 
-    func addQueryListener(query: CollectionQuery, listener: QueryListener) -> ListenerHandle {
-        let request: Query
-        do {
-            request = try platformQuery(query)
-        } catch {
-            listener.onQueryResult(result: ReadResult.Failure(error: classify(error)))
-            return FirestoreListenerHandle(registration: nil)
-        }
-        let registration = request.addSnapshotListener { snapshot, error in
-            if let error {
-                listener.onQueryResult(result: ReadResult.Failure(error: classify(error)))
-            } else if let snapshot {
-                listener.onQueryResult(result: ReadResult.Success(documents: snapshot.documents.map(toFirestoreDocument)))
-            }
-        }
-        return FirestoreListenerHandle(registration: registration)
-    }
-
     private func platformQuery(_ query: CollectionQuery) throws -> Query {
         var request: Query = firestore.collection(query.collection)
         for (field, value) in query.whereEqualTo {
@@ -95,6 +84,24 @@ final class IosFirestoreGateway: FirestoreGateway {
             request = request.limit(to: limit.intValue)
         }
         return request
+    }
+}
+
+private final class IosPageCursor: PageCursor {
+
+    private let query: Query
+    private let last: DocumentSnapshot
+
+    init(query: Query, last: DocumentSnapshot) {
+        self.query = query
+        self.last = last
+    }
+
+    func nextPage(limit: Int32) async throws -> PageResult {
+        try await page {
+            guard !last.metadata.hasPendingWrites else { throw GatewayQueryError.pendingCursor }
+            return query.start(afterDocument: last).limit(to: Int(limit))
+        }
     }
 }
 
@@ -128,6 +135,17 @@ private func classify(_ error: Error) -> DataException {
     case .permissionDenied, .unauthenticated: return DataException.PermissionDenied(message: message)
     case .unavailable, .deadlineExceeded: return DataException.Unavailable(message: message)
     default: return DataException.Unknown(message: message)
+    }
+}
+
+private func page(_ buildRequest: () throws -> Query) async throws -> PageResult {
+    do {
+        let request = try buildRequest()
+        let snapshot = try await request.getDocuments()
+        let cursor = snapshot.documents.last.map { IosPageCursor(query: request, last: $0) }
+        return PageResult.Success(documents: snapshot.documents.map(toFirestoreDocument), next: cursor)
+    } catch {
+        return PageResult.Failure(error: try dataException(from: error))
     }
 }
 
@@ -191,6 +209,18 @@ enum GatewayConversionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedValue(let value): return "Cannot write unsupported Firestore value \(value)"
+        }
+    }
+}
+
+enum GatewayQueryError: LocalizedError {
+    case missingLimit
+    case pendingCursor
+
+    var errorDescription: String? {
+        switch self {
+        case .missingLimit: return "A page query needs a limit"
+        case .pendingCursor: return "Cannot load the next page after a document with pending writes"
         }
     }
 }

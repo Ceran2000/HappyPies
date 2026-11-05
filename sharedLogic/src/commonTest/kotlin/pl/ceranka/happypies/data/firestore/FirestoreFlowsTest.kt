@@ -31,27 +31,17 @@ class FirestoreFlowsTest {
     }
 
     @Test
-    fun queryFlowEmitsTheDocuments() = runTest {
-        val seen = mutableListOf<List<FirestoreDocument>>()
-        gateway.queryFlow(CollectionQuery("reports")).onEach { seen += it }.launchIn(backgroundScope + UnconfinedTestDispatcher(testScheduler))
-
-        gateway.emitQuery(ReadResult.Success(listOf(document)))
-
-        assertEquals(listOf(listOf(document)), seen)
-    }
-
-    @Test
     fun failureEndsTheFlowWithTheErrorAndRemovesTheListener() = runTest {
         val collected = async(UnconfinedTestDispatcher(testScheduler)) {
-            runCatching { gateway.queryFlow(CollectionQuery("reports")).collect {} }
+            runCatching { gateway.documentFlow("reports", "abc").collect {} }
         }
 
-        gateway.emitQuery(ReadResult.Failure(DataException.Unavailable("offline")))
+        gateway.emitDocument(DocumentResult.Failure(DataException.Unavailable("offline")))
 
         val error = collected.await().exceptionOrNull()
         assertIs<DataException.Unavailable>(error)
         assertEquals("offline", error.message)
-        assertTrue(gateway.queryListeners.isEmpty())
+        assertTrue(gateway.documentListeners.isEmpty())
     }
 
     @Test

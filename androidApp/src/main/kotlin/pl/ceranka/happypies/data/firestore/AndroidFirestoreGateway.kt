@@ -36,6 +36,11 @@ class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : Firest
         ReadResult.Success(query.toPlatformQuery().get().await().documents.map { it.toFirestoreDocument() })
     }
 
+    override suspend fun queryPage(query: CollectionQuery): PageResult = page {
+        require(query.limit != null) { "A page query needs a limit" }
+        query.toPlatformQuery()
+    }
+
     override suspend fun add(collection: String, fields: Map<String, FirestoreValue>): WriteResult = write {
         firestore.collection(collection).add(fields.toPlatform()).await().id
     }
@@ -61,17 +66,6 @@ class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : Firest
         return ListenerHandle { registration.remove() }
     }
 
-    override fun addQueryListener(query: CollectionQuery, listener: QueryListener): ListenerHandle {
-        val registration = query.toPlatformQuery().addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                listener.onQueryResult(ReadResult.Failure(error.toDataException()))
-            } else if (snapshot != null) {
-                listener.onQueryResult(ReadResult.Success(snapshot.documents.map { it.toFirestoreDocument() }))
-            }
-        }
-        return ListenerHandle { registration.remove() }
-    }
-
     private fun CollectionQuery.toPlatformQuery(): Query {
         var request: Query = firestore.collection(collection)
         whereEqualTo.forEach { (field, value) -> request = request.whereEqualTo(field, value.toPlatform()) }
@@ -81,6 +75,12 @@ class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : Firest
         }
         limit?.let { request = request.limit(it.toLong()) }
         return request
+    }
+}
+
+private class AndroidPageCursor(private val query: Query, private val last: DocumentSnapshot) : PageCursor {
+    override suspend fun nextPage(limit: Int): PageResult = page {
+        query.startAfter(last).limit(limit.toLong())
     }
 }
 
@@ -95,6 +95,14 @@ private inline fun <T> catching(failure: (DataException) -> T, block: () -> T): 
     } catch (e: Exception) {
         failure(e.toDataException())
     }
+
+private suspend fun page(buildRequest: () -> Query): PageResult = catching({ PageResult.Failure(it) }) {
+    val request = buildRequest()
+    val snapshots = request.get().await().documents
+    val data = snapshots.map { it.toFirestoreDocument() }
+    val cursor = snapshots.lastOrNull()?.let { AndroidPageCursor(request, it) }
+    PageResult.Success(data, cursor)
+}
 
 private fun Exception.toDataException(): DataException {
     val message = message ?: this::class.java.simpleName

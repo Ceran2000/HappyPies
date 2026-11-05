@@ -1,5 +1,9 @@
 package pl.ceranka.happypies.data.report
 
+import androidx.paging.PagingConfig
+import androidx.paging.PagingSource
+import androidx.paging.testing.TestPager
+import androidx.paging.testing.asSnapshot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -13,6 +17,7 @@ import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.firestore.CollectionQuery
 import pl.ceranka.happypies.data.firestore.DocumentResult
 import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway
+import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway.PageRequest
 import pl.ceranka.happypies.data.firestore.FirestoreDocument
 import pl.ceranka.happypies.data.firestore.FirestoreValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
@@ -24,7 +29,7 @@ import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
 import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
 import pl.ceranka.happypies.data.firestore.FirestoreValue.TimestampValue
 import pl.ceranka.happypies.data.firestore.OrderBy
-import pl.ceranka.happypies.data.firestore.ReadResult
+import pl.ceranka.happypies.data.firestore.PageCursor
 import pl.ceranka.happypies.data.firestore.WriteResult
 import pl.ceranka.happypies.data.user.UserRole
 import kotlin.test.Test
@@ -104,28 +109,77 @@ class ReportRepositoryImplTest {
         )
     }
 
-    @Test
-    fun queriesTheClientsReportsNewestFirst() = runTest {
-        collect(repository.observeReports("client-1"))
+    private val firstPageQuery = CollectionQuery(
+        collection = "reports",
+        whereEqualTo = mapOf(ReportFirestoreFields.CLIENT_ID to StringValue("client-1")),
+        orderBy = listOf(OrderBy(ReportFirestoreFields.CREATED_AT, descending = true)),
+        limit = 20
+    )
 
-        assertEquals(
-            CollectionQuery(
-                collection = "reports",
-                whereEqualTo = mapOf(ReportFirestoreFields.CLIENT_ID to StringValue("client-1")),
-                orderBy = listOf(OrderBy(ReportFirestoreFields.CREATED_AT, descending = true)),
-            ),
-            gateway.listenedQueries.single(),
-        )
+    private fun reportDocuments(count: Int) = (1..count).map { reportDocument("r$it", createdAt = 100_000L - it) }
+
+    @Test
+    fun loadsTwentyReportsThenTenAfterTheLastOne() = runTest {
+        gateway.pageDocuments = reportDocuments(35)
+
+        val loaded = repository.reports("client-1").asSnapshot { appendScrollWhile { true } }
+
+        assertEquals((1..35).map { "r$it" }, loaded.map { it.id })
+        assertEquals(listOf(firstPageQuery), gateway.pageQueries)
+        assertEquals(listOf(PageRequest(0, 20), PageRequest(20, 10), PageRequest(30, 10)), gateway.pageRequests)
     }
 
     @Test
-    fun emitsTheReportsInTheQueryOrderOnEveryChange() = runTest {
-        val seen = collect(repository.observeReports("client-1"))
+    fun aFullLastPageEndsWithAnEmptyOne() = runTest {
+        gateway.pageDocuments = reportDocuments(30)
 
-        gateway.emitQuery(ReadResult.Success(listOf(reportDocument("r1", 1_000))))
-        gateway.emitQuery(ReadResult.Success(listOf(reportDocument("r2", 2_000), reportDocument("r1", 1_000))))
+        val loaded = repository.reports("client-1").asSnapshot { appendScrollWhile { true } }
 
-        assertEquals(listOf(listOf("r1"), listOf("r2", "r1")), seen.map { reports -> reports.map { it.id } })
+        assertEquals(30, loaded.size)
+        assertEquals(listOf(PageRequest(0, 20), PageRequest(20, 10), PageRequest(30, 10)), gateway.pageRequests)
+    }
+
+    @Test
+    fun readFailureIsALoadError() = runTest {
+        gateway.pageError = DataException.PermissionDenied("denied")
+        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1"))
+
+        val result = assertIs<PagingSource.LoadResult.Error<PageCursor, Report>>(pager.refresh())
+
+        assertIs<DataException.PermissionDenied>(result.throwable)
+    }
+
+    @Test
+    fun malformedReportIsALoadError() = runTest {
+        gateway.pageDocuments = listOf(FirestoreDocument("r1", validFields - ReportFirestoreFields.TITLE))
+        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1"))
+
+        val result = assertIs<PagingSource.LoadResult.Error<PageCursor, Report>>(pager.refresh())
+
+        assertIs<DataException.MalformedData>(result.throwable)
+    }
+
+    @Test
+    fun everyWriteReloadsTheReports() = runTest {
+        val generations = collect(repository.reports("client-1"))
+
+        repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER))
+        repository.updateReport("r1", "Nowy tytuł", null, "trainer-1")
+        repository.setComment("r1", "Super", "client-1", UserRole.CLIENT)
+        repository.deleteComment("r1")
+        repository.deleteReport("r1")
+
+        assertEquals(6, generations.size)
+    }
+
+    @Test
+    fun failedWriteDoesNotReload() = runTest {
+        val generations = collect(repository.reports("client-1"))
+        gateway.writeResult = WriteResult.Failure(DataException.Unavailable("offline"))
+
+        assertFailsWith<DataException.Unavailable> { repository.deleteReport("r1") }
+
+        assertEquals(1, generations.size)
     }
 
     @Test
@@ -207,15 +261,6 @@ class ReportRepositoryImplTest {
     @Test
     fun missingReportIsNotFound() = runTest {
         assertFailsWith<DataException.NotFound> { repository.getReport("r1") }
-    }
-
-    @Test
-    fun readFailureEndsTheReportsFlow() = runTest {
-        val collected = async(UnconfinedTestDispatcher(testScheduler)) { runCatching { repository.observeReports("client-1").collect {} } }
-
-        gateway.emitQuery(ReadResult.Failure(DataException.PermissionDenied("denied")))
-
-        assertIs<DataException.PermissionDenied>(collected.await().exceptionOrNull())
     }
 
     @Test
