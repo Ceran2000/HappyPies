@@ -4,22 +4,47 @@ import SharedUI
 final class AuthManagerImpl: AuthManager {
 
     private let auth: Auth
-    private let sessionStore: AuthSessionStore
 
-    init(auth: Auth, sessionStore: AuthSessionStore) {
+    init(auth: Auth) {
         self.auth = auth
-        self.sessionStore = sessionStore
     }
 
-    func signIn(email: String, password: String) async throws -> AppUser {
-        let result = try await auth.signIn(withEmail: email, password: password)
-        let user = AppUser(uid: result.user.uid, email: result.user.email)
-        sessionStore.onSignedIn(user: user)
-        return user
+    var authUser: AuthUser? {
+        auth.currentUser.flatMap(toAuthUser)
+    }
+
+    func signIn(email: String, password: String) async throws {
+        _ = try await auth.signIn(withEmail: email, password: password)
     }
 
     func signOut() async throws {
         try auth.signOut()
-        sessionStore.onSignedOut()
     }
+
+    func addAuthStateListener(listener: AuthStateListener) -> ListenerHandle {
+        let handle = auth.addStateDidChangeListener { _, _ in
+            listener.onAuthStateChanged()
+        }
+        return AuthListenerHandle(auth: auth, handle: handle)
+    }
+}
+
+private final class AuthListenerHandle: ListenerHandle {
+
+    private let auth: Auth
+    private let handle: AuthStateDidChangeListenerHandle
+
+    init(auth: Auth, handle: AuthStateDidChangeListenerHandle) {
+        self.auth = auth
+        self.handle = handle
+    }
+
+    func remove() {
+        auth.removeStateDidChangeListener(handle)
+    }
+}
+
+private func toAuthUser(_ user: User) -> AuthUser? {
+    guard let email = user.email else { return nil }
+    return AuthUser(uid: user.uid, email: email)
 }

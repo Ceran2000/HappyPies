@@ -8,16 +8,25 @@ import kotlinx.coroutines.test.setMain
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
-import pl.ceranka.happypies.auth.AppUser
 import pl.ceranka.happypies.auth.AuthManager
-import pl.ceranka.happypies.auth.AuthSessionStore
-import pl.ceranka.happypies.data.client.Client
-import pl.ceranka.happypies.data.client.ClientRepository
-import pl.ceranka.happypies.data.user.UserRepository
-import pl.ceranka.happypies.data.user.UserRole
-import pl.ceranka.happypies.screen.client_details.ClientDetailsViewModel
-import pl.ceranka.happypies.screen.client_list.ClientListViewModel
-import pl.ceranka.happypies.screen.login.LoginViewModel
+import pl.ceranka.happypies.auth.AuthStateListener
+import pl.ceranka.happypies.auth.AuthUser
+import pl.ceranka.happypies.core.ListenerHandle
+import pl.ceranka.happypies.data.firestore.CollectionQuery
+import pl.ceranka.happypies.data.firestore.DocumentListener
+import pl.ceranka.happypies.data.firestore.DocumentResult
+import pl.ceranka.happypies.data.firestore.FirestoreGateway
+import pl.ceranka.happypies.data.firestore.FirestoreValue
+import pl.ceranka.happypies.data.firestore.PageResult
+import pl.ceranka.happypies.data.firestore.ReadResult
+import pl.ceranka.happypies.data.firestore.WriteResult
+import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
+import pl.ceranka.happypies.ui.screen.client_list.ClientListViewModel
+import pl.ceranka.happypies.ui.screen.client_home.ClientHomeViewModel
+import pl.ceranka.happypies.ui.screen.login.LoginViewModel
+import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsViewModel
+import pl.ceranka.happypies.ui.screen.report_form.AddReportViewModel
+import pl.ceranka.happypies.ui.screen.report_form.EditReportViewModel
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -34,12 +43,10 @@ class ViewModelModuleTest {
 
     private val platformModule = module {
         single<AuthManager> { FakeAuthManager }
-        single<UserRepository> { FakeUserRepository }
-        single<ClientRepository> { FakeClientRepository }
-        single { AuthSessionStore() }
+        single<FirestoreGateway> { FakeFirestoreGateway }
     }
 
-    private val koin = koinApplication { modules(platformModule, viewModelModule) }.koin
+    private val koin = koinApplication { modules(platformModule, dataModule, viewModelModule) }.koin
 
     @Test
     fun resolvesLoginViewModel() {
@@ -55,18 +62,44 @@ class ViewModelModuleTest {
     fun resolvesClientDetailsViewModelWithClientId() {
         assertNotNull(koin.get<ClientDetailsViewModel> { parametersOf("client-1") })
     }
+
+    @Test
+    fun resolvesClientHomeViewModelWithClientId() {
+        assertNotNull(koin.get<ClientHomeViewModel> { parametersOf("client-1") })
+    }
+
+    @Test
+    fun resolvesReportDetailsViewModelWithClientAndReportId() {
+        assertNotNull(koin.get<ReportDetailsViewModel> { parametersOf("client-1", "r1") })
+    }
+
+    @Test
+    fun resolvesAddReportViewModelWithClientId() {
+        assertNotNull(koin.get<AddReportViewModel> { parametersOf("client-1") })
+    }
+
+    @Test
+    fun resolvesEditReportViewModelWithReportId() {
+        assertNotNull(koin.get<EditReportViewModel> { parametersOf("r1") })
+    }
 }
 
 private object FakeAuthManager : AuthManager {
-    override suspend fun signIn(email: String, password: String) = AppUser("uid", email)
+    override val authUser: AuthUser? = null
+    override suspend fun signIn(email: String, password: String) = Unit
     override suspend fun signOut() = Unit
+    override fun addAuthStateListener(listener: AuthStateListener): ListenerHandle {
+        listener.onAuthStateChanged()
+        return ListenerHandle {}
+    }
 }
 
-private object FakeUserRepository : UserRepository {
-    override suspend fun getRole(uid: String) = UserRole.TRAINER
-}
-
-private object FakeClientRepository : ClientRepository {
-    override suspend fun getClients(trainerId: String) = emptyList<Client>()
-    override suspend fun getClient(clientId: String) = Client(clientId, "Test", "test@example.com", emptyList())
+private object FakeFirestoreGateway : FirestoreGateway {
+    override suspend fun getDocument(collection: String, id: String) = DocumentResult.Success(null)
+    override suspend fun query(query: CollectionQuery) = ReadResult.Success(emptyList())
+    override suspend fun add(collection: String, fields: Map<String, FirestoreValue>) = WriteResult.Success("id")
+    override suspend fun update(collection: String, id: String, fields: Map<String, FirestoreValue>) = WriteResult.Success(id)
+    override suspend fun delete(collection: String, id: String) = WriteResult.Success(id)
+    override fun addDocumentListener(collection: String, id: String, listener: DocumentListener) = ListenerHandle {}
+    override suspend fun queryPage(query: CollectionQuery) = PageResult.Success(emptyList(), null, isFromCache = false)
 }

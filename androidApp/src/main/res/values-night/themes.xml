@@ -1,0 +1,5 @@
+<resources>
+    <style name="Theme.HappyPies" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#1B1610</item>
+    </style>
+</resources>
