@@ -73,12 +73,10 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
             )
         )
         gateway.update(Fields.COLLECTION, reportId, mapOf(Fields.COMMENT to comment)).documentIdOrThrow()
-        reportsChanged.tryEmit(Unit)
     }
 
     override suspend fun deleteComment(reportId: String) {
         gateway.update(Fields.COLLECTION, reportId, mapOf(Fields.COMMENT to FirestoreValue.Delete)).documentIdOrThrow()
-        reportsChanged.tryEmit(Unit)
     }
 
     override suspend fun deleteReport(reportId: String) {

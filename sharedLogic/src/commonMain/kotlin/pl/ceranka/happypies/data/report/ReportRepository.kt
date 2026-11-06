@@ -7,7 +7,7 @@ import pl.ceranka.happypies.data.user.UserRole
 
 interface ReportRepository {
 
-    /** The client's reports, newest first, in pages; reloaded after every write through this repository. */
+    /** The client's reports, newest first, in pages */
     fun reports(clientId: String): Flow<PagingData<Report>>
 
     /** The report, updated live; `null` once it no longer exists. Ends with a [DataException] on a read error. */

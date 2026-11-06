@@ -160,16 +160,24 @@ class ReportRepositoryImplTest {
     }
 
     @Test
-    fun everyWriteReloadsTheReports() = runTest {
+    fun reportWritesReloadTheReports() = runTest {
         val generations = collect(repository.reports("client-1"))
 
         repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER))
         repository.updateReport("r1", "Nowy tytuł", null, "trainer-1")
-        repository.setComment("r1", "Super", "client-1", UserRole.CLIENT)
-        repository.deleteComment("r1")
         repository.deleteReport("r1")
 
-        assertEquals(6, generations.size)
+        assertEquals(4, generations.size)
+    }
+
+    @Test
+    fun commentWritesDoNotReloadTheReports() = runTest {
+        val generations = collect(repository.reports("client-1"))
+
+        repository.setComment("r1", "Super", "client-1", UserRole.CLIENT)
+        repository.deleteComment("r1")
+
+        assertEquals(1, generations.size)
     }
 
     @Test
