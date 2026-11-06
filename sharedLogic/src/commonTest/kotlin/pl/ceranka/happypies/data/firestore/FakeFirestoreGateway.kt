@@ -16,6 +16,7 @@ class FakeFirestoreGateway : FirestoreGateway {
     /** What queryPage pages through; pageError makes it fail instead. */
     var pageDocuments: List<FirestoreDocument> = emptyList()
     var pageError: DataException? = null
+    var pageFromCache = false
     val pageQueries = mutableListOf<CollectionQuery>()
     val pageRequests = mutableListOf<PageRequest>()
     var writeResult: WriteResult? = null
@@ -55,7 +56,7 @@ class FakeFirestoreGateway : FirestoreGateway {
         pageRequests += PageRequest(from, limit)
         pageError?.let { return PageResult.Failure(it) }
         val documents = pageDocuments.drop(from).take(limit)
-        return PageResult.Success(documents, if (documents.isEmpty()) null else IndexCursor(from + documents.size))
+        return PageResult.Success(documents, if (documents.isEmpty()) null else IndexCursor(from + documents.size), pageFromCache)
     }
 
     private inner class IndexCursor(private val from: Int) : PageCursor {

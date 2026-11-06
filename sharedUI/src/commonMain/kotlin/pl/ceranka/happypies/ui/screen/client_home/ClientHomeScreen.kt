@@ -21,12 +21,15 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,11 +58,14 @@ fun ClientHomeScreen(
 ) {
     val viewModel = koinViewModel<ClientHomeViewModel> { parametersOf(clientId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val showOfflineMessage by viewModel.showOfflineMessage.collectAsStateWithLifecycle()
     val reports = viewModel.reports.collectAsLazyPagingItems()
 
     ClientHomeContent(
         uiState = uiState,
         reports = reports,
+        showOfflineMessage = showOfflineMessage,
+        onOfflineMessageShown = viewModel::onOfflineMessageShown,
         onAddReport = onAddReport,
         onReportClick = onReportClick,
         onLogout = onLogout,
@@ -71,6 +77,8 @@ fun ClientHomeScreen(
 private fun ClientHomeContent(
     uiState: ClientHomeUiState,
     reports: LazyPagingItems<ReportListItem>,
+    showOfflineMessage: Boolean,
+    onOfflineMessageShown: () -> Unit,
     onAddReport: () -> Unit,
     onReportClick: (reportId: String) -> Unit,
     onLogout: () -> Unit,
@@ -97,7 +105,10 @@ private fun ClientHomeContent(
         )
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddReport,
@@ -108,6 +119,9 @@ private fun ClientHomeContent(
     ) { padding ->
         PagingLazyColumn(
             items = reports,
+            snackbarHostState = snackbarHostState,
+            showOfflineMessage = showOfflineMessage,
+            onOfflineMessageShown = onOfflineMessageShown,
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)

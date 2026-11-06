@@ -33,7 +33,10 @@ fun <T : Any> LazyListScope.pagingItems(
 
     when (refresh) {
         is LoadState.Loading -> if (isEmpty) item(contentType = "progress") { PagingProgress() }
-        is LoadState.Error -> item(contentType = "error") { PagingError(refresh, items) }
+        is LoadState.Error -> {
+            item(contentType = "error") { PagingError(refresh, items) }
+            return
+        }
         is LoadState.NotLoading -> if (isEmpty) item(contentType = "empty") { emptyContent() }
     }
     items(

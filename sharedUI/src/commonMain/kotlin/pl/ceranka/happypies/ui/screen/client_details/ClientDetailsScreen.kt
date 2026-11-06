@@ -16,11 +16,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,11 +47,14 @@ fun ClientDetailsScreen(
 ) {
     val viewModel = koinViewModel<ClientDetailsViewModel> { parametersOf(clientId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val showOfflineMessage by viewModel.showOfflineMessage.collectAsStateWithLifecycle()
     val reports = viewModel.reports.collectAsLazyPagingItems()
 
     ClientDetailsContent(
         uiState = uiState,
         reports = reports,
+        showOfflineMessage = showOfflineMessage,
+        onOfflineMessageShown = viewModel::onOfflineMessageShown,
         onBack = onBack,
         onAddReport = onAddReport,
         onReportClick = onReportClick,
@@ -61,12 +67,17 @@ fun ClientDetailsScreen(
 private fun ClientDetailsContent(
     uiState: ClientDetailsUiState,
     reports: LazyPagingItems<ReportListItem>,
+    showOfflineMessage: Boolean,
+    onOfflineMessageShown: () -> Unit,
     onBack: () -> Unit,
     onAddReport: () -> Unit,
     onReportClick: (reportId: String) -> Unit,
     onRetry: () -> Unit
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {},
@@ -88,6 +99,9 @@ private fun ClientDetailsContent(
     ) { padding ->
         PagingLazyColumn(
             items = reports,
+            snackbarHostState = snackbarHostState,
+            showOfflineMessage = showOfflineMessage,
+            onOfflineMessageShown = onOfflineMessageShown,
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)

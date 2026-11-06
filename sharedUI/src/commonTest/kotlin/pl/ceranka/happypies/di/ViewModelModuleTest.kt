@@ -101,5 +101,5 @@ private object FakeFirestoreGateway : FirestoreGateway {
     override suspend fun update(collection: String, id: String, fields: Map<String, FirestoreValue>) = WriteResult.Success(id)
     override suspend fun delete(collection: String, id: String) = WriteResult.Success(id)
     override fun addDocumentListener(collection: String, id: String, listener: DocumentListener) = ListenerHandle {}
-    override suspend fun queryPage(query: CollectionQuery) = PageResult.Success(emptyList(), null)
+    override suspend fun queryPage(query: CollectionQuery) = PageResult.Success(emptyList(), null, isFromCache = false)
 }

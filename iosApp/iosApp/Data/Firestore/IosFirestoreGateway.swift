@@ -141,9 +141,11 @@ private func classify(_ error: Error) -> DataException {
 private func page(_ buildRequest: () throws -> Query) async throws -> PageResult {
     do {
         let request = try buildRequest()
-        let snapshot = try await request.getDocuments()
-        let cursor = snapshot.documents.last.map { IosPageCursor(query: request, last: $0) }
-        return PageResult.Success(documents: snapshot.documents.map(toFirestoreDocument), next: cursor)
+        let querySnapshot = try await request.getDocuments()
+        let snapshots = querySnapshot.documents
+        let data = snapshots.map(toFirestoreDocument)
+        let cursor = snapshots.last.map { IosPageCursor(query: request, last: $0) }
+        return PageResult.Success(documents: data, next: cursor, isFromCache: querySnapshot.metadata.isFromCache)
     } catch {
         return PageResult.Failure(error: try dataException(from: error))
     }

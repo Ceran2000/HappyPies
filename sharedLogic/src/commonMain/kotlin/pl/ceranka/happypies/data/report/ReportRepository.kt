@@ -10,6 +10,9 @@ interface ReportRepository {
     /** The client's reports, newest first, in pages */
     fun reports(clientId: String): Flow<PagingData<Report>>
 
+    /** Emits when [reports] reloaded from the device cache because the server was unreachable. */
+    val cachedReloads: Flow<Unit>
+
     /** The report, updated live; `null` once it no longer exists. Ends with a [DataException] on a read error. */
     fun observeReport(reportId: String): Flow<Report?>
 

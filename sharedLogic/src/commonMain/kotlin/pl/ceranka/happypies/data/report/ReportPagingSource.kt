@@ -13,7 +13,8 @@ import pl.ceranka.happypies.data.firestore.pageOrThrow
 
 class ReportPagingSource(
     private val gateway: FirestoreGateway,
-    private val clientId: String
+    private val clientId: String,
+    private val onCachedRefresh: () -> Unit
 ) : PagingSource<PageCursor, Report>() {
 
     private val log = Logger.withTag("ReportPagingSource")
@@ -22,6 +23,8 @@ class ReportPagingSource(
         try {
             val page = (params.key?.nextPage(params.loadSize)
                 ?: gateway.queryPage(query = firstPageQuery(params.loadSize))).pageOrThrow()
+
+            if (params is LoadParams.Refresh && page.isFromCache) onCachedRefresh()
 
             LoadResult.Page(
                 data = page.documents.map { it.toReport() },

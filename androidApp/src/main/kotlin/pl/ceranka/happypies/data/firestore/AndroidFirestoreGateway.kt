@@ -98,10 +98,11 @@ private inline fun <T> catching(failure: (DataException) -> T, block: () -> T): 
 
 private suspend fun page(buildRequest: () -> Query): PageResult = catching({ PageResult.Failure(it) }) {
     val request = buildRequest()
-    val snapshots = request.get().await().documents
+    val querySnapshot = request.get().await()
+    val snapshots = querySnapshot.documents
     val data = snapshots.map { it.toFirestoreDocument() }
     val cursor = snapshots.lastOrNull()?.let { AndroidPageCursor(request, it) }
-    PageResult.Success(data, cursor)
+    PageResult.Success(data, cursor, isFromCache = querySnapshot.metadata.isFromCache)
 }
 
 private fun Exception.toDataException(): DataException {

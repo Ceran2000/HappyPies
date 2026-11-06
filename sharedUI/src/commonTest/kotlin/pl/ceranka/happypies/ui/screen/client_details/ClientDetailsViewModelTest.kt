@@ -40,7 +40,6 @@ class ClientDetailsViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    // The state is shared WhileSubscribed, so a test collects it like the screen does.
     private fun TestScope.createViewModel() = ClientDetailsViewModel(clients, FakeTrainerRepository(), reports, anna.id, TimeZone.UTC).also { viewModel ->
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
     }
@@ -68,6 +67,18 @@ class ClientDetailsViewModelTest {
             ),
             viewModel.reports.asSnapshot()
         )
+    }
+
+    @Test
+    fun cachedReloadShowsTheOfflineMessageUntilItIsShown() = runTest {
+        val viewModel = createViewModel()
+        assertEquals(false, viewModel.showOfflineMessage.value)
+
+        reports.cachedReloads.emit(Unit)
+        assertEquals(true, viewModel.showOfflineMessage.value)
+
+        viewModel.onOfflineMessageShown()
+        assertEquals(false, viewModel.showOfflineMessage.value)
     }
 
     @Test

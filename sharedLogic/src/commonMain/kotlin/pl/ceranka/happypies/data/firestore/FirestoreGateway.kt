@@ -47,7 +47,7 @@ interface PageCursor {
 }
 
 sealed class PageResult {
-    data class Success(val documents: List<FirestoreDocument>, val next: PageCursor?) : PageResult()
+    data class Success(val documents: List<FirestoreDocument>, val next: PageCursor?, val isFromCache: Boolean) : PageResult()
     data class Failure(val error: DataException) : PageResult()
 }
 

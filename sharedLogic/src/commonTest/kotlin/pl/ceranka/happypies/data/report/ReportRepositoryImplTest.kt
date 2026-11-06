@@ -142,7 +142,7 @@ class ReportRepositoryImplTest {
     @Test
     fun readFailureIsALoadError() = runTest {
         gateway.pageError = DataException.PermissionDenied("denied")
-        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1"))
+        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1", onCachedRefresh = {}))
 
         val result = assertIs<PagingSource.LoadResult.Error<PageCursor, Report>>(pager.refresh())
 
@@ -150,9 +150,33 @@ class ReportRepositoryImplTest {
     }
 
     @Test
+    fun refreshFromCacheIsReported() = runTest {
+        gateway.pageDocuments = reportDocuments(30)
+        gateway.pageFromCache = true
+        var cachedRefreshes = 0
+        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1", onCachedRefresh = { cachedRefreshes++ }))
+
+        pager.refresh()
+        pager.append()
+
+        assertEquals(1, cachedRefreshes)
+    }
+
+    @Test
+    fun refreshFromServerIsNotReported() = runTest {
+        gateway.pageDocuments = reportDocuments(30)
+        var cachedRefreshes = 0
+        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1", onCachedRefresh = { cachedRefreshes++ }))
+
+        pager.refresh()
+
+        assertEquals(0, cachedRefreshes)
+    }
+
+    @Test
     fun malformedReportIsALoadError() = runTest {
         gateway.pageDocuments = listOf(FirestoreDocument("r1", validFields - ReportFirestoreFields.TITLE))
-        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1"))
+        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1", onCachedRefresh = {}))
 
         val result = assertIs<PagingSource.LoadResult.Error<PageCursor, Report>>(pager.refresh())
 

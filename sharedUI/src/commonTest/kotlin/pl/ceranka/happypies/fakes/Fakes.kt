@@ -5,6 +5,7 @@ import androidx.paging.LoadStates
 import androidx.paging.PagingData
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -109,6 +110,8 @@ class FakeTrainerRepository(var trainer: Trainer = annasTrainer) : TrainerReposi
 }
 
 class FakeReportRepository : ReportRepository {
+    override val cachedReloads = MutableSharedFlow<Unit>()
+
     /** The client's reports, all in one page. */
     var reports: List<Report> = emptyList()
 
