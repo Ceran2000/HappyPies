@@ -6,7 +6,7 @@
 
 ## 📍 Teraz
 
-**Faza 1 — MVP** · branch: `main` (raporty zmergowane)
+**Faza 1 — MVP** · branch: `feature/screen-layouts` (układ ekranów wg mockupów)
 
 Najbliższe kroki:
 1. ✅ Koin multiplatform wdrożony, przetestowany i zmergowany do `main`
@@ -19,7 +19,7 @@ Najbliższe kroki:
 8. ✅ Krok 6: lista klientów wg mockupu: nagłówek „Klienci”, karty z kolorowym awatarem i psami (bez sortowania i znaczników, FR-33 odłożone 2026-11-04). Test ręczny na Androidzie OK, iOS do sprawdzenia
 9. ✅ Krok 7: stronicowanie listy raportów (Paging 3), test ręczny 2026-11-06 OK (Android pełny, iOS offline); Snackbar offline (`97b3089`), bez przeładowania po komentarzu (`895c7f5`)
 10. ✅ `feature/reports` zmergowane do `main` 2026-11-06 (PR #1, `422d6f9`); zaległe testy iOS przeniesione do „Na koniec MVP”, uwagi z review do „Obsługa błędów”
-11. ⏳ Następne wg kolejności: układ ekranów wg mockupów (logowanie, szczegóły klienta, formularz raportu), potem zdjęcia i film na osobnym branchu
+11. 🔄 Układ ekranów wg mockupów na `feature/screen-layouts`: logowanie scommitowane (2026-11-07, test ręczny do zrobienia); dalej szczegóły klienta i formularz raportu, potem zdjęcia i film na osobnym branchu
 
 Zakres MVP ustalony 2026-10-11: klient i trener dodają raporty (tytuł, opis, zdjęcia, film), druga strona zostawia jeden komentarz. Bez kalendarza, powiadomień push i encji psa. Szczegóły: Faza 1 poniżej.
 
@@ -73,7 +73,8 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 
 **UI**
 - ✅ Motyw stylu A (`1cf0319`, 2026-10-25): `HappyPiesTheme` z paletą jasną i ciemną wg ustawień systemu (NFR-19), Nunito, zaokrąglenia, ikony z `material-icons-extended` zamiast przycisków tekstowych; kontrast wg WCAG 2.1 AA (NFR-17), obramowania pól ciemniejsze niż na mockupach
-- ⏳ Układ ekranów wg mockupów (po merge raportów, przed zdjęciami i filmem): logowanie (logo bez zmian, w trybie ciemnym na jasnym panelu), szczegóły klienta, formularz raportu; `Scaffold` i karty z cieniem na wszystkich ekranach. Już zrobione: start klienta, szczegóły raportu (krok 5), lista klientów bez znaczników FR-33 (krok 6)
+- 🔄 Układ ekranów wg mockupów (branch `feature/screen-layouts`, przed zdjęciami i filmem): szczegóły klienta, formularz raportu; `Scaffold` i karty z cieniem na ekranach z paskiem. Już zrobione: start klienta, szczegóły raportu (krok 5), lista klientów bez znaczników FR-33 (krok 6)
+  - ✅ Logowanie (2026-11-07, po review scommitowane, test ręczny do zrobienia): bez paska; tymczasowe własne logo `AppLogo` (łapa + „HappyPies”, rysowane w kodzie), bo na logo HappyPies nie ma jeszcze zgody właściciela; etykiety nad polami (`TextFieldLabelPosition.Above`), białe pola (`filledFieldColors` w `ui/common`); pola jednoliniowe (naprawiony Enter w e-mailu), „Dalej” / „Gotowe” na klawiaturze, przewijanie z klawiaturą; przycisk z `derivedStateOf` (`fieldsFilled`), progres zamiast tekstu podczas logowania. Strażniki w `onSignIn()` usunięte (decyzja 2026-11-07): blokadę daje wyłączony przycisk, a „Gotowe” na klawiaturze loguje tylko przy aktywnym przycisku (inaczej chowa klawiaturę). Pominięte: „Nie pamiętam hasła” (wraca z FR-23) i karta o zaproszeniu (zaproszenia na koniec MVP)
 
 **Obsługa błędów**
 - ⏳ Przegląd i obsługa błędów (z review `feature/reports`, 2026-11-06): lista klientów bez „Spróbuj ponownie” (jedyny ekran bez ponowienia); `UNAUTHENTICATED` klasyfikowane jak `PermissionDenied`, przez co chwilowy brak tokenu wylogowałby użytkownika jako „odrzuconego”; Android bez strażnika `pendingCursor` (ogólny komunikat zamiast tego co na iOS); `cachedReloads` wspólne dla całego repozytorium zamiast per lista (poprawić najpóźniej przy następnej stronicowanej liście)
@@ -165,3 +166,4 @@ Do uzgodnienia z trenerem po MVP.
 | 2026-11-04 | Krok 6: lista klientów wg mockupu z kolorowymi awatarami. Decyzja: bez daty ostatniego raportu, sortowania i znaczników; FR-33 odłożone do Fazy 2, znacznik „Nowy raport” odpada (zostaje tylko „Bez komentarza”). |
 | 2026-11-06 | Krok 7 przetestowany ręcznie (31 raportów, odświeżanie, offline). Decyzje: brak sieci to nie błąd, tylko Snackbar przy odświeżeniu z cache (`isFromCache` z mostu, zgodnie z modelem offline Firestore; `Source.SERVER` odrzucone); prawdziwy błąd odświeżenia zastępuje listę; lista nie przeładowuje się po komentarzu; zdarzenia z ViewModelu jako stan z potwierdzeniem (`onOfflineMessageShown`), a nie `Flow` w composable. Fałszywy koniec listy offline świadomie pominięty |
 | 2026-11-06 | `feature/reports` zmergowane do `main` (PR #1, `422d6f9`): raporty z komentarzem, widok klienta, lista klientów wg mockupu, stronicowanie. Review przed merge: nic krytycznego, uwagi zebrane w zadaniu „Przegląd i obsługa błędów” |
+| 2026-11-07 | Start `feature/screen-layouts`. Logowanie wg mockupu z tymczasowym własnym logo (brak zgody na logo HappyPies). Decyzja: logowanie bez górnego paska; na pozostałych ekranach standardowy `TopAppBar` (zwijany duży pasek na ekranach startowych do rozważenia osobno) |
