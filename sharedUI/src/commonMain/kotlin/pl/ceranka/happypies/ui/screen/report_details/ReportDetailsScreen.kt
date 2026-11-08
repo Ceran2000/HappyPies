@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import pl.ceranka.happypies.ui.common.CenteredProgress
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 
@@ -153,7 +154,7 @@ private fun ReportDetailsContent(
                 uiState.isDeleted -> ReportDeletedNotice(onBack)
                 report != null -> LoadedReport(report, uiState, commentText, commentActions, onRetry)
                 uiState.error != null -> ErrorWithRetry(uiState.error, onRetry)
-                else -> CircularProgressIndicator()
+                else -> CenteredProgress()
             }
         }
     }

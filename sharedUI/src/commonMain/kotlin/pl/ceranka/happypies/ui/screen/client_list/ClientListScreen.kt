@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.data.client.Client
+import pl.ceranka.happypies.ui.common.CenteredProgress
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 import pl.ceranka.happypies.ui.common.InitialsAvatar
 
@@ -77,11 +77,13 @@ private fun ClientListContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             when (uiState) {
-                is ClientListUiState.Loading -> item { CircularProgressIndicator() }
+                is ClientListUiState.Loading -> item { CenteredProgress() }
                 is ClientListUiState.Error -> item {
                     Text(
                         text = uiState.message ?: "Nie udało się wczytać listy klientów",
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
                 is ClientListUiState.Success -> {

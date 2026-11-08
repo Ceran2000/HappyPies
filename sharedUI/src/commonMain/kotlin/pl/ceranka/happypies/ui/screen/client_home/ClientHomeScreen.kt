@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -40,6 +39,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import pl.ceranka.happypies.ui.common.CenteredProgress
 import pl.ceranka.happypies.ui.common.EmptyReportsCard
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
@@ -174,9 +174,7 @@ private fun LazyListScope.reportItems(
 }
 
 private fun LazyListScope.loading() {
-    item(key = "progress", contentType = "progress") {
-        CircularProgressIndicator()
-    }
+    item(key = "progress", contentType = "progress") { CenteredProgress() }
 }
 
 private fun LazyListScope.error(message: String, onRetry: () -> Unit) {
