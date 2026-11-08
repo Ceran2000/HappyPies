@@ -72,6 +72,10 @@ fun App() {
             }
         }
 
+        fun goBack() {
+            backStack.removeLastOrNull()
+        }
+
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.safeDrawingPadding()) {
                 val state = accountState
@@ -104,7 +108,7 @@ fun App() {
                         entry<Route.ClientDetail> { route ->
                             ClientDetailsScreen(
                                 clientId = route.clientId,
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = ::goBack,
                                 onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
                                 onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) }
                             )
@@ -113,23 +117,23 @@ fun App() {
                             ReportDetailsScreen(
                                 clientId = route.clientId,
                                 reportId = route.reportId,
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = ::goBack,
                                 onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
-                                onDeleted = { backStack.removeLastOrNull() }
+                                onDeleted = ::goBack
                             )
                         }
                         entry<Route.AddReport> { route ->
                             AddReportScreen(
                                 clientId = route.clientId,
-                                onSaved = { backStack.removeLastOrNull() },
-                                onCancel = { backStack.removeLastOrNull() }
+                                onSaved = ::goBack,
+                                onCancel = ::goBack
                             )
                         }
                         entry<Route.EditReport> { route ->
                             EditReportScreen(
                                 reportId = route.reportId,
-                                onSaved = { backStack.removeLastOrNull() },
-                                onCancel = { backStack.removeLastOrNull() }
+                                onSaved = ::goBack,
+                                onCancel = ::goBack
                             )
                         }
                         entry<Route.ClientHome> { route ->
