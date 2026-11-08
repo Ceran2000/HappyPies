@@ -1,5 +1,11 @@
 package pl.ceranka.happypies
 
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -95,6 +101,11 @@ fun App() {
                         rememberSaveableStateHolderNavEntryDecorator(),
                         rememberViewModelStoreNavEntryDecorator(),
                     ),
+                    transitionSpec = {
+                        (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 4 } + fadeOut())
+                    },
+                    popTransitionSpec = { popTransition() },
+                    predictivePopTransitionSpec = { popTransition() },
                     entryProvider = entryProvider {
                         entry<Route.Login> {
                             LoginScreen()
@@ -150,3 +161,6 @@ fun App() {
         }
     }
 }
+
+private fun popTransition(): ContentTransform =
+    (slideInHorizontally { -it / 4 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())
