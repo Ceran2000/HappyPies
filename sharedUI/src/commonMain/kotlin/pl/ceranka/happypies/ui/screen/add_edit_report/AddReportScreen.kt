@@ -4,6 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.common_new_report
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -21,7 +24,7 @@ fun AddReportScreen(
     }
 
     ReportFormLayout(
-        title = "Nowy raport",
+        title = stringResource(Res.string.common_new_report),
         cancelButtonEnabled = uiState.cancelButtonEnabled,
         onCancel = onCancel,
         bottomBar = {

@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.paging.compose.LazyPagingItems
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.paging_offline_stale
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun PagingLazyColumn(
@@ -23,9 +26,10 @@ fun PagingLazyColumn(
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: LazyListScope.() -> Unit
 ) {
+    val offlineMessage = stringResource(Res.string.paging_offline_stale)
     if (showOfflineMessage) {
         LaunchedEffect(Unit) {
-            snackbarHostState.showSnackbar("Brak połączenia z internetem. Lista może być nieaktualna.")
+            snackbarHostState.showSnackbar(offlineMessage)
             onOfflineMessageShown()
         }
     }

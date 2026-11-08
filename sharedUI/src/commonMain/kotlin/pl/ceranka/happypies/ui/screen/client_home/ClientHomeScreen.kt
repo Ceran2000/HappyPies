@@ -35,6 +35,19 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.client_home_empty_message
+import happypies.sharedui.generated.resources.client_home_empty_title
+import happypies.sharedui.generated.resources.client_home_reports_title
+import happypies.sharedui.generated.resources.client_home_trainer
+import happypies.sharedui.generated.resources.common_cancel
+import happypies.sharedui.generated.resources.common_greeting
+import happypies.sharedui.generated.resources.common_logout
+import happypies.sharedui.generated.resources.common_logout_description
+import happypies.sharedui.generated.resources.common_logout_dialog_title
+import happypies.sharedui.generated.resources.common_new_report
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.ui.common.CenteredProgress
@@ -85,18 +98,18 @@ private fun ClientHomeContent(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Wylogować się?") },
+            title = { Text(stringResource(Res.string.common_logout_dialog_title)) },
             confirmButton = {
                 TextButton(onClick = {
                     showLogoutDialog = false
                     onLogout()
                 }) {
-                    Text("Wyloguj")
+                    Text(stringResource(Res.string.common_logout))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Anuluj")
+                    Text(stringResource(Res.string.common_cancel))
                 }
             }
         )
@@ -119,7 +132,7 @@ private fun ClientHomeContent(
             ExtendedFloatingActionButton(
                 onClick = onAddReport,
                 icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-                text = { Text("Nowy raport") }
+                text = { Text(stringResource(Res.string.common_new_report)) }
             )
         }
     ) { padding ->
@@ -133,7 +146,7 @@ private fun ClientHomeContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             when (uiState) {
-                is ClientHomeUiState.ShowContent -> headerWithReports(uiState.greeting, uiState.subtitle, reports, onReportClick)
+                is ClientHomeUiState.ShowContent -> headerWithReports(uiState.firstName, uiState.dogNames, uiState.trainer.name, reports, onReportClick)
                 ClientHomeUiState.Loading -> loading()
                 is ClientHomeUiState.Error -> error(uiState.message, onRetry)
             }
@@ -142,17 +155,18 @@ private fun ClientHomeContent(
 }
 
 private fun LazyListScope.headerWithReports(
-    greeting: String?,
-    subtitle: String,
+    firstName: String?,
+    dogNames: List<String>,
+    trainerName: String,
     reports: LazyPagingItems<ReportListItem>,
     onReportClick: (reportId: String) -> Unit
 ) {
-    item(key = "header", contentType = "header") { Header(greeting, subtitle) }
+    item(key = "header", contentType = "header") { Header(firstName, dogNames, trainerName) }
     item(key = "reportsTitle", contentType = "reportsTitle") { ReportsTitle() }
     reportItems(reports, onReportClick, emptyContent = {
         EmptyReportsCard(
-            title = "Nie masz jeszcze raportów",
-            message = "Po treningu dodaj raport z opisem, zdjęciem albo filmem. Trener go zobaczy i skomentuje."
+            title = stringResource(Res.string.client_home_empty_title),
+            message = stringResource(Res.string.client_home_empty_message)
         )
     })
 }
@@ -176,18 +190,18 @@ private fun LazyListScope.loading() {
     item(key = "progress", contentType = "progress") { CenteredProgress() }
 }
 
-private fun LazyListScope.error(message: String, onRetry: () -> Unit) {
+private fun LazyListScope.error(message: StringResource, onRetry: () -> Unit) {
     item(key = "error", contentType = "error") {
-        ErrorWithRetry(message, onRetry)
+        ErrorWithRetry(stringResource(message), onRetry)
     }
 }
 
 @Composable
-private fun Header(greeting: String?, subtitle: String) {
+private fun Header(firstName: String?, dogNames: List<String>, trainerName: String) {
     Column(modifier = Modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        greeting?.let { Text(text = it, style = MaterialTheme.typography.headlineLarge) }
+        firstName?.let { Text(text = stringResource(Res.string.common_greeting, it), style = MaterialTheme.typography.headlineLarge) }
         Text(
-            text = subtitle,
+            text = (dogNames + stringResource(Res.string.client_home_trainer, trainerName)).joinToString(" · "),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -196,6 +210,7 @@ private fun Header(greeting: String?, subtitle: String) {
 
 @Composable
 private fun InitialsButton(initials: String, onClick: () -> Unit) {
+    val logoutDescription = stringResource(Res.string.common_logout_description)
     Surface(
         onClick = onClick,
         shape = CircleShape,
@@ -204,7 +219,7 @@ private fun InitialsButton(initials: String, onClick: () -> Unit) {
         modifier = Modifier
             .padding(horizontal = 4.dp)
             .size(40.dp)
-            .clearAndSetSemantics { contentDescription = "Wyloguj się" }
+            .clearAndSetSemantics { contentDescription = logoutDescription }
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(text = initials, style = MaterialTheme.typography.labelLarge)
@@ -215,7 +230,7 @@ private fun InitialsButton(initials: String, onClick: () -> Unit) {
 @Composable
 private fun ReportsTitle() {
     Text(
-        text = "Twoje raporty",
+        text = stringResource(Res.string.client_home_reports_title),
         style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
     )

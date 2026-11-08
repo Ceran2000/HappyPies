@@ -28,6 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.report_form_description_label
+import happypies.sharedui.generated.resources.report_form_description_placeholder
+import happypies.sharedui.generated.resources.report_form_save
+import happypies.sharedui.generated.resources.report_form_title_label
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 import pl.ceranka.happypies.ui.common.ProgressButton
 import pl.ceranka.happypies.ui.common.filledFieldColors
@@ -66,18 +73,18 @@ fun ReportFormLayout(
 fun ReportFields(
     titleState: TextFieldState,
     descriptionState: TextFieldState,
-    titleFieldErrorMessage: String?,
-    saveErrorMessage: String?,
+    titleFieldErrorMessage: StringResource?,
+    saveErrorMessage: StringResource?,
     enabled: Boolean
 ) {
     val colors = filledFieldColors()
 
     OutlinedTextField(
         state = titleState,
-        label = { Text("Tytuł (wymagany)", fontWeight = FontWeight.Bold) },
+        label = { Text(stringResource(Res.string.report_form_title_label), fontWeight = FontWeight.Bold) },
         labelPosition = TextFieldLabelPosition.Above(),
         isError = titleFieldErrorMessage != null,
-        supportingText = titleFieldErrorMessage?.let { error -> { Text(error) } },
+        supportingText = titleFieldErrorMessage?.let { error -> { Text(stringResource(error)) } },
         lineLimits = TextFieldLineLimits.SingleLine,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         enabled = enabled,
@@ -87,9 +94,9 @@ fun ReportFields(
 
     OutlinedTextField(
         state = descriptionState,
-        label = { Text("Opis", fontWeight = FontWeight.Bold) },
+        label = { Text(stringResource(Res.string.report_form_description_label), fontWeight = FontWeight.Bold) },
         labelPosition = TextFieldLabelPosition.Above(),
-        placeholder = { Text("Co ćwiczyliście i jak poszło?") },
+        placeholder = { Text(stringResource(Res.string.report_form_description_placeholder)) },
         lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 4),
         enabled = enabled,
         colors = colors,
@@ -97,7 +104,7 @@ fun ReportFields(
     )
 
     saveErrorMessage?.let { error ->
-        Text(text = error, color = MaterialTheme.colorScheme.error)
+        Text(text = stringResource(error), color = MaterialTheme.colorScheme.error)
     }
 }
 
@@ -109,7 +116,7 @@ fun SaveReportBar(isSaving: Boolean, enabled: Boolean, onSaveClick: () -> Unit) 
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         ProgressButton(
-            text = "Zapisz raport",
+            text = stringResource(Res.string.report_form_save),
             isLoading = isSaving,
             enabled = enabled,
             onClick = onSaveClick

@@ -2,6 +2,9 @@ package pl.ceranka.happypies.ui.screen.report_details
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.snapshots.Snapshot
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.error_unavailable
+import happypies.sharedui.generated.resources.report_details_comment_empty
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,9 +20,9 @@ import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.report.ReportComment
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.FakeClientRepository
-import pl.ceranka.happypies.fakes.FakeTrainerRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository.SavedComment
+import pl.ceranka.happypies.fakes.FakeTrainerRepository
 import pl.ceranka.happypies.fakes.accountOf
 import pl.ceranka.happypies.fakes.anna
 import pl.ceranka.happypies.fakes.report
@@ -38,7 +41,7 @@ class ReportDetailsViewModelTest {
     private val clients = FakeClientRepository()
     private val reports = FakeReportRepository()
     private val client = Account(anna.id, anna.email, anna.name, UserRole.CLIENT)
-    private val offline = "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."
+    private val offline = Res.string.error_unavailable
 
     private val added = 1_791_191_100_000 // 05.10.2026, 09:05 UTC
     private val later = 1_791_830_400_000 // 12.10.2026, 18:40 UTC
@@ -67,9 +70,9 @@ class ReportDetailsViewModelTest {
                 report = ReportDetailsItem(
                     title = "Raport r1",
                     description = "Trzy próby",
-                    addedBy = "Anna Kowalska · 05.10.2026, 09:05",
+                    addedBy = ChangeStamp("Anna Kowalska", "05.10.2026, 09:05"),
                     editedBy = null,
-                    comment = CommentItem("Komentarz: Jan Trener", "Dobra robota", "12.10.2026, 18:40", viewerCanEdit = true),
+                    comment = CommentItem("Jan Trener", "Dobra robota", "12.10.2026, 18:40", viewerCanEdit = true),
                     viewerCanAddComment = false,
                 ),
             ),
@@ -83,7 +86,7 @@ class ReportDetailsViewModelTest {
 
         val viewModel = createViewModel()
 
-        assertEquals("Jan Trener · 12.10.2026, 18:40", viewModel.uiState.value.report?.editedBy)
+        assertEquals(ChangeStamp("Jan Trener", "12.10.2026, 18:40"), viewModel.uiState.value.report?.editedBy)
     }
 
     @Test
@@ -233,7 +236,7 @@ class ReportDetailsViewModelTest {
         viewModel.type("   ")
         viewModel.onSaveComment()
 
-        assertEquals("Komentarz nie może być pusty.", viewModel.editor.error)
+        assertEquals(Res.string.report_details_comment_empty, viewModel.editor.error)
         assertTrue(reports.savedComments.isEmpty())
 
         viewModel.type("D")

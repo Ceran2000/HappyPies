@@ -7,11 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.common_edit_report
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
-
-private const val TITLE = "Edytuj raport"
 
 @Composable
 fun EditReportScreen(
@@ -31,15 +32,15 @@ fun EditReportScreen(
 
 @Composable
 private fun LoadingContent(onCancel: () -> Unit) {
-    ReportFormLayout(title = TITLE, cancelButtonEnabled = true, onCancel = onCancel, bottomBar = {}) {
+    ReportFormLayout(title = stringResource(Res.string.common_edit_report), cancelButtonEnabled = true, onCancel = onCancel, bottomBar = {}) {
         CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
     }
 }
 
 @Composable
 private fun ErrorContent(state: EditReportUiState.LoadError, onCancel: () -> Unit, onRetryClick: () -> Unit) {
-    ReportFormLayout(title = TITLE, cancelButtonEnabled = true, onCancel = onCancel, bottomBar = {}) {
-        ErrorWithRetry(state.message, onRetry = onRetryClick)
+    ReportFormLayout(title = stringResource(Res.string.common_edit_report), cancelButtonEnabled = true, onCancel = onCancel, bottomBar = {}) {
+        ErrorWithRetry(stringResource(state.message), onRetry = onRetryClick)
     }
 }
 
@@ -55,7 +56,7 @@ private fun EditingContent(
     }
 
     ReportFormLayout(
-        title = TITLE,
+        title = stringResource(Res.string.common_edit_report),
         cancelButtonEnabled = state.cancelButtonEnabled,
         onCancel = onCancel,
         bottomBar = {

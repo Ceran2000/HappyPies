@@ -17,6 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.common_back
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun HappyPiesAppBar(
@@ -60,7 +63,7 @@ private fun BackButton(onClick: () -> Unit, enabled: Boolean) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
                 Icons.AutoMirrored.Rounded.ArrowBack,
-                contentDescription = "Wstecz",
+                contentDescription = stringResource(Res.string.common_back),
                 tint = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
             )
         }

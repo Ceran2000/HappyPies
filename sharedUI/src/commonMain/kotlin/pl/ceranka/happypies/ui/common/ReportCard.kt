@@ -13,6 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.report_card_added_by
+import happypies.sharedui.generated.resources.report_card_commented
+import happypies.sharedui.generated.resources.report_card_no_comments
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
@@ -28,7 +33,7 @@ fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = "Dodany przez: ${report.authorName} · ${report.createdAt}",
+                text = stringResource(Res.string.report_card_added_by, report.authorName, report.createdAt),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -45,7 +50,7 @@ private fun CommentChip(hasComment: Boolean) {
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
     ) {
         Text(
-            text = if (hasComment) "Skomentowano" else "Brak komentarzy",
+            text = stringResource(if (hasComment) Res.string.report_card_commented else Res.string.report_card_no_comments),
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )

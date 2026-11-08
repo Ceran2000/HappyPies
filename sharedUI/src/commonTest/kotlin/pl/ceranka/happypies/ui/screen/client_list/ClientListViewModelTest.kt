@@ -1,5 +1,7 @@
 package pl.ceranka.happypies.ui.screen.client_list
 
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.error_unavailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -7,8 +9,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.fakes.FakeClientRepository
-import pl.ceranka.happypies.fakes.anna
 import pl.ceranka.happypies.fakes.accountOf
+import pl.ceranka.happypies.fakes.anna
 import pl.ceranka.happypies.fakes.trainer
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -41,7 +43,7 @@ class ClientListViewModelTest {
         val viewModel = ClientListViewModel(clients, accountOf(trainer))
 
         assertEquals(
-            ClientListUiState.Error("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."),
+            ClientListUiState.Error(Res.string.error_unavailable),
             viewModel.uiState.value,
         )
     }

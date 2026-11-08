@@ -27,6 +27,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.login_email
+import happypies.sharedui.generated.resources.login_password
+import happypies.sharedui.generated.resources.login_sign_in
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.ui.common.AppLogo
 import pl.ceranka.happypies.ui.common.ProgressButton
@@ -70,7 +75,7 @@ private fun LoginContent(
         AppLogo(modifier = Modifier.align(Alignment.CenterHorizontally))
         OutlinedTextField(
             state = emailState,
-            label = { Text("E-mail", fontWeight = FontWeight.Bold) },
+            label = { Text(stringResource(Res.string.login_email), fontWeight = FontWeight.Bold) },
             labelPosition = TextFieldLabelPosition.Above(),
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
@@ -79,7 +84,7 @@ private fun LoginContent(
         )
         OutlinedSecureTextField(
             state = passwordState,
-            label = { Text("Hasło", fontWeight = FontWeight.Bold) },
+            label = { Text(stringResource(Res.string.login_password), fontWeight = FontWeight.Bold) },
             labelPosition = TextFieldLabelPosition.Above(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             onKeyboardAction = { performDefaultAction ->
@@ -89,10 +94,10 @@ private fun LoginContent(
             modifier = Modifier.fillMaxWidth()
         )
         if (showError) {
-            Text(uiState.message, color = MaterialTheme.colorScheme.error)
+            Text(stringResource(uiState.message), color = MaterialTheme.colorScheme.error)
         }
         ProgressButton(
-            text = "Zaloguj się",
+            text = stringResource(Res.string.login_sign_in),
             isLoading = isLoading,
             enabled = signInButtonEnabled,
             onClick = onSignIn

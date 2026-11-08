@@ -1,6 +1,9 @@
 package pl.ceranka.happypies.ui.screen.login
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.login_error_account_not_configured
+import happypies.sharedui.generated.resources.login_error_sign_in_failed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -19,7 +22,7 @@ class LoginViewModelTest {
 
     private val auth = FakeAuthManager()
     private val accounts = FakeAccountRepository(AccountState.SignedOut())
-    private val rejected = LoginUiState.Error("Konto nie jest skonfigurowane. Skontaktuj się z trenerem.")
+    private val rejected = LoginUiState.Error(Res.string.login_error_account_not_configured)
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -66,7 +69,7 @@ class LoginViewModelTest {
         val viewModel = signIn()
 
         assertEquals(
-            LoginUiState.Error("Nie udało się zalogować. Sprawdź e-mail, hasło i połączenie z internetem."),
+            LoginUiState.Error(Res.string.login_error_sign_in_failed),
             viewModel.uiState.value,
         )
     }

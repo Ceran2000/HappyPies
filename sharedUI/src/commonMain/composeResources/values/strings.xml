@@ -1,0 +1,94 @@
+<resources>
+    <!-- [Common] -->
+    <string name="common_back">Wstecz</string>
+    <string name="common_retry">Spróbuj ponownie</string>
+    <string name="common_cancel">Anuluj</string>
+    <string name="common_delete">Usuń</string>
+    <string name="common_save">Zapisz</string>
+    <string name="common_logout">Wyloguj</string>
+    <string name="common_logout_description">Wyloguj się</string>
+    <string name="common_logout_dialog_title">Wylogować się?</string>
+    <string name="common_greeting">Cześć, %1$s</string>
+    <string name="common_new_report">Nowy raport</string>
+    <string name="common_edit_report">Edytuj raport</string>
+    <!-- [/Common] -->
+
+    <!-- [Errors] -->
+    <string name="error_unavailable">Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.</string>
+    <string name="error_permission_denied">Nie masz dostępu do tych danych.</string>
+    <string name="error_not_found">Nie znaleziono danych. Mogły zostać usunięte.</string>
+    <string name="error_malformed_data">Dane w bazie są niekompletne. Skontaktuj się z administratorem.</string>
+    <string name="error_unknown">Coś poszło nie tak. Spróbuj ponownie później.</string>
+    <!-- [/Errors] -->
+
+    <!-- [Login] -->
+    <string name="login_email">E-mail</string>
+    <string name="login_password">Hasło</string>
+    <string name="login_sign_in">Zaloguj się</string>
+    <string name="login_error_account_not_configured">Konto nie jest skonfigurowane. Skontaktuj się z trenerem.</string>
+    <string name="login_error_sign_in_failed">Nie udało się zalogować. Sprawdź e-mail, hasło i połączenie z internetem.</string>
+    <!-- [/Login] -->
+
+    <!-- [AccountUnavailable] -->
+    <string name="account_unavailable_title">Nie udało się wczytać Twojego konta.</string>
+    <!-- [/AccountUnavailable] -->
+
+    <!-- [ClientList] -->
+    <string name="client_list_title">Klienci</string>
+    <string name="client_list_empty">Nie masz jeszcze żadnych klientów</string>
+    <!-- [/ClientList] -->
+
+    <!-- [ClientHome] -->
+    <string name="client_home_trainer">trener: %1$s</string>
+    <string name="client_home_reports_title">Twoje raporty</string>
+    <string name="client_home_empty_title">Nie masz jeszcze raportów</string>
+    <string name="client_home_empty_message">Po treningu dodaj raport z opisem, zdjęciem albo filmem. Trener go zobaczy i skomentuje.</string>
+    <!-- [/ClientHome] -->
+
+    <!-- [ClientDetails] -->
+    <string name="client_details_dogs">PSY</string>
+    <string name="client_details_no_dogs">Brak psów</string>
+    <string name="client_details_reports_title">Raporty</string>
+    <string name="client_details_empty_title">Brak raportów</string>
+    <string name="client_details_empty_message">Dodaj pierwszy raport przyciskiem „Nowy raport”.</string>
+    <!-- [/ClientDetails] -->
+
+    <!-- [ReportCard] -->
+    <string name="report_card_added_by">Dodany przez: %1$s · %2$s</string>
+    <string name="report_card_commented">Skomentowano</string>
+    <string name="report_card_no_comments">Brak komentarzy</string>
+    <!-- [/ReportCard] -->
+
+    <!-- [ReportForm] -->
+    <string name="report_form_title_label">Tytuł (wymagany)</string>
+    <string name="report_form_description_label">Opis</string>
+    <string name="report_form_description_placeholder">Co ćwiczyliście i jak poszło?</string>
+    <string name="report_form_save">Zapisz raport</string>
+    <string name="report_form_title_required">Podaj tytuł raportu</string>
+    <string name="report_form_session_expired">Sesja wygasła. Zaloguj się ponownie.</string>
+    <!-- [/ReportForm] -->
+
+    <!-- [ReportDetails] -->
+    <string name="report_details_delete_report">Usuń raport</string>
+    <string name="report_details_delete_report_title">Usunąć raport?</string>
+    <string name="report_details_delete_report_message">Raport zniknie u trenera i u klienta. Tego nie można cofnąć.</string>
+    <string name="report_details_deleted">Ten raport został usunięty.</string>
+    <string name="report_details_go_back">Wróć</string>
+    <string name="report_details_deleting">Usuwanie…</string>
+    <string name="report_details_added_by">Dodany przez: %1$s · %2$s</string>
+    <string name="report_details_edited_by">Edytowany przez: %1$s · %2$s</string>
+    <string name="report_details_comment">Komentarz</string>
+    <string name="report_details_comment_author">Komentarz: %1$s</string>
+    <string name="report_details_comment_updated_at">Ostatnia zmiana: %1$s</string>
+    <string name="report_details_comment_empty">Komentarz nie może być pusty.</string>
+    <string name="report_details_add_comment">Dodaj komentarz</string>
+    <string name="report_details_edit_comment">Edytuj komentarz</string>
+    <string name="report_details_delete_comment">Usuń komentarz</string>
+    <string name="report_details_delete_comment_title">Usunąć komentarz?</string>
+    <string name="report_details_delete_comment_message">Komentarz zniknie u trenera i u klienta. Tego nie można cofnąć.</string>
+    <!-- [/ReportDetails] -->
+
+    <!-- [Paging] -->
+    <string name="paging_offline_stale">Brak połączenia z internetem. Lista może być nieaktualna.</string>
+    <!-- [/Paging] -->
+</resources>

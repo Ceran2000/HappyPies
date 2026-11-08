@@ -12,6 +12,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.account_unavailable_title
+import happypies.sharedui.generated.resources.common_logout
+import happypies.sharedui.generated.resources.common_retry
+import org.jetbrains.compose.resources.stringResource
 
 /** Firebase remembers the user, but their account could not be loaded for now. */
 @Composable
@@ -25,13 +30,13 @@ fun AccountUnavailableScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = "Nie udało się wczytać Twojego konta.", style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(Res.string.account_unavailable_title), style = MaterialTheme.typography.titleMedium)
         Text(text = message, color = MaterialTheme.colorScheme.error)
         Button(onClick = onRetry) {
-            Text("Spróbuj ponownie")
+            Text(stringResource(Res.string.common_retry))
         }
         TextButton(onClick = onLogout) {
-            Text("Wyloguj")
+            Text(stringResource(Res.string.common_logout))
         }
     }
 }
