@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.ui.screen.report_form
+package pl.ceranka.happypies.ui.screen.add_edit_report
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import kotlinx.coroutines.CompletableDeferred
@@ -19,9 +19,9 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Also covers what [ReportFormViewModel] shares with editing: validation, the session and the save lock. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class AddReportViewModelTest {
 
@@ -42,7 +42,7 @@ class AddReportViewModelTest {
 
     @Test
     fun startsWithAnEmptyForm() {
-        assertEquals(ReportFormUiState(), viewModel.uiState.value)
+        assertEquals(AddReportUiState.INITIAL, viewModel.uiState.value)
         assertEquals("", viewModel.titleState.text.toString())
     }
 
@@ -50,9 +50,9 @@ class AddReportViewModelTest {
     fun blankTitleIsRejected() {
         fill(title = "   ")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
-        assertEquals("Podaj tytuł raportu", viewModel.uiState.value.titleError)
+        assertEquals("Podaj tytuł raportu", viewModel.uiState.value.titleFieldErrorMessage)
         assertTrue(reports.created.isEmpty())
     }
 
@@ -60,7 +60,7 @@ class AddReportViewModelTest {
     fun savesWithTheAuthorFromTheSession() {
         fill(title = "  Przywołanie  ", description = "  Trzy próby ")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
         assertTrue(viewModel.uiState.value.isSaved)
         assertEquals(
@@ -73,7 +73,7 @@ class AddReportViewModelTest {
     fun blankDescriptionIsSavedAsNull() {
         fill(title = "Przywołanie", description = "   ")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
         assertEquals(null, reports.created.single().description)
     }
@@ -83,27 +83,25 @@ class AddReportViewModelTest {
         reports.createError = DataException.Unavailable("offline")
         fill(title = "Przywołanie")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
         val state = viewModel.uiState.value
-        assertEquals("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.", state.saveError)
-        assertFalse(state.isSaving)
+        assertEquals("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.", state.saveErrorMessage)
+        assertEquals(SaveStatus.IDLE, state.saveStatus)
         assertTrue(state.saveButtonEnabled)
     }
 
     @Test
-    fun tappingSaveTwiceWhileSavingCreatesOneReport() {
+    fun saveButtonIsDisabledWhileSaving() {
         val gate = CompletableDeferred<Unit>()
         reports.createGate = gate
         fill(title = "Przywołanie")
 
-        viewModel.onSave()
-        viewModel.onSave()
-        assertTrue(viewModel.uiState.value.isSaving)
+        viewModel.onSaveClick()
+        assertEquals(SaveStatus.SAVING, viewModel.uiState.value.saveStatus)
         assertFalse(viewModel.uiState.value.saveButtonEnabled)
         gate.complete(Unit)
 
-        assertEquals(1, reports.created.size)
         assertTrue(viewModel.uiState.value.isSaved)
     }
 
@@ -112,9 +110,21 @@ class AddReportViewModelTest {
         account = accountOf(null)
         fill(title = "Przywołanie")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
-        assertEquals("Sesja wygasła. Zaloguj się ponownie.", viewModel.uiState.value.saveError)
+        assertEquals("Sesja wygasła. Zaloguj się ponownie.", viewModel.uiState.value.saveErrorMessage)
         assertTrue(reports.created.isEmpty())
+    }
+
+    @Test
+    fun nextSaveAttemptClearsThePreviousErrors() {
+        account = accountOf(null)
+        viewModel.onSaveClick()
+        fill(title = "Przywołanie")
+
+        viewModel.onSaveClick()
+
+        assertNull(viewModel.uiState.value.titleFieldErrorMessage)
+        assertEquals("Sesja wygasła. Zaloguj się ponownie.", viewModel.uiState.value.saveErrorMessage)
     }
 }

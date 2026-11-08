@@ -28,13 +28,13 @@ import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.navigation.Route
 import pl.ceranka.happypies.navigation.requiredBackStack
 import pl.ceranka.happypies.navigation.routeSavedStateConfiguration
+import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportScreen
+import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportScreen
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsScreen
 import pl.ceranka.happypies.ui.screen.client_list.ClientListScreen
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeScreen
 import pl.ceranka.happypies.ui.screen.login.LoginScreen
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsScreen
-import pl.ceranka.happypies.ui.screen.report_form.AddReportScreen
-import pl.ceranka.happypies.ui.screen.report_form.EditReportScreen
 import pl.ceranka.happypies.ui.common.AccountUnavailableScreen
 import pl.ceranka.happypies.ui.common.toUserMessage
 import pl.ceranka.happypies.ui.theme.HappyPiesTheme

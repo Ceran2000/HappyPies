@@ -3,13 +3,13 @@ package pl.ceranka.happypies.di
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
+import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportViewModel
+import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportViewModel
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
 import pl.ceranka.happypies.ui.screen.client_list.ClientListViewModel
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeViewModel
 import pl.ceranka.happypies.ui.screen.login.LoginViewModel
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsViewModel
-import pl.ceranka.happypies.ui.screen.report_form.AddReportViewModel
-import pl.ceranka.happypies.ui.screen.report_form.EditReportViewModel
 
 val viewModelModule = module {
     viewModelOf(::LoginViewModel)

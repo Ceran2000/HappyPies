@@ -4,18 +4,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
@@ -27,12 +22,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.ui.common.AppLogo
+import pl.ceranka.happypies.ui.common.ProgressButton
 import pl.ceranka.happypies.ui.common.filledFieldColors
 
 @Composable
@@ -73,7 +70,7 @@ private fun LoginContent(
         AppLogo(modifier = Modifier.align(Alignment.CenterHorizontally))
         OutlinedTextField(
             state = emailState,
-            label = { Text("E-mail") },
+            label = { Text("E-mail", fontWeight = FontWeight.Bold) },
             labelPosition = TextFieldLabelPosition.Above(),
             lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
@@ -82,7 +79,7 @@ private fun LoginContent(
         )
         OutlinedSecureTextField(
             state = passwordState,
-            label = { Text("Hasło") },
+            label = { Text("Hasło", fontWeight = FontWeight.Bold) },
             labelPosition = TextFieldLabelPosition.Above(),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             onKeyboardAction = { performDefaultAction ->
@@ -94,20 +91,11 @@ private fun LoginContent(
         if (showError) {
             Text(uiState.message, color = MaterialTheme.colorScheme.error)
         }
-        Button(
-            onClick = onSignIn,
+        ProgressButton(
+            text = "Zaloguj się",
+            isLoading = isLoading,
             enabled = signInButtonEnabled,
-            modifier = Modifier.fillMaxWidth().height(56.dp)
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    color = LocalContentColor.current,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(24.dp)
-                )
-            } else {
-                Text("Zaloguj się", style = MaterialTheme.typography.titleMedium)
-            }
-        }
+            onClick = onSignIn
+        )
     }
 }

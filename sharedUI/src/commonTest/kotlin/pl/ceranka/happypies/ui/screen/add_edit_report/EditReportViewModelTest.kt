@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.ui.screen.report_form
+package pl.ceranka.happypies.ui.screen.add_edit_report
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +19,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -39,6 +40,9 @@ class EditReportViewModelTest {
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
         }
 
+    private val EditReportViewModel.editing: EditReportUiState.Editing
+        get() = assertIs<EditReportUiState.Editing>(uiState.value)
+
     private fun EditReportViewModel.fill(title: String, description: String = "") {
         titleState.setTextAndPlaceCursorAtEnd(title)
         descriptionState.setTextAndPlaceCursorAtEnd(description)
@@ -48,7 +52,7 @@ class EditReportViewModelTest {
     fun fillsTheFormWithTheReport() = runTest {
         val viewModel = createViewModel()
 
-        assertTrue(viewModel.uiState.value.showForm)
+        assertIs<EditReportUiState.Editing>(viewModel.uiState.value)
         assertEquals("Przywołanie", viewModel.titleState.text.toString())
         assertEquals("Trzy próby", viewModel.descriptionState.text.toString())
     }
@@ -58,9 +62,9 @@ class EditReportViewModelTest {
         val viewModel = createViewModel()
         viewModel.fill(title = " Przywołanie z gwizdkiem ", description = "")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
-        assertTrue(viewModel.uiState.value.form.isSaved)
+        assertTrue(viewModel.editing.isSaved)
         assertEquals(
             FakeReportRepository.Update(existing.id, "Przywołanie z gwizdkiem", null, editorId = trainer.uid),
             reports.updated.single()
@@ -72,10 +76,38 @@ class EditReportViewModelTest {
         val viewModel = createViewModel()
         viewModel.fill(title = "Przywołanie  ", description = " Trzy próby")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
-        assertTrue(viewModel.uiState.value.form.isSaved)
+        assertTrue(viewModel.editing.isSaved)
         assertTrue(reports.updated.isEmpty())
+    }
+
+    @Test
+    fun changedTitleIsSaved() = runTest {
+        val viewModel = createViewModel()
+        viewModel.fill(title = "Przywołanie z gwizdkiem", description = "Trzy próby")
+
+        viewModel.onSaveClick()
+
+        assertEquals("Przywołanie z gwizdkiem", reports.updated.single().title)
+    }
+
+    @Test
+    fun clearedDescriptionIsSaved() = runTest {
+        val viewModel = createViewModel()
+        viewModel.fill(title = "Przywołanie", description = "")
+
+        viewModel.onSaveClick()
+
+        assertEquals(null, reports.updated.single().description)
+    }
+
+    @Test
+    fun reportWithoutDescriptionFillsAnEmptyField() = runTest {
+        reports.stored[existing.id] = existing.copy(description = null)
+        val viewModel = createViewModel()
+
+        assertEquals("", viewModel.descriptionState.text.toString())
     }
 
     @Test
@@ -83,14 +115,12 @@ class EditReportViewModelTest {
         reports.getError = DataException.Unavailable("offline")
         val viewModel = createViewModel()
 
-        assertEquals("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.", viewModel.uiState.value.loadError)
-        assertFalse(viewModel.uiState.value.showForm)
+        assertEquals(EditReportUiState.LoadError("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."), viewModel.uiState.value)
 
         reports.getError = null
-        viewModel.onRetry()
+        viewModel.onRetryClick()
 
-        assertEquals(null, viewModel.uiState.value.loadError)
-        assertTrue(viewModel.uiState.value.showForm)
+        assertIs<EditReportUiState.Editing>(viewModel.uiState.value)
         assertEquals("Przywołanie", viewModel.titleState.text.toString())
     }
 
@@ -100,9 +130,9 @@ class EditReportViewModelTest {
         val viewModel = createViewModel()
         viewModel.fill(title = "Nowy tytuł")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
-        assertFalse(viewModel.uiState.value.form.isSaving)
+        assertIs<EditReportUiState.LoadError>(viewModel.uiState.value)
         assertTrue(reports.updated.isEmpty())
     }
 
@@ -112,11 +142,11 @@ class EditReportViewModelTest {
         val viewModel = createViewModel()
         viewModel.fill(title = "Nowy tytuł")
 
-        viewModel.onSave()
+        viewModel.onSaveClick()
 
-        val form = viewModel.uiState.value.form
-        assertFalse(form.isSaved)
-        assertEquals("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.", form.saveError)
+        val state = viewModel.editing
+        assertFalse(state.isSaved)
+        assertEquals("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.", state.saveErrorMessage)
         assertEquals("Nowy tytuł", viewModel.titleState.text.toString())
     }
 }

@@ -7,11 +7,13 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun filledFieldColors(): TextFieldColors {
-    val surface = MaterialTheme.colorScheme.surface
+    val colors = MaterialTheme.colorScheme
     return OutlinedTextFieldDefaults.colors(
-        focusedContainerColor = surface,
-        unfocusedContainerColor = surface,
-        disabledContainerColor = surface,
-        errorContainerColor = surface
+        focusedContainerColor = colors.surface,
+        unfocusedContainerColor = colors.surface,
+        disabledContainerColor = colors.surface,
+        errorContainerColor = colors.surface,
+        focusedLabelColor = colors.onBackground,
+        unfocusedLabelColor = colors.onBackground
     )
 }
