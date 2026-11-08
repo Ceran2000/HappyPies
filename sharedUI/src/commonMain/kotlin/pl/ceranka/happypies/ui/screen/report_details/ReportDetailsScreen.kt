@@ -56,6 +56,28 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.common_cancel
+import happypies.sharedui.generated.resources.common_delete
+import happypies.sharedui.generated.resources.common_edit_report
+import happypies.sharedui.generated.resources.common_save
+import happypies.sharedui.generated.resources.report_details_add_comment
+import happypies.sharedui.generated.resources.report_details_added_by
+import happypies.sharedui.generated.resources.report_details_comment
+import happypies.sharedui.generated.resources.report_details_comment_author
+import happypies.sharedui.generated.resources.report_details_comment_updated_at
+import happypies.sharedui.generated.resources.report_details_delete_comment
+import happypies.sharedui.generated.resources.report_details_delete_comment_message
+import happypies.sharedui.generated.resources.report_details_delete_comment_title
+import happypies.sharedui.generated.resources.report_details_delete_report
+import happypies.sharedui.generated.resources.report_details_delete_report_message
+import happypies.sharedui.generated.resources.report_details_delete_report_title
+import happypies.sharedui.generated.resources.report_details_deleted
+import happypies.sharedui.generated.resources.report_details_deleting
+import happypies.sharedui.generated.resources.report_details_edit_comment
+import happypies.sharedui.generated.resources.report_details_edited_by
+import happypies.sharedui.generated.resources.report_details_go_back
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.ui.common.CenteredProgress
@@ -130,7 +152,7 @@ private fun ReportDetailsContent(
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer
                             )
                         ) {
-                            Icon(Icons.Rounded.Delete, contentDescription = "Usuń raport")
+                            Icon(Icons.Rounded.Delete, contentDescription = stringResource(Res.string.report_details_delete_report))
                         }
                     }
                 }
@@ -153,7 +175,7 @@ private fun ReportDetailsContent(
             when {
                 uiState.isDeleted -> ReportDeletedNotice(onBack)
                 report != null -> LoadedReport(report, uiState, commentText, commentActions, onRetry)
-                uiState.error != null -> ErrorWithRetry(uiState.error, onRetry)
+                uiState.error != null -> ErrorWithRetry(stringResource(uiState.error), onRetry)
                 else -> CenteredProgress()
             }
         }
@@ -162,19 +184,19 @@ private fun ReportDetailsContent(
     if (showDeleteReportDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteReportDialog = false },
-            title = { Text("Usunąć raport?") },
-            text = { Text("Raport zniknie u trenera i u klienta. Tego nie można cofnąć.") },
+            title = { Text(stringResource(Res.string.report_details_delete_report_title)) },
+            text = { Text(stringResource(Res.string.report_details_delete_report_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteReportDialog = false
                     onDelete()
                 }) {
-                    Text("Usuń")
+                    Text(stringResource(Res.string.common_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteReportDialog = false }) {
-                    Text("Anuluj")
+                    Text(stringResource(Res.string.common_cancel))
                 }
             }
         )
@@ -183,9 +205,9 @@ private fun ReportDetailsContent(
 
 @Composable
 private fun ReportDeletedNotice(onBack: () -> Unit) {
-    Text("Ten raport został usunięty.")
+    Text(stringResource(Res.string.report_details_deleted))
     Button(onClick = onBack) {
-        Text("Wróć")
+        Text(stringResource(Res.string.report_details_go_back))
     }
 }
 
@@ -202,8 +224,8 @@ private fun LoadedReport(
     Spacer(Modifier.height(4.dp))
     CommentSection(report, uiState.commentEditor, commentText, commentActions)
     if (uiState.showReportDeletionProgress) ReportDeletionProgress()
-    uiState.deleteError?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
-    uiState.error?.let { ErrorWithRetry(it, onRetry) }
+    uiState.deleteError?.let { Text(text = stringResource(it), color = MaterialTheme.colorScheme.error) }
+    uiState.error?.let { ErrorWithRetry(stringResource(it), onRetry) }
 }
 
 @Composable
@@ -217,13 +239,13 @@ private fun ReportFooter(report: ReportDetailsItem, editButtonEnabled: Boolean, 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = "Dodany przez: ${report.addedBy}",
+                text = stringResource(Res.string.report_details_added_by, report.addedBy.personName, report.addedBy.date),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             report.editedBy?.let {
                 Text(
-                    text = "Edytowany przez: $it",
+                    text = stringResource(Res.string.report_details_edited_by, it.personName, it.date),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -235,7 +257,7 @@ private fun ReportFooter(report: ReportDetailsItem, editButtonEnabled: Boolean, 
             contentPadding = PaddingValues(vertical = 16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Edytuj raport", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(Res.string.common_edit_report), style = MaterialTheme.typography.titleMedium)
         }
     }
 }
@@ -260,9 +282,9 @@ private fun CommentEditorCard(editor: CommentEditor, showDeleteButton: Boolean, 
                 state = commentText,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = editor.textFieldEnabled,
-                label = { Text("Komentarz") },
+                label = { Text(stringResource(Res.string.report_details_comment)) },
                 isError = editor.error != null,
-                supportingText = editor.error?.let { { Text(it) } },
+                supportingText = editor.error?.let { error -> { Text(stringResource(error)) } },
                 lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3)
             )
             Row(
@@ -271,7 +293,7 @@ private fun CommentEditorCard(editor: CommentEditor, showDeleteButton: Boolean, 
             ) {
                 if (showDeleteButton) {
                     IconButton(onClick = { showDeleteCommentDialog = true }, enabled = editor.deleteButtonEnabled) {
-                        Icon(Icons.Rounded.Delete, contentDescription = "Usuń komentarz", tint = MaterialTheme.colorScheme.error)
+                        Icon(Icons.Rounded.Delete, contentDescription = stringResource(Res.string.report_details_delete_comment), tint = MaterialTheme.colorScheme.error)
                     }
                 }
                 Spacer(Modifier.weight(1f))
@@ -279,10 +301,10 @@ private fun CommentEditorCard(editor: CommentEditor, showDeleteButton: Boolean, 
                     CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
                 }
                 TextButton(onClick = actions.onCancel, enabled = editor.cancelButtonEnabled) {
-                    Text("Anuluj")
+                    Text(stringResource(Res.string.common_cancel))
                 }
                 Button(onClick = actions.onSave, enabled = editor.saveButtonEnabled) {
-                    Text("Zapisz")
+                    Text(stringResource(Res.string.common_save))
                 }
             }
         }
@@ -291,19 +313,19 @@ private fun CommentEditorCard(editor: CommentEditor, showDeleteButton: Boolean, 
     if (showDeleteCommentDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteCommentDialog = false },
-            title = { Text("Usunąć komentarz?") },
-            text = { Text("Komentarz zniknie u trenera i u klienta. Tego nie można cofnąć.") },
+            title = { Text(stringResource(Res.string.report_details_delete_comment_title)) },
+            text = { Text(stringResource(Res.string.report_details_delete_comment_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteCommentDialog = false
                     actions.onDelete()
                 }) {
-                    Text("Usuń")
+                    Text(stringResource(Res.string.common_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteCommentDialog = false }) {
-                    Text("Anuluj")
+                    Text(stringResource(Res.string.common_cancel))
                 }
             }
         )
@@ -319,16 +341,16 @@ private fun CommentCard(comment: CommentItem, onEdit: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(text = comment.label.uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+                Text(text = stringResource(Res.string.report_details_comment_author, comment.authorName).uppercase(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
                 if (comment.showEditButton) {
                     IconButton(onClick = onEdit) {
-                        Icon(Icons.Rounded.Edit, contentDescription = "Edytuj komentarz", tint = MaterialTheme.colorScheme.secondary)
+                        Icon(Icons.Rounded.Edit, contentDescription = stringResource(Res.string.report_details_edit_comment), tint = MaterialTheme.colorScheme.secondary)
                     }
                 }
             }
             Text(text = comment.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(end = 10.dp))
             Text(
-                text = "Ostatnia zmiana: ${comment.date}",
+                text = stringResource(Res.string.report_details_comment_updated_at, comment.date),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -346,7 +368,7 @@ private fun AddCommentButton(onAdd: () -> Unit) {
     ) {
         Icon(Icons.Rounded.Add, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
         Spacer(Modifier.size(8.dp))
-        Text("Dodaj komentarz", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
+        Text(stringResource(Res.string.report_details_add_comment), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.secondary)
     }
 }
 
@@ -354,7 +376,7 @@ private fun AddCommentButton(onAdd: () -> Unit) {
 private fun ReportDeletionProgress() {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
-        Text("Usuwanie…")
+        Text(stringResource(Res.string.report_details_deleting))
     }
 }
 

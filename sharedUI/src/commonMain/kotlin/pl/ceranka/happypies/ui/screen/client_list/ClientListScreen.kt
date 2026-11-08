@@ -29,6 +29,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.client_list_empty
+import happypies.sharedui.generated.resources.client_list_title
+import happypies.sharedui.generated.resources.common_cancel
+import happypies.sharedui.generated.resources.common_greeting
+import happypies.sharedui.generated.resources.common_logout
+import happypies.sharedui.generated.resources.common_logout_description
+import happypies.sharedui.generated.resources.common_logout_dialog_title
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.ui.common.CenteredProgress
@@ -65,7 +74,7 @@ private fun ClientListContent(
                 navigationIcon = null,
                 actions = {
                     IconButton(onClick = { showLogoutDialog = true }) {
-                        Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = "Wyloguj się")
+                        Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = stringResource(Res.string.common_logout_description))
                     }
                 }
             )
@@ -80,14 +89,14 @@ private fun ClientListContent(
                 is ClientListUiState.Loading -> item { CenteredProgress() }
                 is ClientListUiState.Error -> item {
                     Text(
-                        text = uiState.message ?: "Nie udało się wczytać listy klientów",
+                        text = stringResource(uiState.message),
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
                 is ClientListUiState.Success -> {
-                    uiState.greeting?.let { greeting -> item(key = "greeting", contentType = "greeting") { Greeting(greeting) } }
+                    uiState.trainerFirstName?.let { firstName -> item(key = "greeting", contentType = "greeting") { Greeting(firstName) } }
                     item(key = "clientsTitle", contentType = "clientsTitle") { ClientsTitle() }
                     if (uiState.clients.isEmpty()) {
                         item { EmptyClients() }
@@ -103,18 +112,18 @@ private fun ClientListContent(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Wylogować się?") },
+            title = { Text(stringResource(Res.string.common_logout_dialog_title)) },
             confirmButton = {
                 TextButton(onClick = {
                     showLogoutDialog = false
                     onLogout()
                 }) {
-                    Text("Wyloguj")
+                    Text(stringResource(Res.string.common_logout))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Anuluj")
+                    Text(stringResource(Res.string.common_cancel))
                 }
             }
         )
@@ -122,14 +131,14 @@ private fun ClientListContent(
 }
 
 @Composable
-private fun Greeting(greeting: String) {
-    Text(text = greeting, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(horizontal = 8.dp))
+private fun Greeting(firstName: String) {
+    Text(text = stringResource(Res.string.common_greeting, firstName), style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(horizontal = 8.dp))
 }
 
 @Composable
 private fun ClientsTitle() {
     Text(
-        text = "Klienci",
+        text = stringResource(Res.string.client_list_title),
         style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
     )
@@ -162,7 +171,7 @@ private fun ClientCard(client: Client, onClick: () -> Unit) {
 private fun EmptyClients() {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "Nie masz jeszcze żadnych klientów",
+            text = stringResource(Res.string.client_list_empty),
             style = MaterialTheme.typography.titleMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 28.dp)

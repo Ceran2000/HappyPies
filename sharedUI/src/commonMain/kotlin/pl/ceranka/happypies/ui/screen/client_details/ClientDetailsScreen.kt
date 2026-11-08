@@ -31,6 +31,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.client_details_dogs
+import happypies.sharedui.generated.resources.client_details_empty_message
+import happypies.sharedui.generated.resources.client_details_empty_title
+import happypies.sharedui.generated.resources.client_details_no_dogs
+import happypies.sharedui.generated.resources.client_details_reports_title
+import happypies.sharedui.generated.resources.common_new_report
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.data.client.Client
@@ -95,7 +104,7 @@ private fun ClientDetailsContent(
             ExtendedFloatingActionButton(
                 onClick = onAddReport,
                 icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-                text = { Text("Nowy raport") }
+                text = { Text(stringResource(Res.string.common_new_report)) }
             )
         }
     ) { padding ->
@@ -125,7 +134,10 @@ private fun LazyListScope.clientWithReports(
     item(key = "dogs", contentType = "dogs") { DogsCard(client.dogs) }
     item(key = "reportsTitle", contentType = "reportsTitle") { ReportsTitle() }
     reportItems(reports, onReportClick, emptyContent = {
-        EmptyReportsCard(title = "Brak raportów", message = "Dodaj pierwszy raport przyciskiem „Nowy raport”.")
+        EmptyReportsCard(
+            title = stringResource(Res.string.client_details_empty_title),
+            message = stringResource(Res.string.client_details_empty_message)
+        )
     })
 }
 
@@ -148,16 +160,16 @@ private fun LazyListScope.loading() {
     item(key = "progress", contentType = "progress") { CenteredProgress() }
 }
 
-private fun LazyListScope.error(message: String, onRetry: () -> Unit) {
+private fun LazyListScope.error(message: StringResource, onRetry: () -> Unit) {
     item(key = "error", contentType = "error") {
-        ErrorWithRetry(message, onRetry)
+        ErrorWithRetry(stringResource(message), onRetry)
     }
 }
 
 @Composable
 private fun ReportsTitle() {
     Text(
-        text = "Raporty",
+        text = stringResource(Res.string.client_details_reports_title),
         style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.padding(start = 4.dp, top = 4.dp)
     )
@@ -171,13 +183,13 @@ private fun DogsCard(dogs: List<Dog>) {
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                text = "PSY",
+                text = stringResource(Res.string.client_details_dogs),
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
                 color = MaterialTheme.colorScheme.secondary,
                 letterSpacing = 0.5.sp
             )
             if (dogs.isEmpty()) {
-                Text(text = "Brak psów", style = MaterialTheme.typography.bodyLarge)
+                Text(text = stringResource(Res.string.client_details_no_dogs), style = MaterialTheme.typography.bodyLarge)
             } else {
                 dogs.forEach { dog -> DogRow(dog) }
             }

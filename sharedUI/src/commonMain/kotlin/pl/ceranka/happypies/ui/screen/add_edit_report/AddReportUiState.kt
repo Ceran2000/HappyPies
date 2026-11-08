@@ -1,9 +1,11 @@
 package pl.ceranka.happypies.ui.screen.add_edit_report
 
+import org.jetbrains.compose.resources.StringResource
+
 data class AddReportUiState(
     val saveStatus: SaveStatus,
-    val titleFieldErrorMessage: String?,
-    val saveErrorMessage: String?
+    val titleFieldErrorMessage: StringResource?,
+    val saveErrorMessage: StringResource?
 ) {
     val fieldsEnabled: Boolean get() = saveStatus == SaveStatus.IDLE
     val saveButtonEnabled: Boolean get() = saveStatus == SaveStatus.IDLE

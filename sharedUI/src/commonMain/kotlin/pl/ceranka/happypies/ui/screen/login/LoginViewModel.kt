@@ -4,6 +4,9 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.login_error_account_not_configured
+import happypies.sharedui.generated.resources.login_error_sign_in_failed
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +37,7 @@ class LoginViewModel(
                 .filterIsInstance<AccountState.SignedOut>()
                 .filter { it.rejected }
                 .collect {
-                    _uiState.value = LoginUiState.Error("Konto nie jest skonfigurowane. Skontaktuj się z trenerem.")
+                    _uiState.value = LoginUiState.Error(Res.string.login_error_account_not_configured)
                 }
         }
     }
@@ -48,7 +51,7 @@ class LoginViewModel(
                 throw e
             } catch (e: Exception) {
                 log.e(e) { "Sign-in failed" }
-                _uiState.value = LoginUiState.Error("Nie udało się zalogować. Sprawdź e-mail, hasło i połączenie z internetem.")
+                _uiState.value = LoginUiState.Error(Res.string.login_error_sign_in_failed)
             }
         }
     }

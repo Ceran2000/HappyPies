@@ -1,5 +1,7 @@
 package pl.ceranka.happypies.ui.screen.report_details
 
+import org.jetbrains.compose.resources.StringResource
+
 data class ReportDetailsUiState(
     val report: ReportDetailsItem? = null,
     /** The report no longer exists, e.g. deleted on another device. */
@@ -7,8 +9,8 @@ data class ReportDetailsUiState(
     val isDeleting: Boolean = false,
     /** This screen deleted the report; the screen closes. */
     val isDeleteFinished: Boolean = false,
-    val deleteError: String? = null,
-    val error: String? = null,
+    val deleteError: StringResource? = null,
+    val error: StringResource? = null,
     val commentEditor: CommentEditor = CommentEditor()
 ) {
     val showDeleteReportButton: Boolean get() = report != null && !isDeleted
@@ -20,8 +22,8 @@ data class ReportDetailsUiState(
 data class ReportDetailsItem(
     val title: String,
     val description: String?,
-    val addedBy: String,
-    val editedBy: String?,
+    val addedBy: ChangeStamp,
+    val editedBy: ChangeStamp?,
     val comment: CommentItem?,
     val viewerCanAddComment: Boolean
 ) {
@@ -29,8 +31,10 @@ data class ReportDetailsItem(
     val showDeleteCommentButton: Boolean get() = comment != null
 }
 
+data class ChangeStamp(val personName: String, val date: String)
+
 data class CommentItem(
-    val label: String,
+    val authorName: String,
     val text: String,
     val date: String,
     val viewerCanEdit: Boolean
@@ -43,7 +47,7 @@ data class CommentEditor(
     val isOpen: Boolean = false,
     val isSaving: Boolean = false,
     /** Validation or write error shown in the card. */
-    val error: String? = null
+    val error: StringResource? = null
 ) {
     val textFieldEnabled: Boolean get() = !isSaving
     val deleteButtonEnabled: Boolean get() = !isSaving

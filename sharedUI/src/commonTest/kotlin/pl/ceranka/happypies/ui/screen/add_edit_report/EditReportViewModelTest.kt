@@ -1,6 +1,8 @@
 package pl.ceranka.happypies.ui.screen.add_edit_report
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.error_unavailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -115,7 +117,7 @@ class EditReportViewModelTest {
         reports.getError = DataException.Unavailable("offline")
         val viewModel = createViewModel()
 
-        assertEquals(EditReportUiState.LoadError("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."), viewModel.uiState.value)
+        assertEquals(EditReportUiState.LoadError(Res.string.error_unavailable), viewModel.uiState.value)
 
         reports.getError = null
         viewModel.onRetryClick()
@@ -146,7 +148,7 @@ class EditReportViewModelTest {
 
         val state = viewModel.editing
         assertFalse(state.isSaved)
-        assertEquals("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.", state.saveErrorMessage)
+        assertEquals(Res.string.error_unavailable, state.saveErrorMessage)
         assertEquals("Nowy tytuł", viewModel.titleState.text.toString())
     }
 }

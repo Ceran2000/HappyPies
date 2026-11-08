@@ -5,6 +5,9 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.report_form_session_expired
+import happypies.sharedui.generated.resources.report_form_title_required
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -96,11 +99,11 @@ class EditReportViewModel(
     }
 
     private fun showTitleRequiredError() {
-        updateEditing { it.copy(titleFieldErrorMessage = TITLE_REQUIRED_MESSAGE) }
+        updateEditing { it.copy(titleFieldErrorMessage = Res.string.report_form_title_required) }
     }
 
     private fun showSessionExpiredError() {
-        updateEditing { it.copy(saveErrorMessage = SESSION_EXPIRED_MESSAGE) }
+        updateEditing { it.copy(saveErrorMessage = Res.string.report_form_session_expired) }
     }
 
     private fun updateEditing(transform: (EditReportUiState.Editing) -> EditReportUiState.Editing) {

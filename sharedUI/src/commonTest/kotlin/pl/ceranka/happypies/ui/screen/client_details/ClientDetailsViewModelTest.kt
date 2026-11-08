@@ -1,6 +1,8 @@
 package pl.ceranka.happypies.ui.screen.client_details
 
 import androidx.paging.testing.asSnapshot
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.error_unavailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -32,7 +34,7 @@ class ClientDetailsViewModelTest {
 
     private val clients = FakeClientRepository()
     private val reports = FakeReportRepository()
-    private val offline = "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."
+    private val offline = Res.string.error_unavailable
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())

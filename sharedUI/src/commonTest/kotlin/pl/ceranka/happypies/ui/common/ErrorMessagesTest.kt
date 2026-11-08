@@ -1,5 +1,9 @@
 package pl.ceranka.happypies.ui.common
 
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.error_permission_denied
+import happypies.sharedui.generated.resources.error_unavailable
+import happypies.sharedui.generated.resources.error_unknown
 import pl.ceranka.happypies.data.DataException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,16 +16,13 @@ class ErrorMessagesTest {
             "FAILED_PRECONDITION: The query requires an index. You can create it here: https://console.firebase.google.com/..."
         )
 
-        assertEquals("Coś poszło nie tak. Spróbuj ponownie później.", missingIndex.toUserMessage())
-        assertEquals("Coś poszło nie tak. Spróbuj ponownie później.", IllegalStateException("boom").toUserMessage())
+        assertEquals(Res.string.error_unknown, missingIndex.toUserMessage())
+        assertEquals(Res.string.error_unknown, IllegalStateException("boom").toUserMessage())
     }
 
     @Test
     fun knownDataErrorsHaveTheirOwnMessages() {
-        assertEquals("Nie masz dostępu do tych danych.", DataException.PermissionDenied("denied").toUserMessage())
-        assertEquals(
-            "Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.",
-            DataException.Unavailable("offline").toUserMessage(),
-        )
+        assertEquals(Res.string.error_permission_denied, DataException.PermissionDenied("denied").toUserMessage())
+        assertEquals(Res.string.error_unavailable, DataException.Unavailable("offline").toUserMessage())
     }
 }

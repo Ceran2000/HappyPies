@@ -1,6 +1,8 @@
 package pl.ceranka.happypies.ui.screen.client_home
 
 import androidx.paging.testing.asSnapshot
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.error_unavailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -53,8 +55,8 @@ class ClientHomeViewModelTest {
         val viewModel = createViewModel()
 
         val state = assertIs<ClientHomeUiState.ShowContent>(viewModel.uiState.value)
-        assertEquals("Cześć, Anna", state.greeting)
-        assertEquals("Bala · trener: Jan Trener", state.subtitle)
+        assertEquals("Anna", state.firstName)
+        assertEquals(listOf("Bala"), state.dogNames)
         assertEquals("AK", state.initials)
         assertEquals(
             listOf(
@@ -69,7 +71,7 @@ class ClientHomeViewModelTest {
     fun trainerErrorShowsTheMessageAndRetryLoadsAgain() = runTest {
         trainers.error = DataException.Unavailable("offline")
         val viewModel = createViewModel()
-        assertEquals(ClientHomeUiState.Error("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie."), viewModel.uiState.value)
+        assertEquals(ClientHomeUiState.Error(Res.string.error_unavailable), viewModel.uiState.value)
 
         trainers.error = null
         reports.reports = listOf(report("r1"))

@@ -7,6 +7,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.report_details_comment_empty
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
+import org.jetbrains.compose.resources.StringResource
 import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.accountOrNull
@@ -139,7 +142,7 @@ class ReportDetailsViewModel(
 
         val text = commentText.text.toString().trim()
         if (text.isEmpty()) {
-            commentEditor.update { it.copy(error = "Komentarz nie może być pusty.") }
+            commentEditor.update { it.copy(error = Res.string.report_details_comment_empty) }
             return
         }
         val viewer = accountRepository.state.value.accountOrNull ?: return
@@ -182,20 +185,20 @@ class ReportDetailsViewModel(
     }
 }
 
-private data class DeletionState(val inProgress: Boolean = false, val finished: Boolean = false, val error: String? = null)
+private data class DeletionState(val inProgress: Boolean = false, val finished: Boolean = false, val error: StringResource? = null)
 
 private fun Report.toItem(people: ClientSpacePeople, viewer: Account?, timeZone: TimeZone) = ReportDetailsItem(
     title = title,
     description = description,
-    addedBy = "${people.nameOf(authorId)} · ${formatDateTime(createdAt, timeZone)}",
+    addedBy = ChangeStamp(people.nameOf(authorId), formatDateTime(createdAt, timeZone)),
     editedBy = if (updatedAt > createdAt) {
-        "${people.nameOf(lastEditedBy)} · ${formatDateTime(updatedAt, timeZone)}"
+        ChangeStamp(people.nameOf(lastEditedBy), formatDateTime(updatedAt, timeZone))
     } else {
         null
     },
     comment = comment?.let {
         CommentItem(
-            label = "Komentarz: ${people.nameOf(it.authorId)}",
+            authorName = people.nameOf(it.authorId),
             text = it.text,
             date = formatDateTime(it.updatedAt, timeZone),
             viewerCanEdit = viewer != null && it.authorId == viewer.uid,

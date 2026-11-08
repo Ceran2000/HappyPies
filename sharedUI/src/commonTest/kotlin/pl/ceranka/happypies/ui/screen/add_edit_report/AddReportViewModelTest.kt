@@ -1,6 +1,10 @@
 package pl.ceranka.happypies.ui.screen.add_edit_report
 
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.error_unavailable
+import happypies.sharedui.generated.resources.report_form_session_expired
+import happypies.sharedui.generated.resources.report_form_title_required
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -52,7 +56,7 @@ class AddReportViewModelTest {
 
         viewModel.onSaveClick()
 
-        assertEquals("Podaj tytuł raportu", viewModel.uiState.value.titleFieldErrorMessage)
+        assertEquals(Res.string.report_form_title_required, viewModel.uiState.value.titleFieldErrorMessage)
         assertTrue(reports.created.isEmpty())
     }
 
@@ -86,7 +90,7 @@ class AddReportViewModelTest {
         viewModel.onSaveClick()
 
         val state = viewModel.uiState.value
-        assertEquals("Brak połączenia z internetem. Sprawdź sieć i spróbuj ponownie.", state.saveErrorMessage)
+        assertEquals(Res.string.error_unavailable, state.saveErrorMessage)
         assertEquals(SaveStatus.IDLE, state.saveStatus)
         assertTrue(state.saveButtonEnabled)
     }
@@ -112,7 +116,7 @@ class AddReportViewModelTest {
 
         viewModel.onSaveClick()
 
-        assertEquals("Sesja wygasła. Zaloguj się ponownie.", viewModel.uiState.value.saveErrorMessage)
+        assertEquals(Res.string.report_form_session_expired, viewModel.uiState.value.saveErrorMessage)
         assertTrue(reports.created.isEmpty())
     }
 
@@ -125,6 +129,6 @@ class AddReportViewModelTest {
         viewModel.onSaveClick()
 
         assertNull(viewModel.uiState.value.titleFieldErrorMessage)
-        assertEquals("Sesja wygasła. Zaloguj się ponownie.", viewModel.uiState.value.saveErrorMessage)
+        assertEquals(Res.string.report_form_session_expired, viewModel.uiState.value.saveErrorMessage)
     }
 }

@@ -9,22 +9,17 @@ import kotlin.test.assertEquals
 class ClientHomeUiStateTest {
 
     @Test
-    fun namesAllDogsInTheSubtitle() {
+    fun namesAllDogs() {
         val client = anna.copy(dogs = listOf(Dog("Bala", "border collie"), Dog("Rex", "mieszaniec"), Dog("Fuks", "jamnik")))
 
-        assertEquals("Bala · Rex · Fuks · trener: Jan Trener", ClientHomeUiState.ShowContent(client, annasTrainer).subtitle)
+        assertEquals(listOf("Bala", "Rex", "Fuks"), ClientHomeUiState.ShowContent(client, annasTrainer).dogNames)
     }
 
     @Test
-    fun withoutDogsTheSubtitleNamesOnlyTheTrainer() {
-        assertEquals("trener: Jan Trener", ClientHomeUiState.ShowContent(anna.copy(dogs = emptyList()), annasTrainer).subtitle)
-    }
-
-    @Test
-    fun greetsByFirstNameAndTakesInitialsFromTwoWords() {
+    fun takesFirstNameAndInitialsFromTwoWords() {
         val state = ClientHomeUiState.ShowContent(anna.copy(name = "  maria anna nowak "), annasTrainer)
 
-        assertEquals("Cześć, maria", state.greeting)
+        assertEquals("maria", state.firstName)
         assertEquals("MA", state.initials)
     }
 }

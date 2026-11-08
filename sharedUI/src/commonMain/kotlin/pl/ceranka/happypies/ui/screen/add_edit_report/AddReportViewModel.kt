@@ -4,6 +4,9 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.report_form_session_expired
+import happypies.sharedui.generated.resources.report_form_title_required
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,11 +43,11 @@ class AddReportViewModel(
     }
 
     private fun showTitleRequiredError() {
-        _uiState.update { it.copy(titleFieldErrorMessage = TITLE_REQUIRED_MESSAGE) }
+        _uiState.update { it.copy(titleFieldErrorMessage = Res.string.report_form_title_required) }
     }
 
     private fun showSessionExpiredError() {
-        _uiState.update { it.copy(saveErrorMessage = SESSION_EXPIRED_MESSAGE) }
+        _uiState.update { it.copy(saveErrorMessage = Res.string.report_form_session_expired) }
     }
 
     private fun clearErrors() {

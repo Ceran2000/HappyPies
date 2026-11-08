@@ -6,6 +6,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import org.jetbrains.compose.resources.stringResource
 import pl.ceranka.happypies.ui.common.CenteredProgress
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
 import pl.ceranka.happypies.ui.common.toUserMessage
@@ -49,5 +50,5 @@ fun <T : Any> LazyListScope.pagingItems(
 
 @Composable
 private fun PagingError(error: LoadState.Error, items: LazyPagingItems<*>) {
-    ErrorWithRetry(error.error.toUserMessage(), onRetry = items::retry)
+    ErrorWithRetry(stringResource(error.error.toUserMessage()), onRetry = items::retry)
 }
