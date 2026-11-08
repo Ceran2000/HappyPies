@@ -1,35 +1,34 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# HappyPies
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+A mobile app for a dog trainer and their clients, built for Android and iOS from a single Kotlin codebase.
 
-* [/sharedLogic](./sharedLogic/src) is for the code that will be shared between app targets in the project.
-  The most important subfolder is [commonMain](./sharedLogic/src/commonMain/kotlin). If preferred, you
-  can add code to the platform-specific folders here too.
+After a training session, either the trainer or the client adds a report describing what they practiced and how it went. The other side reads it and leaves a comment. This keeps the trainer and the client in touch between sessions. The app's UI is in Polish.
 
-* [/sharedUI](./sharedUI/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./sharedUI/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./sharedUI/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./sharedUI/src/jvmMain/kotlin)
-    folder is the appropriate location.
+## Features
 
-### Running the apps
+Available now:
+- Email sign-in with two roles, trainer and client
+- Trainer: a list of clients and each client's details, with their dogs and reports
+- Client: a home screen with their own reports and trainer
+- Reports with a title and description that can be added, edited and deleted
+- One comment per report, written by the side that did not author it
+- Paged report lists that keep working offline with cached data
+- Light and dark theme
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+Planned:
+- Photos and video in reports
+- Client invitations, password reset and a client profile with their dogs
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+## Tech stack
 
-### Running tests
+- **Kotlin Multiplatform**: the logic and data layer are shared between Android and iOS
+- **Compose Multiplatform**: the UI and ViewModels are shared, Material 3
+- **Firebase** (Auth, Firestore): native Android and iOS SDKs, each implementing a small shared Kotlin interface
+- **Koin** for dependency injection, **Navigation 3**, **Paging 3**, **kotlinx-datetime**, **Kermit**
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+## Modules
 
-- Android tests: `./gradlew :sharedUI:testAndroidHostTest :sharedLogic:testAndroidHostTest`
-- iOS tests: `./gradlew :sharedLogic:iosSimulatorArm64Test`
-
----
-
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+- `sharedLogic`: domain models, repositories and the platform-independent Firebase interfaces
+- `sharedUI`: screens, ViewModels, theme, navigation and string resources
+- `androidApp`: the Android entry point and the Android Firebase implementation
+- `iosApp`: the iOS entry point (SwiftUI host) and the iOS Firebase implementation in Swift
