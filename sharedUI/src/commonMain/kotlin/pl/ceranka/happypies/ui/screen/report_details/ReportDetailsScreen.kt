@@ -21,14 +21,12 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -40,8 +38,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
+import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 
 @Composable
 fun ReportDetailsScreen(
@@ -104,7 +101,6 @@ private class CommentActions(
     val onDelete: () -> Unit
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReportDetailsContent(
     uiState: ReportDetailsUiState,
@@ -120,13 +116,9 @@ private fun ReportDetailsContent(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            HappyPiesAppBar(
                 title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Wstecz")
-                    }
-                },
+                onBackClick = onBack,
                 actions = {
                     if (uiState.showDeleteReportButton) {
                         FilledTonalIconButton(
@@ -135,14 +127,12 @@ private fun ReportDetailsContent(
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer,
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            ),
-                            modifier = Modifier.padding(end = 8.dp)
+                            )
                         ) {
                             Icon(Icons.Rounded.Delete, contentDescription = "Usuń raport")
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                }
             )
         },
         bottomBar = {

@@ -2,9 +2,7 @@ package pl.ceranka.happypies.ui.screen.client_home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -34,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
@@ -42,6 +42,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.ui.common.EmptyReportsCard
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
+import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 import pl.ceranka.happypies.ui.common.ReportCard
 import pl.ceranka.happypies.ui.common.ReportListItem
 import pl.ceranka.happypies.ui.paging.PagingLazyColumn
@@ -105,7 +106,16 @@ private fun ClientHomeContent(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val content = uiState.showContentOrNull
+
     Scaffold(
+        topBar = {
+            HappyPiesAppBar(
+                title = { content?.let { Text(text = it.greeting, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
+                navigationIcon = null,
+                actions = { content?.let { InitialsButton(it.initials, onClick = { showLogoutDialog = true }) } }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -121,18 +131,11 @@ private fun ClientHomeContent(
             showOfflineMessage = showOfflineMessage,
             onOfflineMessageShown = onOfflineMessageShown,
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 96.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             when (uiState) {
-                is ClientHomeUiState.ShowContent -> headerWithReports(
-                    greeting = uiState.greeting,
-                    subtitle = uiState.subtitle,
-                    initials = uiState.initials,
-                    reports = reports,
-                    onReportClick = onReportClick,
-                    onLogoutClick = { showLogoutDialog = true }
-                )
+                is ClientHomeUiState.ShowContent -> subtitleWithReports(uiState.subtitle, reports, onReportClick)
                 ClientHomeUiState.Loading -> loading()
                 is ClientHomeUiState.Error -> error(uiState.message, onRetry)
             }
@@ -140,15 +143,12 @@ private fun ClientHomeContent(
     }
 }
 
-private fun LazyListScope.headerWithReports(
-    greeting: String,
+private fun LazyListScope.subtitleWithReports(
     subtitle: String,
-    initials: String,
     reports: LazyPagingItems<ReportListItem>,
-    onReportClick: (reportId: String) -> Unit,
-    onLogoutClick: () -> Unit
+    onReportClick: (reportId: String) -> Unit
 ) {
-    item(key = "header", contentType = "header") { Header(greeting, subtitle, initials, onLogoutClick) }
+    item(key = "subtitle", contentType = "subtitle") { Subtitle(subtitle) }
     item(key = "reportsTitle", contentType = "reportsTitle") { ReportsTitle() }
     reportItems(reports, onReportClick, emptyContent = {
         EmptyReportsCard(
@@ -186,31 +186,30 @@ private fun LazyListScope.error(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun Header(greeting: String, subtitle: String, initials: String, onLogoutClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(text = greeting, style = MaterialTheme.typography.headlineLarge)
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+private fun Subtitle(subtitle: String) {
+    Text(
+        text = subtitle,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth()
+    )
+}
 
-        Surface(
-            onClick = onLogoutClick,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.size(52.dp).clearAndSetSemantics { contentDescription = "Wyloguj się" }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(text = initials, style = MaterialTheme.typography.titleMedium)
-            }
+@Composable
+private fun InitialsButton(initials: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .size(40.dp)
+            .clearAndSetSemantics { contentDescription = "Wyloguj się" }
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(text = initials, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -223,3 +222,9 @@ private fun ReportsTitle() {
         modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
     )
 }
+
+private val ClientHomeUiState.showContentOrNull: ClientHomeUiState.ShowContent?
+    get() = when (this) {
+        is ClientHomeUiState.ShowContent -> this
+        ClientHomeUiState.Loading, is ClientHomeUiState.Error -> null
+    }

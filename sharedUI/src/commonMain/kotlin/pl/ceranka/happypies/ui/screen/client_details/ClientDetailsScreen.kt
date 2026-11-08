@@ -1,39 +1,31 @@
 package pl.ceranka.happypies.ui.screen.client_details
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,6 +38,7 @@ import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.data.client.Dog
 import pl.ceranka.happypies.ui.common.EmptyReportsCard
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
+import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 import pl.ceranka.happypies.ui.common.ReportCard
 import pl.ceranka.happypies.ui.common.ReportListItem
 import pl.ceranka.happypies.ui.paging.PagingLazyColumn
@@ -75,7 +68,6 @@ fun ClientDetailsScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ClientDetailsContent(
     uiState: ClientDetailsUiState,
@@ -92,26 +84,11 @@ private fun ClientDetailsContent(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
+            HappyPiesAppBar(
                 title = {
-                    uiState.clientNameOrNull?.let {
-                        Text(text = it, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(start = 8.dp))
-                    }
+                    uiState.clientNameOrNull?.let { Text(text = it, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 },
-                navigationIcon = {
-                    Surface(
-                        onClick = onBack,
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.padding(horizontal = 4.dp).size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Wstecz")
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                onBackClick = onBack
             )
         },
         floatingActionButton = {
