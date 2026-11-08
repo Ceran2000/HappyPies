@@ -6,7 +6,7 @@
 
 ## 📍 Teraz
 
-**Faza 1 — MVP** · branch: `feature/string-resources` (stringi w `strings.xml`)
+**Faza 1 — MVP** · branch: `main` (następny: zdjęcia i film)
 
 Najbliższe kroki:
 1. ✅ Koin multiplatform wdrożony, przetestowany i zmergowany do `main`
@@ -20,7 +20,7 @@ Najbliższe kroki:
 9. ✅ Krok 7: stronicowanie listy raportów (Paging 3), test ręczny 2026-11-06 OK (Android pełny, iOS offline); Snackbar offline (`97b3089`), bez przeładowania po komentarzu (`895c7f5`)
 10. ✅ `feature/reports` zmergowane do `main` 2026-11-06 (PR #1, `422d6f9`); zaległe testy iOS przeniesione do „Na koniec MVP”, uwagi z review do „Obsługa błędów”
 11. ✅ Układ ekranów wg mockupów (`feature/screen-layouts`) zmergowany do `main` 2026-11-08 bez PR (merge lokalny jak przy Koin): logowanie, formularz raportu, szczegóły klienta, karty z cieniem, wspólny `HappyPiesAppBar`, przejścia ekranów, powitania; wszystko przetestowane ręcznie
-12. 🔄 Stringi w `strings.xml` (Compose Multiplatform resources) na `feature/string-resources`: zrobione 2026-11-08 (wszystkie teksty UI w jednym pliku z sekcjami `<!-- [Ekran] -->`, testy na `Res.string.*`, 154 testy OK, iOS się kompiluje), czeka na review i test ręczny; potem zdjęcia i film na osobnym branchu
+12. ✅ Stringi w `strings.xml` (`feature/string-resources`) zmergowane do `main` 2026-11-08 bez PR: wszystkie teksty UI w jednym pliku z sekcjami `<!-- [Ekran] -->`, testy na `Res.string.*`, test ręczny OK. Następny: zdjęcia i film na osobnym branchu
 
 Zakres MVP ustalony 2026-10-11: klient i trener dodają raporty (tytuł, opis, zdjęcia, film), druga strona zostawia jeden komentarz. Bez kalendarza, powiadomień push i encji psa. Szczegóły: Faza 1 poniżej.
 
