@@ -58,8 +58,8 @@ class ClientHomeViewModelTest {
         assertEquals("AK", state.initials)
         assertEquals(
             listOf(
-                ReportListItem("r1", "Raport r1", "12.10.2026, 18:40", "Anna Kowalska", mediaCount = 0, hasComment = false),
-                ReportListItem("r2", "Raport r2", "05.10.2026, 09:05", "Jan Trener", mediaCount = 0, hasComment = false)
+                ReportListItem("r1", "Raport r1", "12.10.2026", "Anna Kowalska", hasComment = false),
+                ReportListItem("r2", "Raport r2", "05.10.2026", "Jan Trener", hasComment = false)
             ),
             viewModel.reports.asSnapshot()
         )
