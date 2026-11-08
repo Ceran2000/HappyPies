@@ -54,7 +54,7 @@ class ClientHomeViewModelTest {
 
         val state = assertIs<ClientHomeUiState.ShowContent>(viewModel.uiState.value)
         assertEquals("Cześć, Anna", state.greeting)
-        assertEquals("Bala · trener Jan Trener", state.subtitle)
+        assertEquals("Bala · trener: Jan Trener", state.subtitle)
         assertEquals("AK", state.initials)
         assertEquals(
             listOf(

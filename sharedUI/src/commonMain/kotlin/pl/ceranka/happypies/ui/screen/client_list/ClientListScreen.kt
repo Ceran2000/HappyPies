@@ -61,7 +61,7 @@ private fun ClientListContent(
     Scaffold(
         topBar = {
             HappyPiesAppBar(
-                title = { Text("Klienci") },
+                title = {},
                 navigationIcon = null,
                 actions = {
                     IconButton(onClick = { showLogoutDialog = true }) {
@@ -87,6 +87,8 @@ private fun ClientListContent(
                     )
                 }
                 is ClientListUiState.Success -> {
+                    uiState.greeting?.let { greeting -> item(key = "greeting", contentType = "greeting") { Greeting(greeting) } }
+                    item(key = "clientsTitle", contentType = "clientsTitle") { ClientsTitle() }
                     if (uiState.clients.isEmpty()) {
                         item { EmptyClients() }
                     }
@@ -117,6 +119,20 @@ private fun ClientListContent(
             }
         )
     }
+}
+
+@Composable
+private fun Greeting(greeting: String) {
+    Text(text = greeting, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(horizontal = 8.dp))
+}
+
+@Composable
+private fun ClientsTitle() {
+    Text(
+        text = "Klienci",
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
+    )
 }
 
 @Composable

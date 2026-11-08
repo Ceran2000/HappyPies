@@ -30,7 +30,7 @@ class ClientListViewModelTest {
     fun loadsTheSignedInTrainersClients() {
         val viewModel = ClientListViewModel(clients, accountOf(trainer))
 
-        assertEquals(ClientListUiState.Success(listOf(anna)), viewModel.uiState.value)
+        assertEquals(ClientListUiState.Success(listOf(anna), trainer.name), viewModel.uiState.value)
         assertEquals(listOf(trainer.uid), clients.requestedTrainers)
     }
 

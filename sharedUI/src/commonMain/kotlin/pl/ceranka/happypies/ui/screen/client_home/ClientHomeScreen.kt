@@ -2,9 +2,9 @@ package pl.ceranka.happypies.ui.screen.client_home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
@@ -31,8 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
@@ -111,7 +109,7 @@ private fun ClientHomeContent(
     Scaffold(
         topBar = {
             HappyPiesAppBar(
-                title = { content?.let { Text(text = it.greeting, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
+                title = {},
                 navigationIcon = null,
                 actions = { content?.let { InitialsButton(it.initials, onClick = { showLogoutDialog = true }) } }
             )
@@ -135,7 +133,7 @@ private fun ClientHomeContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             when (uiState) {
-                is ClientHomeUiState.ShowContent -> subtitleWithReports(uiState.subtitle, reports, onReportClick)
+                is ClientHomeUiState.ShowContent -> headerWithReports(uiState.greeting, uiState.subtitle, reports, onReportClick)
                 ClientHomeUiState.Loading -> loading()
                 is ClientHomeUiState.Error -> error(uiState.message, onRetry)
             }
@@ -143,12 +141,13 @@ private fun ClientHomeContent(
     }
 }
 
-private fun LazyListScope.subtitleWithReports(
+private fun LazyListScope.headerWithReports(
+    greeting: String?,
     subtitle: String,
     reports: LazyPagingItems<ReportListItem>,
     onReportClick: (reportId: String) -> Unit
 ) {
-    item(key = "subtitle", contentType = "subtitle") { Subtitle(subtitle) }
+    item(key = "header", contentType = "header") { Header(greeting, subtitle) }
     item(key = "reportsTitle", contentType = "reportsTitle") { ReportsTitle() }
     reportItems(reports, onReportClick, emptyContent = {
         EmptyReportsCard(
@@ -184,14 +183,15 @@ private fun LazyListScope.error(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun Subtitle(subtitle: String) {
-    Text(
-        text = subtitle,
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth()
-    )
+private fun Header(greeting: String?, subtitle: String) {
+    Column(modifier = Modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        greeting?.let { Text(text = it, style = MaterialTheme.typography.headlineLarge) }
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
 }
 
 @Composable
