@@ -12,12 +12,12 @@ class ClientHomeUiStateTest {
     fun namesAllDogsInTheSubtitle() {
         val client = anna.copy(dogs = listOf(Dog("Bala", "border collie"), Dog("Rex", "mieszaniec"), Dog("Fuks", "jamnik")))
 
-        assertEquals("Bala · Rex · Fuks · trener Jan Trener", ClientHomeUiState.ShowContent(client, annasTrainer).subtitle)
+        assertEquals("Bala · Rex · Fuks · trener: Jan Trener", ClientHomeUiState.ShowContent(client, annasTrainer).subtitle)
     }
 
     @Test
     fun withoutDogsTheSubtitleNamesOnlyTheTrainer() {
-        assertEquals("trener Jan Trener", ClientHomeUiState.ShowContent(anna.copy(dogs = emptyList()), annasTrainer).subtitle)
+        assertEquals("trener: Jan Trener", ClientHomeUiState.ShowContent(anna.copy(dogs = emptyList()), annasTrainer).subtitle)
     }
 
     @Test

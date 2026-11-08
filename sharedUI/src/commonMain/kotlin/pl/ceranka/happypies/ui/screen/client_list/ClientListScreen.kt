@@ -12,11 +12,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.data.client.Client
+import pl.ceranka.happypies.ui.common.CenteredProgress
+import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 import pl.ceranka.happypies.ui.common.InitialsAvatar
 
 @Composable
@@ -56,26 +58,43 @@ private fun ClientListContent(
 ) {
     var showLogoutDialog by rememberSaveable { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item { Header(onLogoutClick = { showLogoutDialog = true }) }
-        when (uiState) {
-            is ClientListUiState.Loading -> item { CircularProgressIndicator() }
-            is ClientListUiState.Error -> item {
-                Text(
-                    text = uiState.message ?: "Nie udało się wczytać listy klientów",
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-            is ClientListUiState.Success -> {
-                if (uiState.clients.isEmpty()) {
-                    item { EmptyClients() }
+    Scaffold(
+        topBar = {
+            HappyPiesAppBar(
+                title = {},
+                navigationIcon = null,
+                actions = {
+                    IconButton(onClick = { showLogoutDialog = true }) {
+                        Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = "Wyloguj się")
+                    }
                 }
-                items(uiState.clients, key = { it.id }, contentType = { "client" }) { client ->
-                    ClientCard(client = client, onClick = { onClientClick(client.id) })
+            )
+        }
+    ) { padding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(padding),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            when (uiState) {
+                is ClientListUiState.Loading -> item { CenteredProgress() }
+                is ClientListUiState.Error -> item {
+                    Text(
+                        text = uiState.message ?: "Nie udało się wczytać listy klientów",
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                is ClientListUiState.Success -> {
+                    uiState.greeting?.let { greeting -> item(key = "greeting", contentType = "greeting") { Greeting(greeting) } }
+                    item(key = "clientsTitle", contentType = "clientsTitle") { ClientsTitle() }
+                    if (uiState.clients.isEmpty()) {
+                        item { EmptyClients() }
+                    }
+                    items(uiState.clients, key = { it.id }, contentType = { "client" }) { client ->
+                        ClientCard(client = client, onClick = { onClientClick(client.id) })
+                    }
                 }
             }
         }
@@ -103,21 +122,22 @@ private fun ClientListContent(
 }
 
 @Composable
-private fun Header(onLogoutClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(text = "Klienci", style = MaterialTheme.typography.headlineLarge, modifier = Modifier.weight(1f))
-        IconButton(onClick = onLogoutClick) {
-            Icon(Icons.AutoMirrored.Rounded.Logout, contentDescription = "Wyloguj się")
-        }
-    }
+private fun Greeting(greeting: String) {
+    Text(text = greeting, style = MaterialTheme.typography.headlineLarge, modifier = Modifier.padding(horizontal = 8.dp))
+}
+
+@Composable
+private fun ClientsTitle() {
+    Text(
+        text = "Klienci",
+        style = MaterialTheme.typography.titleLarge,
+        modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
+    )
 }
 
 @Composable
 private fun ClientCard(client: Client, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -140,7 +160,7 @@ private fun ClientCard(client: Client, onClick: () -> Unit) {
 
 @Composable
 private fun EmptyClients() {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = "Nie masz jeszcze żadnych klientów",
             style = MaterialTheme.typography.titleMedium,

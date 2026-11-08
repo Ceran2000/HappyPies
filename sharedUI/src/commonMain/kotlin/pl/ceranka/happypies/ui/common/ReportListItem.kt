@@ -15,16 +15,14 @@ data class ReportListItem(
     val title: String,
     val createdAt: String,
     val authorName: String,
-    val mediaCount: Int,
     val hasComment: Boolean
 )
 
 internal fun Report.toListItem(people: ClientSpacePeople, timeZone: TimeZone) = ReportListItem(
     id = id,
     title = title,
-    createdAt = formatDateTime(createdAt, timeZone),
+    createdAt = formatDate(createdAt, timeZone),
     authorName = people.nameOf(authorId),
-    mediaCount = media.size,
     hasComment = comment != null
 )
 

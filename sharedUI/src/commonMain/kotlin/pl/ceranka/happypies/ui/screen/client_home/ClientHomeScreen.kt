@@ -4,19 +4,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,14 +31,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import pl.ceranka.happypies.ui.common.CenteredProgress
+import pl.ceranka.happypies.ui.common.EmptyReportsCard
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
+import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 import pl.ceranka.happypies.ui.common.ReportCard
 import pl.ceranka.happypies.ui.common.ReportListItem
 import pl.ceranka.happypies.ui.paging.PagingLazyColumn
@@ -107,7 +104,16 @@ private fun ClientHomeContent(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val content = uiState.showContentOrNull
+
     Scaffold(
+        topBar = {
+            HappyPiesAppBar(
+                title = {},
+                navigationIcon = null,
+                actions = { content?.let { InitialsButton(it.initials, onClick = { showLogoutDialog = true }) } }
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             ExtendedFloatingActionButton(
@@ -123,18 +129,11 @@ private fun ClientHomeContent(
             showOfflineMessage = showOfflineMessage,
             onOfflineMessageShown = onOfflineMessageShown,
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 96.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             when (uiState) {
-                is ClientHomeUiState.ShowContent -> headerWithReports(
-                    greeting = uiState.greeting,
-                    subtitle = uiState.subtitle,
-                    initials = uiState.initials,
-                    reports = reports,
-                    onReportClick = onReportClick,
-                    onLogoutClick = { showLogoutDialog = true }
-                )
+                is ClientHomeUiState.ShowContent -> headerWithReports(uiState.greeting, uiState.subtitle, reports, onReportClick)
                 ClientHomeUiState.Loading -> loading()
                 is ClientHomeUiState.Error -> error(uiState.message, onRetry)
             }
@@ -143,16 +142,19 @@ private fun ClientHomeContent(
 }
 
 private fun LazyListScope.headerWithReports(
-    greeting: String,
+    greeting: String?,
     subtitle: String,
-    initials: String,
     reports: LazyPagingItems<ReportListItem>,
-    onReportClick: (reportId: String) -> Unit,
-    onLogoutClick: () -> Unit
+    onReportClick: (reportId: String) -> Unit
 ) {
-    item(key = "header", contentType = "header") { Header(greeting, subtitle, initials, onLogoutClick) }
+    item(key = "header", contentType = "header") { Header(greeting, subtitle) }
     item(key = "reportsTitle", contentType = "reportsTitle") { ReportsTitle() }
-    reportItems(reports, onReportClick, emptyContent = { EmptyReports() })
+    reportItems(reports, onReportClick, emptyContent = {
+        EmptyReportsCard(
+            title = "Nie masz jeszcze raportów",
+            message = "Po treningu dodaj raport z opisem, zdjęciem albo filmem. Trener go zobaczy i skomentuje."
+        )
+    })
 }
 
 private fun LazyListScope.reportItems(
@@ -171,9 +173,7 @@ private fun LazyListScope.reportItems(
 }
 
 private fun LazyListScope.loading() {
-    item(key = "progress", contentType = "progress") {
-        CircularProgressIndicator()
-    }
+    item(key = "progress", contentType = "progress") { CenteredProgress() }
 }
 
 private fun LazyListScope.error(message: String, onRetry: () -> Unit) {
@@ -183,31 +183,31 @@ private fun LazyListScope.error(message: String, onRetry: () -> Unit) {
 }
 
 @Composable
-private fun Header(greeting: String, subtitle: String, initials: String, onLogoutClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(text = greeting, style = MaterialTheme.typography.headlineLarge)
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+private fun Header(greeting: String?, subtitle: String) {
+    Column(modifier = Modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        greeting?.let { Text(text = it, style = MaterialTheme.typography.headlineLarge) }
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
 
-        Surface(
-            onClick = onLogoutClick,
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.size(52.dp).clearAndSetSemantics { contentDescription = "Wyloguj się" }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(text = initials, style = MaterialTheme.typography.titleMedium)
-            }
+@Composable
+private fun InitialsButton(initials: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        modifier = Modifier
+            .padding(horizontal = 4.dp)
+            .size(40.dp)
+            .clearAndSetSemantics { contentDescription = "Wyloguj się" }
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(text = initials, style = MaterialTheme.typography.labelLarge)
         }
     }
 }
@@ -221,31 +221,8 @@ private fun ReportsTitle() {
     )
 }
 
-@Composable
-private fun EmptyReports() {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(72.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        Icons.Rounded.Description,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(34.dp)
-                    )
-                }
-            }
-            Text(text = "Nie masz jeszcze raportów", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-            Text(
-                text = "Po treningu dodaj raport z opisem, zdjęciem albo filmem. Trener go zobaczy i skomentuje.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-        }
+private val ClientHomeUiState.showContentOrNull: ClientHomeUiState.ShowContent?
+    get() = when (this) {
+        is ClientHomeUiState.ShowContent -> this
+        ClientHomeUiState.Loading, is ClientHomeUiState.Error -> null
     }
-}

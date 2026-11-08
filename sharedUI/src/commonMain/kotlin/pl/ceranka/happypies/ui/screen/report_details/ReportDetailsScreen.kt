@@ -6,24 +6,27 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,8 +38,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,7 +58,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import pl.ceranka.happypies.ui.common.CenteredProgress
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
+import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 
 @Composable
 fun ReportDetailsScreen(
@@ -99,7 +102,6 @@ private class CommentActions(
     val onDelete: () -> Unit
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReportDetailsContent(
     uiState: ReportDetailsUiState,
@@ -115,13 +117,9 @@ private fun ReportDetailsContent(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            HappyPiesAppBar(
                 title = {},
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Wstecz")
-                    }
-                },
+                onBackClick = onBack,
                 actions = {
                     if (uiState.showDeleteReportButton) {
                         FilledTonalIconButton(
@@ -130,14 +128,12 @@ private fun ReportDetailsContent(
                             colors = IconButtonDefaults.filledTonalIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer,
                                 contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            ),
-                            modifier = Modifier.padding(end = 8.dp)
+                            )
                         ) {
                             Icon(Icons.Rounded.Delete, contentDescription = "Usuń raport")
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+                }
             )
         },
         bottomBar = {
@@ -158,7 +154,7 @@ private fun ReportDetailsContent(
                 uiState.isDeleted -> ReportDeletedNotice(onBack)
                 report != null -> LoadedReport(report, uiState, commentText, commentActions, onRetry)
                 uiState.error != null -> ErrorWithRetry(uiState.error, onRetry)
-                else -> CircularProgressIndicator()
+                else -> CenteredProgress()
             }
         }
     }
@@ -212,7 +208,12 @@ private fun LoadedReport(
 
 @Composable
 private fun ReportFooter(report: ReportDetailsItem, editButtonEnabled: Boolean, onEditReport: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.navigationBars.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
+            .padding(start = 24.dp, end = 24.dp, bottom = 16.dp)
+    ) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Column(modifier = Modifier.padding(vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(

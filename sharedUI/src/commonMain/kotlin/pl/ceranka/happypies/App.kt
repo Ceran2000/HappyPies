@@ -1,5 +1,11 @@
 package pl.ceranka.happypies
 
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -28,13 +34,13 @@ import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.navigation.Route
 import pl.ceranka.happypies.navigation.requiredBackStack
 import pl.ceranka.happypies.navigation.routeSavedStateConfiguration
+import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportScreen
+import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportScreen
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsScreen
 import pl.ceranka.happypies.ui.screen.client_list.ClientListScreen
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeScreen
 import pl.ceranka.happypies.ui.screen.login.LoginScreen
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsScreen
-import pl.ceranka.happypies.ui.screen.report_form.AddReportScreen
-import pl.ceranka.happypies.ui.screen.report_form.EditReportScreen
 import pl.ceranka.happypies.ui.common.AccountUnavailableScreen
 import pl.ceranka.happypies.ui.common.toUserMessage
 import pl.ceranka.happypies.ui.theme.HappyPiesTheme
@@ -72,6 +78,10 @@ fun App() {
             }
         }
 
+        fun goBack() {
+            backStack.removeLastOrNull()
+        }
+
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.safeDrawingPadding()) {
                 val state = accountState
@@ -91,6 +101,11 @@ fun App() {
                         rememberSaveableStateHolderNavEntryDecorator(),
                         rememberViewModelStoreNavEntryDecorator(),
                     ),
+                    transitionSpec = {
+                        (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 4 } + fadeOut())
+                    },
+                    popTransitionSpec = { popTransition() },
+                    predictivePopTransitionSpec = { popTransition() },
                     entryProvider = entryProvider {
                         entry<Route.Login> {
                             LoginScreen()
@@ -104,7 +119,7 @@ fun App() {
                         entry<Route.ClientDetail> { route ->
                             ClientDetailsScreen(
                                 clientId = route.clientId,
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = ::goBack,
                                 onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
                                 onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) }
                             )
@@ -113,23 +128,23 @@ fun App() {
                             ReportDetailsScreen(
                                 clientId = route.clientId,
                                 reportId = route.reportId,
-                                onBack = { backStack.removeLastOrNull() },
+                                onBack = ::goBack,
                                 onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
-                                onDeleted = { backStack.removeLastOrNull() }
+                                onDeleted = ::goBack
                             )
                         }
                         entry<Route.AddReport> { route ->
                             AddReportScreen(
                                 clientId = route.clientId,
-                                onSaved = { backStack.removeLastOrNull() },
-                                onCancel = { backStack.removeLastOrNull() }
+                                onSaved = ::goBack,
+                                onCancel = ::goBack
                             )
                         }
                         entry<Route.EditReport> { route ->
                             EditReportScreen(
                                 reportId = route.reportId,
-                                onSaved = { backStack.removeLastOrNull() },
-                                onCancel = { backStack.removeLastOrNull() }
+                                onSaved = ::goBack,
+                                onCancel = ::goBack
                             )
                         }
                         entry<Route.ClientHome> { route ->
@@ -146,3 +161,6 @@ fun App() {
         }
     }
 }
+
+private fun popTransition(): ContentTransform =
+    (slideInHorizontally { -it / 4 } + fadeIn()) togetherWith (slideOutHorizontally { it } + fadeOut())

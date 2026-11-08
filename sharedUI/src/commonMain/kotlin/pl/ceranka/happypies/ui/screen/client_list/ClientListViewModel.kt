@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -30,17 +30,17 @@ class ClientListViewModel(
     init {
         viewModelScope.launch {
             accountRepository.state
-                .map { it.accountOrNull?.uid }
+                .map { it.accountOrNull }
                 .filterNotNull()
-                .distinctUntilChanged()
-                .collectLatest { trainerId ->
+                .distinctUntilChangedBy { it.uid }
+                .collectLatest { trainer ->
                     _uiState.value = ClientListUiState.Loading
                     _uiState.value = try {
-                        ClientListUiState.Success(clientRepository.getClients(trainerId))
+                        ClientListUiState.Success(clientRepository.getClients(trainer.uid), trainer.name)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        log.e(e) { "Loading clients of trainer $trainerId failed" }
+                        log.e(e) { "Loading clients of trainer ${trainer.uid} failed" }
                         ClientListUiState.Error(e.toUserMessage())
                     }
                 }

@@ -4,27 +4,50 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Card
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 @Composable
-internal fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(text = report.title, style = MaterialTheme.typography.titleMedium)
+fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
+    ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             Text(
-                text = "${report.createdAt} · Dodany przez: ${report.authorName}",
-                style = MaterialTheme.typography.bodySmall
+                text = report.title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
-            val details = buildList {
-                if (report.mediaCount > 0) add("Media: ${report.mediaCount}")
-                add(if (report.hasComment) "Jest komentarz" else "Bez komentarza")
-            }
-            Text(text = details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = "Dodany przez: ${report.authorName} · ${report.createdAt}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            CommentChip(report.hasComment)
         }
+    }
+}
+
+@Composable
+private fun CommentChip(hasComment: Boolean) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+    ) {
+        Text(
+            text = if (hasComment) "Skomentowano" else "Brak komentarzy",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
     }
 }

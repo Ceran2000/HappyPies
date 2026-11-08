@@ -20,13 +20,13 @@ import pl.ceranka.happypies.data.firestore.FirestoreValue
 import pl.ceranka.happypies.data.firestore.PageResult
 import pl.ceranka.happypies.data.firestore.ReadResult
 import pl.ceranka.happypies.data.firestore.WriteResult
+import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportViewModel
+import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportViewModel
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
 import pl.ceranka.happypies.ui.screen.client_list.ClientListViewModel
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeViewModel
 import pl.ceranka.happypies.ui.screen.login.LoginViewModel
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsViewModel
-import pl.ceranka.happypies.ui.screen.report_form.AddReportViewModel
-import pl.ceranka.happypies.ui.screen.report_form.EditReportViewModel
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test

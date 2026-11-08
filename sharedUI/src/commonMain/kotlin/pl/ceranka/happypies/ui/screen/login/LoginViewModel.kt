@@ -40,8 +40,6 @@ class LoginViewModel(
     }
 
     fun onSignIn() {
-        if (_uiState.value == LoginUiState.Loading) return
-
         _uiState.value = LoginUiState.Loading
         viewModelScope.launch {
             try {
