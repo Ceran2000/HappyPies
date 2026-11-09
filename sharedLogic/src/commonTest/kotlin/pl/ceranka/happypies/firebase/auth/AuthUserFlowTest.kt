@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.auth
+package pl.ceranka.happypies.firebase.auth
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.launchIn

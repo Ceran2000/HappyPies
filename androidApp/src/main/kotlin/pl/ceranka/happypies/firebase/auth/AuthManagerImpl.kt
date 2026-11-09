@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.auth
+package pl.ceranka.happypies.firebase.auth
 
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser

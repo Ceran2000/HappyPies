@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.data
+package pl.ceranka.happypies.core
 
 /** Errors of the data layer, the same on both platforms. ViewModels decide what to show per type. */
 sealed class DataException(message: String) : Exception(message) {

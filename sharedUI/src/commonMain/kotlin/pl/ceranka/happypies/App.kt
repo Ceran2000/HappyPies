@@ -29,9 +29,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
-import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountState
+import pl.ceranka.happypies.firebase.auth.AuthManager
 import pl.ceranka.happypies.navigation.Route
 import pl.ceranka.happypies.navigation.requiredBackStack
 import pl.ceranka.happypies.navigation.routeSavedStateConfiguration

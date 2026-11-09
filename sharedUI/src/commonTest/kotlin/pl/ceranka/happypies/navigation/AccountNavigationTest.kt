@@ -2,9 +2,9 @@ package pl.ceranka.happypies.navigation
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountState
-import pl.ceranka.happypies.data.DataException
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.trainer
 import kotlin.test.Test

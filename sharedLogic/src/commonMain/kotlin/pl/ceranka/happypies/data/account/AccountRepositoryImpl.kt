@@ -8,15 +8,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import pl.ceranka.happypies.auth.AuthManager
-import pl.ceranka.happypies.auth.AuthUser
-import pl.ceranka.happypies.auth.authUserFlow
-import pl.ceranka.happypies.data.DataException
-import pl.ceranka.happypies.data.firestore.DocumentReader
-import pl.ceranka.happypies.data.firestore.FirestoreGateway
-import pl.ceranka.happypies.data.firestore.documentOrThrow
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.user.UserFirestoreFields
 import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.firebase.auth.AuthManager
+import pl.ceranka.happypies.firebase.auth.AuthUser
+import pl.ceranka.happypies.firebase.auth.authUserFlow
+import pl.ceranka.happypies.firebase.firestore.DocumentReader
+import pl.ceranka.happypies.firebase.firestore.FirestoreGateway
+import pl.ceranka.happypies.firebase.firestore.documentOrThrow
 
 private typealias Fields = UserFirestoreFields
 

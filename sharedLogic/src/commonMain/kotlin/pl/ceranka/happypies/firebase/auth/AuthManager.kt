@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.auth
+package pl.ceranka.happypies.firebase.auth
 
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow

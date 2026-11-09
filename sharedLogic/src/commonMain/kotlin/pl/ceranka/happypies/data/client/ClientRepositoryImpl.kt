@@ -1,15 +1,15 @@
 package pl.ceranka.happypies.data.client
 
-import pl.ceranka.happypies.data.DataException
-import pl.ceranka.happypies.data.firestore.CollectionQuery
-import pl.ceranka.happypies.data.firestore.DocumentReader
-import pl.ceranka.happypies.data.firestore.FirestoreDocument
-import pl.ceranka.happypies.data.firestore.FirestoreGateway
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.documentOrThrow
-import pl.ceranka.happypies.data.firestore.documentsOrThrow
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.user.UserFirestoreFields
 import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.firebase.firestore.CollectionQuery
+import pl.ceranka.happypies.firebase.firestore.DocumentReader
+import pl.ceranka.happypies.firebase.firestore.FirestoreDocument
+import pl.ceranka.happypies.firebase.firestore.FirestoreGateway
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.firebase.firestore.documentOrThrow
+import pl.ceranka.happypies.firebase.firestore.documentsOrThrow
 
 private typealias Fields = UserFirestoreFields
 

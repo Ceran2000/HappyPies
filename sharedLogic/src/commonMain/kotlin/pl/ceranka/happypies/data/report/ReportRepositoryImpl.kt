@@ -11,19 +11,19 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import pl.ceranka.happypies.data.firestore.DocumentReader
-import pl.ceranka.happypies.data.firestore.FirestoreDocument
-import pl.ceranka.happypies.data.firestore.FirestoreGateway
-import pl.ceranka.happypies.data.firestore.FirestoreValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.documentFlow
-import pl.ceranka.happypies.data.firestore.documentIdOrThrow
-import pl.ceranka.happypies.data.firestore.documentOrThrow
-import pl.ceranka.happypies.data.firestore.toFirestoreValue
 import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.firebase.firestore.DocumentReader
+import pl.ceranka.happypies.firebase.firestore.FirestoreDocument
+import pl.ceranka.happypies.firebase.firestore.FirestoreGateway
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ArrayValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.MapValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ServerTimestamp
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.firebase.firestore.documentFlow
+import pl.ceranka.happypies.firebase.firestore.documentIdOrThrow
+import pl.ceranka.happypies.firebase.firestore.documentOrThrow
+import pl.ceranka.happypies.firebase.firestore.toFirestoreValue
 
 private typealias Fields = ReportFirestoreFields
 

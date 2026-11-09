@@ -1,6 +1,6 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

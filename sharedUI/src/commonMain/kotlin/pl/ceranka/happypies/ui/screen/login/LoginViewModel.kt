@@ -14,9 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.launch
-import pl.ceranka.happypies.auth.AuthManager
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountState
+import pl.ceranka.happypies.firebase.auth.AuthManager
 
 class LoginViewModel(
     private val authManager: AuthManager,

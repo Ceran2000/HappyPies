@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
 /**
  * A Firestore field value as it crosses the platform bridge. Typed on purpose:

@@ -1,7 +1,7 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.core.ListenerHandle
-import pl.ceranka.happypies.data.DataException
 
 /** In-memory gateway: returns the configured results and records every call. */
 class FakeFirestoreGateway : FirestoreGateway {

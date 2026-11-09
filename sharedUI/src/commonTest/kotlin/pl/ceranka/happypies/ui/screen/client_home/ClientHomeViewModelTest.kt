@@ -12,7 +12,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.FakeClientRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository

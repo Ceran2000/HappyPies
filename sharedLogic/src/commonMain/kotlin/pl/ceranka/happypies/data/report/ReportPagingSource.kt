@@ -4,12 +4,12 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import co.touchlab.kermit.Logger
 import kotlinx.coroutines.CancellationException
-import pl.ceranka.happypies.data.firestore.CollectionQuery
-import pl.ceranka.happypies.data.firestore.FirestoreGateway
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.OrderBy
-import pl.ceranka.happypies.data.firestore.PageCursor
-import pl.ceranka.happypies.data.firestore.pageOrThrow
+import pl.ceranka.happypies.firebase.firestore.CollectionQuery
+import pl.ceranka.happypies.firebase.firestore.FirestoreGateway
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.firebase.firestore.OrderBy
+import pl.ceranka.happypies.firebase.firestore.PageCursor
+import pl.ceranka.happypies.firebase.firestore.pageOrThrow
 
 class ReportPagingSource(
     private val gateway: FirestoreGateway,

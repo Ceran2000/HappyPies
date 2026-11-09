@@ -1,9 +1,9 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ArrayValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.MapValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ServerTimestamp
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 

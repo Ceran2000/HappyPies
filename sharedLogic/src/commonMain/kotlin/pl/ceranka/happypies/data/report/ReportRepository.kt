@@ -2,7 +2,7 @@ package pl.ceranka.happypies.data.report
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.user.UserRole
 
 interface ReportRepository {

@@ -1,12 +1,12 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
-import pl.ceranka.happypies.data.DataException
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.LongValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.NullValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.TimestampValue
+import pl.ceranka.happypies.core.DataException
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ArrayValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.LongValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.MapValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.NullValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.TimestampValue
 
 /**
  * Reads typed fields of a document (or of a nested map) and throws [DataException.MalformedData]

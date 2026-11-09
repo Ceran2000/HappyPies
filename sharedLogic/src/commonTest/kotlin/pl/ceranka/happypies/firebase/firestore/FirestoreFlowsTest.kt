@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs

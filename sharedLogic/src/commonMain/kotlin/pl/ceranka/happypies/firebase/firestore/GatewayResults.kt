@@ -1,6 +1,6 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 
 internal inline fun DocumentResult.documentOrThrow(notFoundMessage: () -> String): FirestoreDocument = when (this) {
     is DocumentResult.Success -> document ?: throw DataException.NotFound(notFoundMessage())

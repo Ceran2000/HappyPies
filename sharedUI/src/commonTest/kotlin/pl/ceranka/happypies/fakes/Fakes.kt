@@ -9,9 +9,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import pl.ceranka.happypies.auth.AuthManager
-import pl.ceranka.happypies.auth.AuthStateListener
-import pl.ceranka.happypies.auth.AuthUser
 import pl.ceranka.happypies.core.ListenerHandle
 import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
@@ -28,6 +25,9 @@ import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.data.trainer.Trainer
 import pl.ceranka.happypies.data.trainer.TrainerRepository
 import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.firebase.auth.AuthManager
+import pl.ceranka.happypies.firebase.auth.AuthStateListener
+import pl.ceranka.happypies.firebase.auth.AuthUser
 
 val anna = Client("client-1", "Anna Kowalska", "anna@przyklad.pl", trainerId = "trainer-1", listOf(Dog("Bala", "border collie")))
 val trainer = Account("trainer-1", "jan@przyklad.pl", "Jan Trener", UserRole.TRAINER)

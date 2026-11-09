@@ -1,4 +1,4 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
@@ -10,19 +10,19 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.core.ListenerHandle
-import pl.ceranka.happypies.data.DataException
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.BooleanValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.Delete
-import pl.ceranka.happypies.data.firestore.FirestoreValue.DoubleValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.LongValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.NullValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.TimestampValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.Unsupported
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ArrayValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.BooleanValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.Delete
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.DoubleValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.LongValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.MapValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.NullValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ServerTimestamp
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.TimestampValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.Unsupported
 import java.util.Date
 
 class AndroidFirestoreGateway(private val firestore: FirebaseFirestore) : FirestoreGateway {

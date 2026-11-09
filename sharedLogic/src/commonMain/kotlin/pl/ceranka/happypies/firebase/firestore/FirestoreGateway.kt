@@ -1,11 +1,11 @@
-package pl.ceranka.happypies.data.firestore
+package pl.ceranka.happypies.firebase.firestore
 
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.core.ListenerHandle
-import pl.ceranka.happypies.data.DataException
 
 data class FirestoreDocument(val id: String, val fields: Map<String, FirestoreValue>)
 
