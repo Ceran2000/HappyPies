@@ -6,7 +6,7 @@
 
 ## 📍 Teraz
 
-**Faza 1 — MVP** · branch: `main` (następny: zdjęcia i film)
+**Faza 1 — MVP** · branch: `feature/media` (zdjęcia i film, zaczynamy od wysyłania filmu)
 
 Najbliższe kroki:
 1. ✅ Koin multiplatform wdrożony, przetestowany i zmergowany do `main`
@@ -24,7 +24,7 @@ Najbliższe kroki:
 
 Zakres MVP ustalony 2026-10-11: klient i trener dodają raporty (tytuł, opis, zdjęcia, film), druga strona zostawia jeden komentarz. Bez kalendarza, powiadomień push i encji psa. Szczegóły: Faza 1 poniżej.
 
-Kolejność ustalona 2026-10-11: najpierw raporty. Na koniec MVP zostają zaproszenia, usuwanie klienta, testy i kompresja wideo. Plan awaryjny: jeśli nie wystarczy czasu, pokazujemy trenerowi dodawanie raportów na użytkowniku założonym ręcznie w konsoli Firebase.
+Kolejność ustalona 2026-10-11: najpierw raporty. Na koniec MVP zostają zaproszenia, usuwanie klienta i testy (kompresja wideo przeniesiona 2026-11-09 do brancha zdjęć i filmu). Plan awaryjny: jeśli nie wystarczy czasu, pokazujemy trenerowi dodawanie raportów na użytkowniku założonym ręcznie w konsoli Firebase.
 
 ---
 
@@ -64,8 +64,12 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 - ✅ Krok 6. Lista klientów wg mockupu (2026-11-04): nagłówek „Klienci” z wylogowaniem po potwierdzeniu (zamiast `AuthenticatedScreen`), karty z awatarem z inicjałami (paleta `AvatarColors` w motywie, jasna i ciemna, kolor stały wg ID klienta) i psami pod imieniem; wspólne `initialsOf` w `ui/common`. Decyzja 2026-11-04: lista to po prostu lista klientów, bez daty ostatniego raportu, sortowania i znaczników; FR-33 do przemyślenia później (raporty nie mają `trainerId`, potrzebny pomysł na źródło danych: listener per klient, podsumowanie w `users/{clientId}` albo Cloud Function). Odpadły też wyszukiwarka, licznik i „Zaproś klienta” (zaproszenia na koniec MVP). Test ręczny na Androidzie OK, iOS do sprawdzenia
 - ✅ Krok 7. Stronicowanie listy raportów (Paging 3.5.3), przetestowane ręcznie 2026-11-06. Kursor to obiekt platformy (`PageCursor.nextPage(limit)`): Android i iOS trzymają zapytanie i ostatni `DocumentSnapshot`, więc wymagania (1)–(3) z review spełnia sam SDK (dokładne wartości, bez kopiowania timestampu). Odświeżanie listy po dodaniu, edycji i usunięciu raportu (po komentarzu już nie, decyzja 2026-11-06: oszczędność odczytów, znacznik komentarza liczy się głównie po otwarciu aplikacji) przez unieważnienie źródła (`InvalidatingPagingSourceFactory`) i pull-to-refresh. Wspólne `ui/paging` (`PagingLazyColumn`, `pagingItems`). Ograniczenia: lista nie jest na żywo (zmiany z innego urządzenia widać po odświeżeniu); offline lista może się skończyć wcześniej niż w rzeczywistości (strona z cache); (4) kursor z dokumentu z niezatwierdzonym zapisem: na iOS SDK rzuca wyjątek Objective-C, którego Swift nie złapie, więc bridge odmawia takiego kursora (`pendingCursor` → błąd z ponowieniem, pomaga pull-to-refresh), na Androidzie wyjątek wraca jako `Failure`. Odłożone do następnej stronicowanej listy: wspólny `FirestorePagingSource(gateway, firstPageQuery, map)` i helper `invalidatingPager(config, changes)`. Offline (2026-11-06): brak sieci nie jest błędem; gdy odświeżenie przyszło z cache (`isFromCache` z mostu), lista zostaje i pojawia się Snackbar „Brak połączenia z internetem. Lista może być nieaktualna.” (flaga `showOfflineMessage` w ViewModelu, a nie zdarzenie przez `Flow`). Prawdziwy błąd odświeżenia zastępuje listę komunikatem z „Spróbuj ponownie”, błąd dociągania pokazuje się w stopce. Odrzucone: `Source.SERVER` przy odświeżaniu (psuło odczyt offline). Test ręczny 2026-11-06: 31 raportów (20 + 10 + 1) bez duplikatów i braków, odświeżanie po zmianach, pull-to-refresh, offline; oba ekrany (trener i klient). Oba ViewModele z `stateIn(Lazily)` (szczegóły klienta nie mają już listenera, więc `WhileSubscribed(5_000)` z 4b nie jest potrzebne)
 
-**Zdjęcia i film** (osobny branch po zmergowaniu raportów, najbardziej ryzykowna część: upload przez bridge na iOS)
-- ⏳ Zdjęcia i film w raporcie, upload do Firebase Storage (nowy interfejs bridge'a) (FR-15)
+**Zdjęcia i film** (branch `feature/media` od 2026-11-09, projekt na planie Blaze; najbardziej ryzykowna część: upload przez bridge na iOS). Zakres i kolejność ustalone 2026-11-09: najpierw film, miniatury, kompresja z limitami i kasowanie plików na końcu tego brancha. Decyzje 2026-11-09: wybór plików przez FileKit (systemowy Photo Picker / PHPicker, bez uprawnień); upload przy „Zapisz raport”, sekwencyjnie: najpierw pliki, potem zapis raportu z listą mediów; nazwa pliku to losowy UUID nadany w aplikacji (Storage nie nadaje nazw), ścieżka `reports/{clientId}/{uuid}`
+- ⏳ Wysyłanie filmu w raporcie do Firebase Storage (nowy interfejs bridge'a) (FR-15)
+- ⏳ Zdjęcia w raporcie (FR-15)
+- ⏳ Miniatury zdjęć i wideo (FR-17)
+- ⏳ Kompresja wideo na urządzeniu i limity rozmiaru: ustalamy na realnych filmach (kompromis jakość / koszt) (FR-16, NFR-05, NFR-06)
+- ⏳ Kasowanie plików ze Storage przy usuwaniu raportu
 
 **Konta i profil**
 - ⏳ Reset hasła i wylogowanie (FR-23, FR-24)
@@ -92,8 +96,7 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 - ⏳ Zaległe testy ręczne na iOS (pominięte przed merge `feature/reports`, 2026-11-06): lista klientów z kroku 6, powrót z tła z kroku 4, pełne stronicowanie z kroku 7
 - ⏳ Luka: brak testu, że `appModule` (Android) dostarcza wszystkie interfejsy
 - ⏳ Luka: brak testów kontraktu `FirestoreGateway`, które sprawdzałyby, że Android i iOS zachowują się tak samo (błąd → rodzaj, wartość → typ). Minimum: test instrumentowany Androida na emulatorze Firestore i spisana tabela zachowań w ADR 0006
-- ⏳ Alert budżetu w Google Cloud od razu po przejściu na plan Blaze (najtańsze zabezpieczenie przed niespodzianką w kosztach)
-- ⏳ Kompresja wideo na urządzeniu i limity rozmiaru: ustalamy na realnych filmach (kompromis jakość / koszt) (FR-16, NFR-05)
+- ✅ Alert budżetu w Google Cloud od razu po przejściu na plan Blaze (najtańsze zabezpieczenie przed niespodzianką w kosztach); ustawiony 2026-11-09
 
 ## Faza 2 — po MVP ⏳
 
@@ -101,7 +104,6 @@ Do uzgodnienia z trenerem po MVP.
 
 - ⏳ Kalendarz raportów klienta i zbiorczy kalendarz trenera (FR-11)
 - ⏳ Powiadomienia push (FCM) i lista powiadomień w aplikacji (FR-21, FR-22)
-- ⏳ Miniatury zdjęć i wideo (FR-17)
 - ⏳ Ekran „porządki” + kwartalne zbiorcze przypomnienie o starych filmach: usuń / zachowaj / nie przypominaj (FR-18–FR-20)
 - ⏳ Encja Pies (klient ma 1..n psów, raport wskazuje psa) (FR-27, FR-28)
 - ⏳ Lista klientów sortowana wg ostatniego raportu ze znacznikiem „Bez komentarza” (FR-33, odłożone 2026-11-04; „Nowy raport” odpada). Najpierw decyzja o źródle danych, bo raporty nie mają `trainerId`
@@ -129,7 +131,7 @@ Do uzgodnienia z trenerem po MVP.
 - **Zapisy czekają na potwierdzenie serwera.** Repozytoria czekają (`await`) na zapis w Firestore, więc offline zapis nie kończy się, dopóki nie wróci sieć, a UI pokaże wskaźnik ładowania. Firestore zapisuje lokalnie od razu, ale z tego trybu offline w MVP świadomie nie korzystamy. Rozwiązanie po MVP: „Zapisy offline” w Fazie 2.
 - **Odczyty offline z cache.** Domyślne `get()` bez sieci zwraca dane z cache. Lista raportów mówi o tym Snackbarem przy odświeżeniu (krok 7), inne odczyty (szczegóły klienta, trener) nadal po cichu. Fałszywy koniec listy: offline dociąganie strony, której nie ma w cache, kończy listę bez komunikatu; świadomie pominięte 2026-11-06 (możliwe rozwiązanie: krótka strona z cache przy `Append` jako błąd z ponowieniem).
 - **Listenery Firestore a koszty.** Start listenera kosztuje tyle co pełny odczyt wyników, kolejne zmiany tylko po 1 odczycie za zmieniony dokument. Po powrocie na ekran (listener zatrzymany przez `WhileSubscribed`) i przerwie dłuższej niż ok. 30 min płacimy znów za pełny odczyt. Do kroku 7 słuchamy całej historii raportów klienta, bez `limit`.
-- **Usunięcie raportu nie usuwa plików z Storage.** `deleteReport` kasuje tylko dokument. Do rozwiązania razem ze zdjęciami i filmem (F1-04), inaczej zostaną osierocone pliki.
+- **Usunięcie raportu nie usuwa plików z Storage.** `deleteReport` kasuje tylko dokument. Do rozwiązania na końcu brancha zdjęć i filmu, inaczej zostaną osierocone pliki.
 
 ## 🐞 Znane problemy
 
