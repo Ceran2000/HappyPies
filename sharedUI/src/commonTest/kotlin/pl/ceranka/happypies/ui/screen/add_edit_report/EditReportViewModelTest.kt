@@ -12,10 +12,16 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import pl.ceranka.happypies.core.DataException
+import pl.ceranka.happypies.data.report.MediaItem
+import pl.ceranka.happypies.data.report.MediaType
+import pl.ceranka.happypies.fakes.FakeMediaRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.accountOf
+import pl.ceranka.happypies.fakes.anna
 import pl.ceranka.happypies.fakes.report
 import pl.ceranka.happypies.fakes.trainer
+import pl.ceranka.happypies.fakes.uploadedVideo
+import pl.ceranka.happypies.fakes.video
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -29,6 +35,7 @@ class EditReportViewModelTest {
 
     private val existing = report("r1").copy(title = "Przywołanie", description = "Trzy próby")
     private val reports = FakeReportRepository().apply { stored[existing.id] = existing }
+    private val media = FakeMediaRepository()
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -38,7 +45,7 @@ class EditReportViewModelTest {
 
     // The state is shared WhileSubscribed, so a test collects it like the screen does.
     private fun TestScope.createViewModel() =
-        EditReportViewModel(reports, accountOf(trainer), existing.id).also { viewModel ->
+        EditReportViewModel(reports, media, accountOf(trainer), existing.id).also { viewModel ->
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
         }
 
@@ -68,7 +75,7 @@ class EditReportViewModelTest {
 
         assertTrue(viewModel.editing.isSaved)
         assertEquals(
-            FakeReportRepository.Update(existing.id, "Przywołanie z gwizdkiem", null, editorId = trainer.uid),
+            FakeReportRepository.Update(existing.id, "Przywołanie z gwizdkiem", null, media = emptyList(), editorId = trainer.uid),
             reports.updated.single()
         )
     }
@@ -150,5 +157,71 @@ class EditReportViewModelTest {
         assertFalse(state.isSaved)
         assertEquals(Res.string.error_unavailable, state.saveErrorMessage)
         assertEquals("Nowy tytuł", viewModel.titleState.text.toString())
+    }
+
+    private val photo = MediaItem(MediaType.PHOTO, "reports/r1/photo.jpg", 500_000)
+
+    private fun storeWithMedia() {
+        reports.stored[existing.id] = existing.copy(media = listOf(photo, video))
+    }
+
+    @Test
+    fun showsTheVideosOfTheReport() = runTest {
+        storeWithMedia()
+        val viewModel = createViewModel()
+
+        assertEquals(listOf(ReportVideo.Uploaded(video)), viewModel.editing.videos)
+    }
+
+    @Test
+    fun removedVideoIsDeletedAfterTheReportIsSaved() = runTest {
+        storeWithMedia()
+        val viewModel = createViewModel()
+        viewModel.onRemoveVideoClick(ReportVideo.Uploaded(video))
+
+        viewModel.onSaveClick()
+
+        assertEquals(listOf(photo), reports.updated.single().media)
+        assertEquals(listOf(video), media.deleted)
+        assertTrue(viewModel.editing.isSaved)
+    }
+
+    @Test
+    fun replacedVideoIsUploadedAndTheOldOneDeleted() = runTest {
+        storeWithMedia()
+        val viewModel = createViewModel()
+        viewModel.onRemoveVideoClick(ReportVideo.Uploaded(video))
+        viewModel.onVideosPicked(listOf(ReportVideo.Picked("file:///new.mov", 2_000)))
+
+        viewModel.onSaveClick()
+
+        assertEquals(listOf(photo, uploadedVideo("file:///new.mov", 2_000)), reports.updated.single().media)
+        assertEquals(anna.id, media.uploads.single().clientId)
+        assertEquals(listOf(video), media.deleted)
+    }
+
+    @Test
+    fun failedDeleteStillSavesTheReport() = runTest {
+        storeWithMedia()
+        media.deleteError = DataException.Unavailable("offline")
+        val viewModel = createViewModel()
+        viewModel.onRemoveVideoClick(ReportVideo.Uploaded(video))
+
+        viewModel.onSaveClick()
+
+        assertTrue(viewModel.editing.isSaved)
+    }
+
+    @Test
+    fun failedUpdateDeletesNoVideo() = runTest {
+        storeWithMedia()
+        reports.updateError = DataException.Unavailable("offline")
+        val viewModel = createViewModel()
+        viewModel.onRemoveVideoClick(ReportVideo.Uploaded(video))
+
+        viewModel.onSaveClick()
+
+        assertTrue(media.deleted.isEmpty())
+        assertFalse(viewModel.editing.isSaved)
     }
 }

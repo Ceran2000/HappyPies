@@ -17,6 +17,6 @@ val viewModelModule = module {
     viewModel { params -> ClientDetailsViewModel(get(), get(), get(), clientId = params.get()) }
     viewModel { params -> ClientHomeViewModel(get(), get(), get(), clientId = params.get()) }
     viewModel { (clientId: String, reportId: String) -> ReportDetailsViewModel(get(), get(), get(), get(), clientId, reportId) }
-    viewModel { params -> AddReportViewModel(get(), get(), clientId = params.get()) }
-    viewModel { params -> EditReportViewModel(get(), get(), reportId = params.get()) }
+    viewModel { params -> AddReportViewModel(get(), get(), get(), clientId = params.get()) }
+    viewModel { params -> EditReportViewModel(get(), get(), get(), reportId = params.get()) }
 }

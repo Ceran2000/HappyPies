@@ -33,4 +33,5 @@ data class NewReport(
     val description: String?,
     val authorId: String,
     val authorRole: UserRole,
+    val media: List<MediaItem>
 )

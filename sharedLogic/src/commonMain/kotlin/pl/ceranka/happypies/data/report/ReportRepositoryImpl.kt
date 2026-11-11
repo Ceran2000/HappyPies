@@ -17,6 +17,7 @@ import pl.ceranka.happypies.firebase.firestore.FirestoreDocument
 import pl.ceranka.happypies.firebase.firestore.FirestoreGateway
 import pl.ceranka.happypies.firebase.firestore.FirestoreValue
 import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ArrayValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.LongValue
 import pl.ceranka.happypies.firebase.firestore.FirestoreValue.MapValue
 import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ServerTimestamp
 import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
@@ -57,10 +58,11 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
         return id
     }
 
-    override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) {
+    override suspend fun updateReport(reportId: String, title: String, description: String?, media: List<MediaItem>, editorId: String) {
         val fields = mapOf(
             Fields.TITLE to StringValue(title),
             Fields.DESCRIPTION to description.toFirestoreValue(),
+            Fields.MEDIA to media.toFirestoreValue(),
             Fields.LAST_EDITED_BY to StringValue(editorId),
             Fields.UPDATED_AT to ServerTimestamp,
         )
@@ -99,7 +101,19 @@ internal fun NewReport.toFields(): Map<String, FirestoreValue> = mapOf(
     Fields.LAST_EDITED_BY to StringValue(authorId),
     Fields.CREATED_AT to ServerTimestamp,
     Fields.UPDATED_AT to ServerTimestamp,
-    Fields.MEDIA to ArrayValue(emptyList()),
+    Fields.MEDIA to media.toFirestoreValue()
+)
+
+private fun List<MediaItem>.toFirestoreValue() = ArrayValue(
+    map { item ->
+        MapValue(
+            mapOf(
+                Fields.MEDIA_TYPE to StringValue(item.type.name),
+                Fields.MEDIA_STORAGE_PATH to StringValue(item.storagePath),
+                Fields.MEDIA_SIZE_BYTES to LongValue(item.sizeBytes)
+            )
+        )
+    }
 )
 
 internal fun FirestoreDocument.toReport(): Report {

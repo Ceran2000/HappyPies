@@ -28,7 +28,7 @@ fun AddReportScreen(
         cancelButtonEnabled = uiState.cancelButtonEnabled,
         onCancel = onCancel,
         bottomBar = {
-            SaveReportBar(isSaving = uiState.showSavingProgress, enabled = uiState.saveButtonEnabled, onSaveClick = viewModel::onSaveClick)
+            SaveReportBar(saveStatus = uiState.saveStatus, enabled = uiState.saveButtonEnabled, onSaveClick = viewModel::onSaveClick)
         }
     ) {
         ReportFields(
@@ -37,6 +37,15 @@ fun AddReportScreen(
             titleFieldErrorMessage = uiState.titleFieldErrorMessage,
             saveErrorMessage = uiState.saveErrorMessage,
             enabled = uiState.fieldsEnabled
+        )
+        ReportVideos(
+            videos = uiState.videos,
+            addButtonEnabled = uiState.addVideoButtonEnabled,
+            removeEnabled = uiState.fieldsEnabled,
+            pickerMaxItems = uiState.videoPickerMaxItems,
+            errorMessage = uiState.videoErrorMessage,
+            onVideosPicked = viewModel::onVideosPicked,
+            onRemoveClick = viewModel::onRemoveVideoClick
         )
     }
 }

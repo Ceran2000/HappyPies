@@ -3,6 +3,8 @@ package pl.ceranka.happypies.firebase.storage
 import androidx.core.net.toUri
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.tasks.await
 import pl.ceranka.happypies.core.DataException
 
 class AndroidStorageGateway(private val storage: FirebaseStorage) : StorageGateway {
@@ -20,6 +22,17 @@ class AndroidStorageGateway(private val storage: FirebaseStorage) : StorageGatew
             .addOnProgressListener { listener.onUploadEvent(UploadEvent.Progress(it.bytesTransferred, it.totalByteCount)) }
 
         return UploadHandle { uploadTask.cancel() }
+    }
+
+    override suspend fun delete(storagePath: String): DeleteResult {
+        return try {
+            storage.reference.child(storagePath).delete().await()
+            DeleteResult.Success
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            DeleteResult.Failure(e.toDataException())
+        }
     }
 
 }

@@ -16,3 +16,9 @@ fun StorageGateway.uploadFlow(localFileUri: String, storagePath: String): Flow<U
     awaitClose { handle.cancel() }
 }
     .conflate()
+
+suspend fun StorageGateway.deleteOrThrow(storagePath: String): Unit =
+    when (val result = delete(storagePath)) {
+        is DeleteResult.Success -> Unit
+        is DeleteResult.Failure -> throw result.error
+    }

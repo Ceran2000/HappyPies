@@ -66,6 +66,12 @@
     <string name="report_form_save">Zapisz raport</string>
     <string name="report_form_title_required">Podaj tytuł raportu</string>
     <string name="report_form_session_expired">Sesja wygasła. Zaloguj się ponownie.</string>
+    <string name="report_form_videos_label">Filmy (maks. %1$d)</string>
+    <string name="report_form_add_video">Dodaj film</string>
+    <string name="report_form_video_item">Film %1$d · %2$s</string>
+    <string name="report_form_remove_video">Usuń film</string>
+    <string name="report_form_uploading">Wysyłanie %1$d%</string>
+    <string name="report_form_video_unreadable">Nie udało się odczytać filmu. Wybierz inny.</string>
     <!-- [/ReportForm] -->
 
     <!-- [ReportDetails] -->

@@ -29,7 +29,15 @@ final class IosStorageGateway: StorageGateway {
         return StorageUploadHandle { task.cancel() }
     }
     
-    
+    func delete(storagePath: String) async throws -> DeleteResult {
+        do {
+            try await storage.reference(withPath: storagePath).delete()
+            return DeleteResult.Success.shared
+        } catch {
+            if error is CancellationError { throw error }
+            return DeleteResult.Failure(error: classify(error))
+        }
+    }
 }
 
 private final class StorageUploadHandle: UploadHandle {

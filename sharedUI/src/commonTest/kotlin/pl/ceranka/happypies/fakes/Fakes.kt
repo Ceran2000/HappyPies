@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.core.ListenerHandle
 import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
@@ -16,6 +17,7 @@ import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.client.Dog
+import pl.ceranka.happypies.data.media.MediaRepository
 import pl.ceranka.happypies.data.report.MediaItem
 import pl.ceranka.happypies.data.report.MediaType
 import pl.ceranka.happypies.data.report.NewReport
@@ -174,7 +176,7 @@ class FakeReportRepository : ReportRepository {
     val stored = mutableMapOf<String, Report>()
     var getError: Exception? = null
 
-    data class Update(val reportId: String, val title: String, val description: String?, val editorId: String)
+    data class Update(val reportId: String, val title: String, val description: String?, val media: List<MediaItem>, val editorId: String)
 
     val updated = mutableListOf<Update>()
     var updateError: Exception? = null
@@ -184,8 +186,8 @@ class FakeReportRepository : ReportRepository {
         return stored.getValue(reportId)
     }
 
-    override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) {
-        updated += Update(reportId, title, description, editorId)
+    override suspend fun updateReport(reportId: String, title: String, description: String?, media: List<MediaItem>, editorId: String) {
+        updated += Update(reportId, title, description, media, editorId)
         updateError?.let { throw it }
     }
 
@@ -201,3 +203,34 @@ class FakeReportRepository : ReportRepository {
         commentError?.let { throw it }
     }
 }
+
+class FakeMediaRepository : MediaRepository {
+
+    data class Upload(val clientId: String, val localFileUri: String, val sizeBytes: Long)
+
+    val uploads = mutableListOf<Upload>()
+    val deleted = mutableListOf<MediaItem>()
+
+    /** Uploads of these local files fail. */
+    val failingUris = mutableSetOf<String>()
+    var deleteError: Exception? = null
+
+    /** When set, each upload reports half of the file and waits for it, so a test can see the progress. */
+    var uploadGate: CompletableDeferred<Unit>? = null
+
+    override suspend fun uploadVideo(clientId: String, localFileUri: String, sizeBytes: Long, onProgress: (uploadedBytes: Long) -> Unit): MediaItem {
+        uploads += Upload(clientId, localFileUri, sizeBytes)
+        if (localFileUri in failingUris) throw DataException.Unavailable("offline")
+        onProgress(sizeBytes / 2)
+        uploadGate?.await()
+        onProgress(sizeBytes)
+        return uploadedVideo(localFileUri, sizeBytes)
+    }
+
+    override suspend fun delete(item: MediaItem) {
+        deleted += item
+        deleteError?.let { throw it }
+    }
+}
+
+fun uploadedVideo(localFileUri: String, sizeBytes: Long) = MediaItem(MediaType.VIDEO, "reports/uploaded/$localFileUri", sizeBytes)

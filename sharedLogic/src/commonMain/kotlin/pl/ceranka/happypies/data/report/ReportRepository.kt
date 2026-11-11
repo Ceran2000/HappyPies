@@ -23,7 +23,7 @@ interface ReportRepository {
     suspend fun createReport(report: NewReport): String
 
     @Throws(Exception::class)
-    suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String)
+    suspend fun updateReport(reportId: String, title: String, description: String?, media: List<MediaItem>, editorId: String)
 
     @Throws(Exception::class)
     suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole)

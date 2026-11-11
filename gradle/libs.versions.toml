@@ -24,8 +24,10 @@ kotlinxSerialization = "1.11.0"
 kotlinxDatetime = "0.8.0"
 kermit = "2.2.0"
 androidx-paging = "3.5.3"
+filekit = "0.15.0"
 
 [libraries]
+filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }

@@ -20,6 +20,10 @@ import pl.ceranka.happypies.firebase.firestore.FirestoreValue
 import pl.ceranka.happypies.firebase.firestore.PageResult
 import pl.ceranka.happypies.firebase.firestore.ReadResult
 import pl.ceranka.happypies.firebase.firestore.WriteResult
+import pl.ceranka.happypies.firebase.storage.DeleteResult
+import pl.ceranka.happypies.firebase.storage.StorageGateway
+import pl.ceranka.happypies.firebase.storage.UploadHandle
+import pl.ceranka.happypies.firebase.storage.UploadListener
 import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportViewModel
 import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportViewModel
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
@@ -44,6 +48,7 @@ class ViewModelModuleTest {
     private val platformModule = module {
         single<AuthManager> { FakeAuthManager }
         single<FirestoreGateway> { FakeFirestoreGateway }
+        single<StorageGateway> { FakeStorageGateway }
     }
 
     private val koin = koinApplication { modules(platformModule, dataModule, viewModelModule) }.koin
@@ -102,4 +107,9 @@ private object FakeFirestoreGateway : FirestoreGateway {
     override suspend fun delete(collection: String, id: String) = WriteResult.Success(id)
     override fun addDocumentListener(collection: String, id: String, listener: DocumentListener) = ListenerHandle {}
     override suspend fun queryPage(query: CollectionQuery) = PageResult.Success(emptyList(), null, isFromCache = false)
+}
+
+private object FakeStorageGateway : StorageGateway {
+    override fun startUpload(localFileUri: String, storagePath: String, listener: UploadListener) = UploadHandle {}
+    override suspend fun delete(storagePath: String) = DeleteResult.Success
 }

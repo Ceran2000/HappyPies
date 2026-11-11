@@ -187,8 +187,8 @@ class ReportRepositoryImplTest {
     fun reportWritesReloadTheReports() = runTest {
         val generations = collect(repository.reports("client-1"))
 
-        repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER))
-        repository.updateReport("r1", "Nowy tytuł", null, "trainer-1")
+        repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER, media = emptyList()))
+        repository.updateReport("r1", "Nowy tytuł", null, emptyList(), "trainer-1")
         repository.deleteReport("r1")
 
         assertEquals(4, generations.size)
@@ -303,7 +303,7 @@ class ReportRepositoryImplTest {
 
     @Test
     fun createReportWritesServerTimestampsAndEmptyMedia() = runTest {
-        val id = repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER))
+        val id = repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER, media = emptyList()))
 
         val write = gateway.writes.single()
         assertEquals("new-id", id)
@@ -319,8 +319,17 @@ class ReportRepositoryImplTest {
     }
 
     @Test
+    fun createReportWritesTheMedia() = runTest {
+        val item = MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)
+
+        repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER, media = listOf(item)))
+
+        assertEquals(ArrayValue(listOf(video)), gateway.writes.single().fields!![ReportFirestoreFields.MEDIA])
+    }
+
+    @Test
     fun updateReportRecordsTheEditor() = runTest {
-        repository.updateReport("r1", "Nowy tytuł", "Opis", "client-1")
+        repository.updateReport("r1", "Nowy tytuł", "Opis", listOf(MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)), "client-1")
 
         val write = gateway.writes.single()
         assertEquals("update", write.operation)
@@ -329,6 +338,7 @@ class ReportRepositoryImplTest {
             mapOf(
                 ReportFirestoreFields.TITLE to StringValue("Nowy tytuł"),
                 ReportFirestoreFields.DESCRIPTION to StringValue("Opis"),
+                ReportFirestoreFields.MEDIA to ArrayValue(listOf(video)),
                 ReportFirestoreFields.LAST_EDITED_BY to StringValue("client-1"),
                 ReportFirestoreFields.UPDATED_AT to ServerTimestamp,
             ),
