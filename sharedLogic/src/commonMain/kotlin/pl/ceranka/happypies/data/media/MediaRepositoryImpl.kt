@@ -20,4 +20,4 @@ class MediaRepositoryImpl(private val gateway: StorageGateway) : MediaRepository
     }
 }
 
-private fun newStoragePath(clientId: String): String = "reports/$clientId/${Uuid.random()}"
+private fun newStoragePath(clientId: String): String = "clients/$clientId/media/${Uuid.random()}"
