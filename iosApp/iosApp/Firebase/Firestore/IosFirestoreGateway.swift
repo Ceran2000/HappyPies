@@ -1,5 +1,5 @@
 import FirebaseFirestore
-import SharedUI
+import Shared
 
 final class IosFirestoreGateway: FirestoreGateway {
 

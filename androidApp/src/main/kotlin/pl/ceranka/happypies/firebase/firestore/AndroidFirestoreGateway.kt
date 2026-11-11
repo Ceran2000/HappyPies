@@ -106,7 +106,6 @@ private suspend fun page(buildRequest: () -> Query): PageResult = catching({ Pag
 }
 
 private fun Exception.toDataException(): DataException {
-    val message = message ?: this::class.java.simpleName
     if (this !is FirebaseFirestoreException) return DataException.Unknown(message)
     return when (code) {
         Code.NOT_FOUND -> DataException.NotFound(message)

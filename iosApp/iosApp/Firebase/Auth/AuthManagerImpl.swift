@@ -1,5 +1,5 @@
 import FirebaseAuth
-import SharedUI
+import Shared
 
 final class AuthManagerImpl: AuthManager {
 

@@ -15,9 +15,9 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "SharedUI"
+            baseName = "Shared"
             isStatic = true
-            binaryOption("bundleId", "pl.ceranka.happypies.sharedUI")
+            binaryOption("bundleId", "pl.ceranka.happypies.shared")
             export(projects.sharedLogic)
         }
     }
