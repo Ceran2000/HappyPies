@@ -4,7 +4,7 @@ import pl.ceranka.happypies.data.user.UserRole
 
 enum class MediaType { PHOTO, VIDEO }
 
-data class MediaItem(val type: MediaType, val storagePath: String, val sizeBytes: Long)
+data class MediaItem(val type: MediaType, val storagePath: String, val downloadUrl: String, val sizeBytes: Long)
 
 data class ReportComment(
     val authorId: String,

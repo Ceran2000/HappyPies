@@ -56,7 +56,7 @@ fun report(
     media = media,
 )
 
-val video = MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)
+val video = MediaItem(MediaType.VIDEO, "clients/client-1/media/v1", "https://example.com/v1", 24_000_000)
 
 class FakeAccountRepository(initial: AccountState) : AccountRepository {
     override val state = MutableStateFlow(initial)
@@ -233,4 +233,5 @@ class FakeMediaRepository : MediaRepository {
     }
 }
 
-fun uploadedVideo(localFileUri: String, sizeBytes: Long) = MediaItem(MediaType.VIDEO, "reports/uploaded/$localFileUri", sizeBytes)
+fun uploadedVideo(localFileUri: String, sizeBytes: Long) =
+    MediaItem(MediaType.VIDEO, "clients/uploaded/media/$localFileUri", "https://example.com/uploaded/$localFileUri", sizeBytes)

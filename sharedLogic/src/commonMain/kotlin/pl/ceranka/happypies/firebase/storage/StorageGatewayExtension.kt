@@ -22,3 +22,9 @@ suspend fun StorageGateway.deleteOrThrow(storagePath: String): Unit =
         is DeleteResult.Success -> Unit
         is DeleteResult.Failure -> throw result.error
     }
+
+suspend fun StorageGateway.downloadUrlOrThrow(storagePath: String): String =
+    when (val result = getDownloadUrl(storagePath)) {
+        is DownloadUrlResult.Success -> result.url
+        is DownloadUrlResult.Failure -> throw result.error
+    }

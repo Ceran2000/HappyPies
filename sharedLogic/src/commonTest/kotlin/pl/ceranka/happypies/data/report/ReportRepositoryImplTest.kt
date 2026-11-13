@@ -57,8 +57,9 @@ class ReportRepositoryImplTest {
     private val video = MapValue(
         mapOf(
             ReportFirestoreFields.MEDIA_TYPE to StringValue("VIDEO"),
-            ReportFirestoreFields.MEDIA_STORAGE_PATH to StringValue("reports/r1/video.mp4"),
-            ReportFirestoreFields.MEDIA_SIZE_BYTES to LongValue(24_000_000),
+            ReportFirestoreFields.MEDIA_STORAGE_PATH to StringValue("clients/client-1/media/v1"),
+            ReportFirestoreFields.MEDIA_DOWNLOAD_URL to StringValue("https://example.com/v1"),
+            ReportFirestoreFields.MEDIA_SIZE_BYTES to LongValue(24_000_000)
         )
     )
 
@@ -103,7 +104,7 @@ class ReportRepositoryImplTest {
                 createdAt = 1_000,
                 updatedAt = 2_000,
                 comment = ReportComment("trainer-1", UserRole.TRAINER, "Dobra robota", 3_000),
-                media = listOf(MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)),
+                media = listOf(MediaItem(MediaType.VIDEO, "clients/client-1/media/v1", "https://example.com/v1", 24_000_000)),
             ),
             readReport(validFields),
         )
@@ -291,6 +292,12 @@ class ReportRepositoryImplTest {
     }
 
     @Test
+    fun mediaEntryWithoutDownloadUrlIsMalformed() = runTest {
+        val withoutUrl = MapValue(video.fields - ReportFirestoreFields.MEDIA_DOWNLOAD_URL)
+        assertFailsWith<DataException.MalformedData> { readReport(validFields + (ReportFirestoreFields.MEDIA to ArrayValue(listOf(withoutUrl)))) }
+    }
+
+    @Test
     fun missingReportIsNotFound() = runTest {
         assertFailsWith<DataException.NotFound> { repository.getReport("r1") }
     }
@@ -320,7 +327,7 @@ class ReportRepositoryImplTest {
 
     @Test
     fun createReportWritesTheMedia() = runTest {
-        val item = MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)
+        val item = MediaItem(MediaType.VIDEO, "clients/client-1/media/v1", "https://example.com/v1", 24_000_000)
 
         repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER, media = listOf(item)))
 
@@ -329,7 +336,7 @@ class ReportRepositoryImplTest {
 
     @Test
     fun updateReportRecordsTheEditor() = runTest {
-        repository.updateReport("r1", "Nowy tytuł", "Opis", listOf(MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)), "client-1")
+        repository.updateReport("r1", "Nowy tytuł", "Opis", listOf(MediaItem(MediaType.VIDEO, "clients/client-1/media/v1", "https://example.com/v1", 24_000_000)), "client-1")
 
         val write = gateway.writes.single()
         assertEquals("update", write.operation)

@@ -1,6 +1,7 @@
 package pl.ceranka.happypies.ui.screen.report_details
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -24,6 +26,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +50,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -53,6 +58,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,6 +67,7 @@ import happypies.sharedui.generated.resources.common_cancel
 import happypies.sharedui.generated.resources.common_delete
 import happypies.sharedui.generated.resources.common_edit_report
 import happypies.sharedui.generated.resources.common_save
+import happypies.sharedui.generated.resources.common_video_item
 import happypies.sharedui.generated.resources.report_details_add_comment
 import happypies.sharedui.generated.resources.report_details_added_by
 import happypies.sharedui.generated.resources.report_details_comment
@@ -77,12 +84,16 @@ import happypies.sharedui.generated.resources.report_details_deleting
 import happypies.sharedui.generated.resources.report_details_edit_comment
 import happypies.sharedui.generated.resources.report_details_edited_by
 import happypies.sharedui.generated.resources.report_details_go_back
+import happypies.sharedui.generated.resources.report_details_play_video
+import happypies.sharedui.generated.resources.report_details_videos
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.ui.common.CenteredProgress
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
+import pl.ceranka.happypies.ui.common.formatMegabytes
+import pl.ceranka.happypies.ui.media.rememberVideoPlayerLauncher
 
 @Composable
 fun ReportDetailsScreen(
@@ -94,6 +105,7 @@ fun ReportDetailsScreen(
 ) {
     val viewModel = koinViewModel<ReportDetailsViewModel> { parametersOf(clientId, reportId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val videoPlayer = rememberVideoPlayerLauncher()
 
     LaunchedEffect(uiState.isDeleteFinished) {
         if (uiState.isDeleteFinished) onDeleted()
@@ -103,6 +115,7 @@ fun ReportDetailsScreen(
         uiState = uiState,
         onBack = onBack,
         onEditReport = onEditReport,
+        onVideoClick = videoPlayer::play,
         onDelete = viewModel::onDelete,
         onRetry = viewModel::onRetry,
         commentText = viewModel.commentText,
@@ -129,6 +142,7 @@ private fun ReportDetailsContent(
     uiState: ReportDetailsUiState,
     onBack: () -> Unit,
     onEditReport: () -> Unit,
+    onVideoClick: (url: String) -> Unit,
     onDelete: () -> Unit,
     onRetry: () -> Unit,
     commentText: TextFieldState,
@@ -174,7 +188,7 @@ private fun ReportDetailsContent(
         ) {
             when {
                 uiState.isDeleted -> ReportDeletedNotice(onBack)
-                report != null -> LoadedReport(report, uiState, commentText, commentActions, onRetry)
+                report != null -> LoadedReport(report, uiState, commentText, commentActions, onVideoClick, onRetry)
                 uiState.error != null -> ErrorWithRetry(stringResource(uiState.error), onRetry)
                 else -> CenteredProgress()
             }
@@ -217,15 +231,47 @@ private fun LoadedReport(
     uiState: ReportDetailsUiState,
     commentText: TextFieldState,
     commentActions: CommentActions,
+    onVideoClick: (url: String) -> Unit,
     onRetry: () -> Unit
 ) {
     Text(text = report.title, style = MaterialTheme.typography.titleLarge)
     report.description?.let { Text(text = it, style = MaterialTheme.typography.bodyLarge) }
+    if (report.videos.isNotEmpty()) VideoSection(report.videos, onVideoClick)
     Spacer(Modifier.height(4.dp))
     CommentSection(report, uiState.commentEditor, commentText, commentActions)
     if (uiState.showReportDeletionProgress) ReportDeletionProgress()
     uiState.deleteError?.let { Text(text = stringResource(it), color = MaterialTheme.colorScheme.error) }
     uiState.error?.let { ErrorWithRetry(stringResource(it), onRetry) }
+}
+
+@Composable
+private fun VideoSection(videos: List<ReportDetailsVideo>, onVideoClick: (url: String) -> Unit) {
+    Column {
+        Text(text = stringResource(Res.string.report_details_videos), style = MaterialTheme.typography.titleSmall)
+        videos.forEachIndexed { index, video ->
+            VideoRow(number = index + 1, sizeBytes = video.sizeBytes, onClick = { onVideoClick(video.downloadUrl) })
+        }
+    }
+}
+
+@Composable
+private fun VideoRow(number: Int, sizeBytes: Long, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .clickable(onClickLabel = stringResource(Res.string.report_details_play_video), role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Icon(Icons.Rounded.Movie, contentDescription = null)
+        Text(
+            text = stringResource(Res.string.common_video_item, number, formatMegabytes(sizeBytes)),
+            modifier = Modifier.weight(1f).padding(start = 12.dp)
+        )
+        Icon(Icons.Rounded.PlayArrow, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+    }
 }
 
 @Composable

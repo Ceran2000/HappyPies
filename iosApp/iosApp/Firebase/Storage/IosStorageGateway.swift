@@ -38,6 +38,17 @@ final class IosStorageGateway: StorageGateway {
             return DeleteResult.Failure(error: classify(error))
         }
     }
+    
+    func getDownloadUrl(storagePath: String) async throws -> DownloadUrlResult {
+        do {
+            let downloadUrl = try await storage.reference(withPath: storagePath).downloadURL().absoluteString
+            return DownloadUrlResult.Success(url: downloadUrl)
+        } catch {
+            if error is CancellationError { throw error }
+            return DownloadUrlResult.Failure(error: classify(error))
+        }
+    }
+
 }
 
 private final class StorageUploadHandle: UploadHandle {

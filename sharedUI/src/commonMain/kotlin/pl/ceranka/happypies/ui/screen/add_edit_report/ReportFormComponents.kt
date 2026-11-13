@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import happypies.sharedui.generated.resources.Res
+import happypies.sharedui.generated.resources.common_video_item
 import happypies.sharedui.generated.resources.report_form_add_video
 import happypies.sharedui.generated.resources.report_form_description_label
 import happypies.sharedui.generated.resources.report_form_description_placeholder
@@ -45,7 +46,6 @@ import happypies.sharedui.generated.resources.report_form_remove_video
 import happypies.sharedui.generated.resources.report_form_save
 import happypies.sharedui.generated.resources.report_form_title_label
 import happypies.sharedui.generated.resources.report_form_uploading
-import happypies.sharedui.generated.resources.report_form_video_item
 import happypies.sharedui.generated.resources.report_form_videos_label
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
@@ -166,7 +166,7 @@ private fun VideoRow(number: Int, sizeBytes: Long, removeEnabled: Boolean, onRem
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         Icon(Icons.Rounded.Movie, contentDescription = null)
         Text(
-            text = stringResource(Res.string.report_form_video_item, number, formatMegabytes(sizeBytes)),
+            text = stringResource(Res.string.common_video_item, number, formatMegabytes(sizeBytes)),
             modifier = Modifier.weight(1f).padding(start = 12.dp)
         )
         IconButton(onClick = onRemoveClick, enabled = removeEnabled) {

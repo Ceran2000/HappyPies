@@ -159,7 +159,7 @@ class EditReportViewModelTest {
         assertEquals("Nowy tytuł", viewModel.titleState.text.toString())
     }
 
-    private val photo = MediaItem(MediaType.PHOTO, "reports/r1/photo.jpg", 500_000)
+    private val photo = MediaItem(MediaType.PHOTO, "clients/client-1/media/p1", "https://example.com/p1", 500_000)
 
     private fun storeWithMedia() {
         reports.stored[existing.id] = existing.copy(media = listOf(photo, video))

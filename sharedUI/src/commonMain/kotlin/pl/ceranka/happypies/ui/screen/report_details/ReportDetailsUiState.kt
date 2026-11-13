@@ -22,6 +22,7 @@ data class ReportDetailsUiState(
 data class ReportDetailsItem(
     val title: String,
     val description: String?,
+    val videos: List<ReportDetailsVideo>,
     val addedBy: ChangeStamp,
     val editedBy: ChangeStamp?,
     val comment: CommentItem?,
@@ -30,6 +31,8 @@ data class ReportDetailsItem(
     val showAddCommentButton: Boolean get() = viewerCanAddComment
     val showDeleteCommentButton: Boolean get() = comment != null
 }
+
+data class ReportDetailsVideo(val downloadUrl: String, val sizeBytes: Long)
 
 data class ChangeStamp(val personName: String, val date: String)
 

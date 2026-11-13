@@ -110,6 +110,7 @@ private fun List<MediaItem>.toFirestoreValue() = ArrayValue(
             mapOf(
                 Fields.MEDIA_TYPE to StringValue(item.type.name),
                 Fields.MEDIA_STORAGE_PATH to StringValue(item.storagePath),
+                Fields.MEDIA_DOWNLOAD_URL to StringValue(item.downloadUrl),
                 Fields.MEDIA_SIZE_BYTES to LongValue(item.sizeBytes)
             )
         )
@@ -143,5 +144,6 @@ private fun DocumentReader.toComment() = ReportComment(
 private fun DocumentReader.toMediaItem() = MediaItem(
     type = requireEnum(Fields.MEDIA_TYPE, MediaType.entries),
     storagePath = requireString(Fields.MEDIA_STORAGE_PATH),
-    sizeBytes = requireLong(Fields.MEDIA_SIZE_BYTES),
+    downloadUrl = requireString(Fields.MEDIA_DOWNLOAD_URL),
+    sizeBytes = requireLong(Fields.MEDIA_SIZE_BYTES)
 )

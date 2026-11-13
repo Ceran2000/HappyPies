@@ -11,6 +11,7 @@
     <string name="common_greeting">Cześć, %1$s</string>
     <string name="common_new_report">Nowy raport</string>
     <string name="common_edit_report">Edytuj raport</string>
+    <string name="common_video_item">Film %1$d · %2$s</string>
     <!-- [/Common] -->
 
     <!-- [Errors] -->
@@ -68,7 +69,6 @@
     <string name="report_form_session_expired">Sesja wygasła. Zaloguj się ponownie.</string>
     <string name="report_form_videos_label">Filmy (maks. %1$d)</string>
     <string name="report_form_add_video">Dodaj film</string>
-    <string name="report_form_video_item">Film %1$d · %2$s</string>
     <string name="report_form_remove_video">Usuń film</string>
     <string name="report_form_uploading">Wysyłanie %1$d%</string>
     <string name="report_form_video_unreadable">Nie udało się odczytać filmu. Wybierz inny.</string>
@@ -83,6 +83,8 @@
     <string name="report_details_deleting">Usuwanie…</string>
     <string name="report_details_added_by">Dodany przez: %1$s · %2$s</string>
     <string name="report_details_edited_by">Edytowany przez: %1$s · %2$s</string>
+    <string name="report_details_videos">Filmy</string>
+    <string name="report_details_play_video">Odtwórz film</string>
     <string name="report_details_comment">Komentarz</string>
     <string name="report_details_comment_author">Komentarz: %1$s</string>
     <string name="report_details_comment_updated_at">Ostatnia zmiana: %1$s</string>

@@ -21,6 +21,7 @@ import pl.ceranka.happypies.firebase.firestore.PageResult
 import pl.ceranka.happypies.firebase.firestore.ReadResult
 import pl.ceranka.happypies.firebase.firestore.WriteResult
 import pl.ceranka.happypies.firebase.storage.DeleteResult
+import pl.ceranka.happypies.firebase.storage.DownloadUrlResult
 import pl.ceranka.happypies.firebase.storage.StorageGateway
 import pl.ceranka.happypies.firebase.storage.UploadHandle
 import pl.ceranka.happypies.firebase.storage.UploadListener
@@ -112,4 +113,5 @@ private object FakeFirestoreGateway : FirestoreGateway {
 private object FakeStorageGateway : StorageGateway {
     override fun startUpload(localFileUri: String, storagePath: String, listener: UploadListener) = UploadHandle {}
     override suspend fun delete(storagePath: String) = DeleteResult.Success
+    override suspend fun getDownloadUrl(storagePath: String) = DownloadUrlResult.Success("https://example.com/$storagePath")
 }

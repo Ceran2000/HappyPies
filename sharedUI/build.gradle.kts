@@ -41,6 +41,8 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
+            implementation(libs.media3.exoplayer)
+            implementation(libs.media3.ui)
         }
         commonMain.dependencies {
             api(projects.sharedLogic)

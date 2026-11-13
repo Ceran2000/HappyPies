@@ -4,6 +4,7 @@ import pl.ceranka.happypies.data.report.MediaItem
 import pl.ceranka.happypies.data.report.MediaType
 import pl.ceranka.happypies.firebase.storage.StorageGateway
 import pl.ceranka.happypies.firebase.storage.deleteOrThrow
+import pl.ceranka.happypies.firebase.storage.downloadUrlOrThrow
 import pl.ceranka.happypies.firebase.storage.uploadFlow
 import kotlin.uuid.Uuid
 
@@ -12,7 +13,8 @@ class MediaRepositoryImpl(private val gateway: StorageGateway) : MediaRepository
     override suspend fun uploadVideo(clientId: String, localFileUri: String, sizeBytes: Long, onProgress: (uploadedBytes: Long) -> Unit): MediaItem {
         val storagePath = newStoragePath(clientId)
         gateway.uploadFlow(localFileUri, storagePath).collect { onProgress(it.uploadedBytes) }
-        return MediaItem(MediaType.VIDEO, storagePath, sizeBytes)
+        val downloadUrl = gateway.downloadUrlOrThrow(storagePath)
+        return MediaItem(MediaType.VIDEO, storagePath, downloadUrl, sizeBytes)
     }
 
     override suspend fun delete(item: MediaItem) {

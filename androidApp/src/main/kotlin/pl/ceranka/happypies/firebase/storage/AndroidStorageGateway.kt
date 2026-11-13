@@ -35,6 +35,17 @@ class AndroidStorageGateway(private val storage: FirebaseStorage) : StorageGatew
         }
     }
 
+    override suspend fun getDownloadUrl(storagePath: String): DownloadUrlResult {
+        return try {
+            val downloadUrl = storage.reference.child(storagePath).downloadUrl.await()
+            DownloadUrlResult.Success(downloadUrl.toString())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            DownloadUrlResult.Failure(e.toDataException())
+        }
+    }
+
 }
 
 private fun Exception.toDataException(): DataException {

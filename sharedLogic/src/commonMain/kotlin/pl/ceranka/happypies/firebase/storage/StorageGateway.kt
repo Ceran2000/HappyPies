@@ -6,4 +6,7 @@ interface StorageGateway {
 
     @Throws(Exception::class)
     suspend fun delete(storagePath: String): DeleteResult
+
+    @Throws(Exception::class)
+    suspend fun getDownloadUrl(storagePath: String): DownloadUrlResult
 }

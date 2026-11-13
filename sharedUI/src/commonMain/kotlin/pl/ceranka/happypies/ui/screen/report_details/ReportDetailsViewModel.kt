@@ -35,6 +35,7 @@ import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.client.ClientRepository
+import pl.ceranka.happypies.data.report.MediaType
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.data.trainer.TrainerRepository
@@ -190,6 +191,7 @@ private data class DeletionState(val inProgress: Boolean = false, val finished: 
 private fun Report.toItem(people: ClientSpacePeople, viewer: Account?, timeZone: TimeZone) = ReportDetailsItem(
     title = title,
     description = description,
+    videos = media.filter { it.type == MediaType.VIDEO }.map { ReportDetailsVideo(it.downloadUrl, it.sizeBytes) },
     addedBy = ChangeStamp(people.nameOf(authorId), formatDateTime(createdAt, timeZone)),
     editedBy = if (updatedAt > createdAt) {
         ChangeStamp(people.nameOf(lastEditedBy), formatDateTime(updatedAt, timeZone))

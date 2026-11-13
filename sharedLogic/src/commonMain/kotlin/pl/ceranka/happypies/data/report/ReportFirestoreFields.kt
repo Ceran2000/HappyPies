@@ -21,5 +21,6 @@ object ReportFirestoreFields {
     const val MEDIA = "media"
     const val MEDIA_TYPE = "type"
     const val MEDIA_STORAGE_PATH = "storagePath"
+    const val MEDIA_DOWNLOAD_URL = "downloadUrl"
     const val MEDIA_SIZE_BYTES = "sizeBytes"
 }
