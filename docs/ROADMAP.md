@@ -6,7 +6,7 @@
 
 ## 📍 Teraz
 
-**Faza 1 — MVP** · branch: `feature/media` (zdjęcia i film): wysyłanie i odtwarzanie filmów gotowe (FR-15, FR-34); następne: zepsuty raport nie blokuje listy, potem zdjęcia
+**Faza 1 — MVP** · branch: `feature/media` (zdjęcia i film): filmy gotowe (wysyłanie i odtwarzanie, FR-15 / FR-34, `3a526b1`); zepsuty raport nie blokuje listy (2026-11-21, test ręczny OK); na branchu zostały: zdjęcia, kompresja wideo z limitami, kasowanie plików przy usuwaniu raportu, sprzątanie osieroconych plików
 
 Najbliższe kroki:
 1. ✅ Koin multiplatform wdrożony, przetestowany i zmergowany do `main`
@@ -88,13 +88,13 @@ Jeden typ raportu, bez podziału na raporty trenera i klienta (ADR 0004). Po MVP
 
 **Obsługa błędów**
 - ⏳ Przegląd i obsługa błędów (z review `feature/reports`, 2026-11-06): lista klientów bez „Spróbuj ponownie” (jedyny ekran bez ponowienia); `UNAUTHENTICATED` klasyfikowane jak `PermissionDenied`, przez co chwilowy brak tokenu wylogowałby użytkownika jako „odrzuconego”; Android bez strażnika `pendingCursor` (ogólny komunikat zamiast tego co na iOS); `cachedReloads` wspólne dla całego repozytorium zamiast per lista (poprawić najpóźniej przy następnej stronicowanej liście)
-- ⏳ Zepsuty raport nie blokuje listy (decyzja 2026-11-13, osobny task po FR-34): dziś `ReportPagingSource` mapuje całą stronę naraz i jeden dokument rzucający `MalformedData` daje błąd całej listy (wyszło na raportach testowych bez `downloadUrl`). Wybrany wariant B: mapowanie dalej rzuca, ale lista łapie błąd per dokument i pokazuje go jako sealed `Readable(report)` / `Unreadable(id)` z kartą zastępczą „Nie można wyświetlić raportu” (bez akcji po kliknięciu, błąd w logu). Odrzucone: pominięcie zepsutego raportu (znika bez śladu, przy masowym błędzie lista wyglądałaby na pustą)
+- ✅ Zepsuty raport nie blokuje listy (decyzja 2026-11-13, osobny task po FR-34; zrobione 2026-11-21, testy i build Android/iOS OK, test ręczny OK): dziś `ReportPagingSource` mapuje całą stronę naraz i jeden dokument rzucający `MalformedData` daje błąd całej listy (wyszło na raportach testowych bez `downloadUrl`). Wybrany wariant B: mapowanie dalej rzuca, ale lista łapie błąd per dokument i pokazuje go jako sealed `Readable(report)` / `Unreadable(id)` z kartą zastępczą „Nie można wyświetlić raportu” (bez akcji po kliknięciu, błąd w logu). Odrzucone: pominięcie zepsutego raportu (znika bez śladu, przy masowym błędzie lista wyglądałaby na pustą). Realizacja: `ReportEntry` (`Readable` / `Unreadable`) w warstwie danych, łapany tylko `MalformedData`; w UI sealed `ReportListItem` i `UnreadableReportCard`; wspólne `reportItems` dla startu klienta i szczegółów klienta
 - ⏳ Pełne dane błędu z SDK w `DataException` na obu platformach (decyzja odłożona 2026-11-11): dziś przechodzi tylko `message` (od 2026-11-11 `String?`, bez sztucznego fallbacku na nazwę klasy), a gubimy oryginalny wyjątek (kod błędu, stack trace). Rozwiązanie bez asymetrii: Android może podać `cause`, ale Swift nie (`NSError` to nie `Throwable`), więc szukamy formy wspólnej dla obu, np. pola z domeną i kodem błędu platformy. Do zrobienia najpóźniej przy wprowadzaniu logowania / Crashlytics
 
 **Na koniec MVP** (decyzja 2026-10-11; do tego czasu klient w demo zakładany ręcznie w konsoli Firebase)
 - ⏳ Zaproszenie klienta mailem: deep link → rejestracja (tylko po zaproszeniu), ważność 7 dni, ponowne wysłanie (FR-02, FR-25)
 - ⏳ Usunięcie klienta wraz z danymi, w tym kaskadowe kasowanie mediów (Cloud Function) (FR-04)
-- ⏳ Security Rules z podziałem na role dla `users` i `reports` (teraz tymczasowo „każdy zalogowany”; klient ma zmieniać tylko swoje `dogs` i czytać dokument swojego trenera; nikt nie może sam zmienić sobie `role` ani `trainerId`, bo dziś klient mógłby nadać sobie rolę trenera). Reguły i indeksy wdrażane z plików w repo (`firestore.rules`, `firestore.indexes.json`, `firebase deploy`), a nie klikane w konsoli (FR-03)
+- ⏳ Security Rules z podziałem na role dla `users` i `reports` (teraz tymczasowo „każdy zalogowany”; klient ma zmieniać tylko swoje `dogs` i czytać dokument swojego trenera; nikt nie może sam zmienić sobie `role` ani `trainerId`, bo dziś klient mógłby nadać sobie rolę trenera). Reguły (Firestore i Storage) i indeksy zostają tylko w konsoli Firebase, bez plików w repo (decyzja 2026-11-13, zastępuje wcześniejszy plan `firebase deploy`) (FR-03)
 - ⏳ Zasada zmian schematu od chwili prawdziwych danych (2026-11-13): nowe pole w istniejącej kolekcji jest opcjonalne z jawną obsługą braku albo idzie razem z migracją starych dokumentów; usuwanie danych testowych (jak przy `downloadUrl`) przestaje być opcją
 - ⏳ Testy logiki ViewModeli (stany Loading/Success/Error) z fałszywymi repozytoriami
 - ⏳ Zaległe testy ręczne na iOS (pominięte przed merge `feature/reports`, 2026-11-06): lista klientów z kroku 6, powrót z tła z kroku 4, pełne stronicowanie z kroku 7

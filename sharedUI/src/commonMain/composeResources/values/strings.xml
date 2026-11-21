@@ -58,6 +58,7 @@
     <string name="report_card_added_by">Dodany przez: %1$s · %2$s</string>
     <string name="report_card_commented">Skomentowano</string>
     <string name="report_card_no_comments">Brak komentarzy</string>
+    <string name="report_card_unreadable">Nie można wyświetlić raportu</string>
     <!-- [/ReportCard] -->
 
     <!-- [ReportForm] -->

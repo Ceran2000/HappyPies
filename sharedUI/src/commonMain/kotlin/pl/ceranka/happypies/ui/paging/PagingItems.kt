@@ -18,7 +18,7 @@ val LazyPagingItems<*>.isRefreshing: Boolean get() = loadState.refresh is LoadSt
 fun <T : Any> LazyListScope.pagingItems(
     items: LazyPagingItems<T>,
     key: (T) -> Any,
-    contentType: String,
+    contentType: (T) -> Any,
     emptyContent: @Composable () -> Unit,
     itemContent: @Composable (T) -> Unit
 ) {
@@ -37,7 +37,7 @@ fun <T : Any> LazyListScope.pagingItems(
     items(
         count = items.itemCount,
         key = items.itemKey(key),
-        contentType = items.itemContentType { contentType }
+        contentType = items.itemContentType(contentType)
     ) { index ->
         items[index]?.let { itemContent(it) }
     }

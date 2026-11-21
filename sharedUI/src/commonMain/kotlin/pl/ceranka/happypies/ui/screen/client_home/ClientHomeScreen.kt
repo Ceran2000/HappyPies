@@ -54,10 +54,9 @@ import pl.ceranka.happypies.ui.common.CenteredProgress
 import pl.ceranka.happypies.ui.common.EmptyReportsCard
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
-import pl.ceranka.happypies.ui.common.ReportCard
 import pl.ceranka.happypies.ui.common.ReportListItem
+import pl.ceranka.happypies.ui.common.reportItems
 import pl.ceranka.happypies.ui.paging.PagingLazyColumn
-import pl.ceranka.happypies.ui.paging.pagingItems
 
 @Composable
 fun ClientHomeScreen(
@@ -169,21 +168,6 @@ private fun LazyListScope.headerWithReports(
             message = stringResource(Res.string.client_home_empty_message)
         )
     })
-}
-
-private fun LazyListScope.reportItems(
-    reports: LazyPagingItems<ReportListItem>,
-    onReportClick: (reportId: String) -> Unit,
-    emptyContent: @Composable () -> Unit
-) {
-    pagingItems(
-        items = reports,
-        key = { it.id },
-        contentType = "report",
-        emptyContent = emptyContent
-    ) { report ->
-        ReportCard(report, onClick = { onReportClick(report.id) })
-    }
 }
 
 private fun LazyListScope.loading() {

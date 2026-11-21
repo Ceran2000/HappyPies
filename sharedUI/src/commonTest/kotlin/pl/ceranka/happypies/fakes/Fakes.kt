@@ -23,6 +23,7 @@ import pl.ceranka.happypies.data.report.MediaType
 import pl.ceranka.happypies.data.report.NewReport
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportComment
+import pl.ceranka.happypies.data.report.ReportEntry
 import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.data.trainer.Trainer
 import pl.ceranka.happypies.data.trainer.TrainerRepository
@@ -115,7 +116,7 @@ class FakeReportRepository : ReportRepository {
     override val cachedReloads = MutableSharedFlow<Unit>()
 
     /** The client's reports, all in one page. */
-    var reports: List<Report> = emptyList()
+    var reports: List<ReportEntry> = emptyList()
 
     // The live single report, like liveReports; null means it no longer exists.
     private val liveReport = MutableStateFlow<Result<Report?>>(Result.success(null))
@@ -152,7 +153,7 @@ class FakeReportRepository : ReportRepository {
     var commentGate: CompletableDeferred<Unit>? = null
 
     // Without load states asSnapshot never sees the load finish and waits forever.
-    override fun reports(clientId: String): Flow<PagingData<Report>> = flow {
+    override fun reports(clientId: String): Flow<PagingData<ReportEntry>> = flow {
         val loaded = LoadState.NotLoading(endOfPaginationReached = true)
         emit(PagingData.from(reports, sourceLoadStates = LoadStates(refresh = loaded, prepend = loaded, append = loaded)))
     }

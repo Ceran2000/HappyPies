@@ -145,7 +145,7 @@ class ReportRepositoryImplTest {
         gateway.pageError = DataException.PermissionDenied("denied")
         val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1", onCachedRefresh = {}))
 
-        val result = assertIs<PagingSource.LoadResult.Error<PageCursor, Report>>(pager.refresh())
+        val result = assertIs<PagingSource.LoadResult.Error<PageCursor, ReportEntry>>(pager.refresh())
 
         assertIs<DataException.PermissionDenied>(result.throwable)
     }
@@ -175,13 +175,19 @@ class ReportRepositoryImplTest {
     }
 
     @Test
-    fun malformedReportIsALoadError() = runTest {
-        gateway.pageDocuments = listOf(FirestoreDocument("r1", validFields - ReportFirestoreFields.TITLE))
-        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1", onCachedRefresh = {}))
+    fun malformedReportIsUnreadableAndTheOthersLoad() = runTest {
+        gateway.pageDocuments = listOf(
+            reportDocument("r1", createdAt = 3_000),
+            FirestoreDocument("r2", validFields - ReportFirestoreFields.TITLE),
+            reportDocument("r3", createdAt = 1_000)
+        )
 
-        val result = assertIs<PagingSource.LoadResult.Error<PageCursor, Report>>(pager.refresh())
+        val loaded = repository.reports("client-1").asSnapshot()
 
-        assertIs<DataException.MalformedData>(result.throwable)
+        assertEquals(listOf("r1", "r2", "r3"), loaded.map { it.id })
+        assertIs<ReportEntry.Readable>(loaded[0])
+        assertEquals(ReportEntry.Unreadable("r2"), loaded[1])
+        assertIs<ReportEntry.Readable>(loaded[2])
     }
 
     @Test

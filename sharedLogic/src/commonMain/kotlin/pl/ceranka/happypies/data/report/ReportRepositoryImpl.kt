@@ -37,7 +37,7 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
     private val cachedRefreshes = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     override val cachedReloads: Flow<Unit> = cachedRefreshes
 
-    override fun reports(clientId: String): Flow<PagingData<Report>> = channelFlow {
+    override fun reports(clientId: String): Flow<PagingData<ReportEntry>> = channelFlow {
         val sources = InvalidatingPagingSourceFactory {
             ReportPagingSource(gateway, clientId, onCachedRefresh = { cachedRefreshes.tryEmit(Unit) })
         }

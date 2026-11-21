@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
 import pl.ceranka.happypies.core.DataException
+import pl.ceranka.happypies.data.report.ReportEntry
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.FakeClientRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository
@@ -48,8 +49,9 @@ class ClientHomeViewModelTest {
     @Test
     fun showsTheHeaderAndTheReportsWithRealNames() = runTest {
         reports.reports = listOf(
-            report("r1", createdAt = 1_791_830_400_000),
-            report("r2", createdAt = 1_791_191_100_000, authorId = trainer.uid, authorRole = UserRole.TRAINER)
+            ReportEntry.Readable(report("r1", createdAt = 1_791_830_400_000)),
+            ReportEntry.Readable(report("r2", createdAt = 1_791_191_100_000, authorId = trainer.uid, authorRole = UserRole.TRAINER)),
+            ReportEntry.Unreadable("r3")
         )
 
         val viewModel = createViewModel()
@@ -60,8 +62,9 @@ class ClientHomeViewModelTest {
         assertEquals("AK", state.initials)
         assertEquals(
             listOf(
-                ReportListItem("r1", "Raport r1", "12.10.2026", "Anna Kowalska", hasComment = false),
-                ReportListItem("r2", "Raport r2", "05.10.2026", "Jan Trener", hasComment = false)
+                ReportListItem.Readable("r1", "Raport r1", "12.10.2026", "Anna Kowalska", hasComment = false),
+                ReportListItem.Readable("r2", "Raport r2", "05.10.2026", "Jan Trener", hasComment = false),
+                ReportListItem.Unreadable("r3")
             ),
             viewModel.reports.asSnapshot()
         )
@@ -74,7 +77,7 @@ class ClientHomeViewModelTest {
         assertEquals(ClientHomeUiState.Error(Res.string.error_unavailable), viewModel.uiState.value)
 
         trainers.error = null
-        reports.reports = listOf(report("r1"))
+        reports.reports = listOf(ReportEntry.Readable(report("r1")))
         viewModel.onRetry()
 
         assertEquals(ClientHomeUiState.ShowContent(anna, annasTrainer), viewModel.uiState.value)

@@ -7,8 +7,8 @@ import pl.ceranka.happypies.data.user.UserRole
 
 interface ReportRepository {
 
-    /** The client's reports, newest first, in pages */
-    fun reports(clientId: String): Flow<PagingData<Report>>
+    /** The client's reports, newest first, in pages; a malformed report comes as [ReportEntry.Unreadable] instead of failing the page. */
+    fun reports(clientId: String): Flow<PagingData<ReportEntry>>
 
     /** Emits when [reports] reloaded from the device cache because the server was unreachable. */
     val cachedReloads: Flow<Unit>

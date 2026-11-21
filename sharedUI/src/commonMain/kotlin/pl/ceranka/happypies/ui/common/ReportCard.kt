@@ -17,10 +17,11 @@ import happypies.sharedui.generated.resources.Res
 import happypies.sharedui.generated.resources.report_card_added_by
 import happypies.sharedui.generated.resources.report_card_commented
 import happypies.sharedui.generated.resources.report_card_no_comments
+import happypies.sharedui.generated.resources.report_card_unreadable
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
+fun ReportCard(report: ReportListItem.Readable, onClick: () -> Unit) {
     ElevatedCard(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
@@ -39,6 +40,18 @@ fun ReportCard(report: ReportListItem, onClick: () -> Unit) {
             )
             CommentChip(report.hasComment)
         }
+    }
+}
+
+@Composable
+fun UnreadableReportCard() {
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(Res.string.report_card_unreadable),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp)
+        )
     }
 }
 
