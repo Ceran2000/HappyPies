@@ -70,14 +70,19 @@ private fun EditingContent(
             saveErrorMessage = state.saveErrorMessage,
             enabled = state.fieldsEnabled
         )
-        ReportVideos(
-            videos = state.videos,
-            addButtonEnabled = state.addVideoButtonEnabled,
-            removeEnabled = state.fieldsEnabled,
-            pickerMaxItems = state.videoPickerMaxItems,
-            errorMessage = state.videoErrorMessage,
-            onVideosPicked = viewModel::onVideosPicked,
-            onRemoveClick = viewModel::onRemoveVideoClick
+        ReportMediaSection(
+            media = state.media,
+            isPreparing = state.isPreparingMedia,
+            showAddPhotosButton = state.showAddPhotosButton,
+            showAddVideosButton = state.showAddVideosButton,
+            photoPickerMaxItems = state.photoPickerMaxItems,
+            videoPickerMaxItems = state.videoPickerMaxItems,
+            addButtonEnabled = state.addMediaButtonEnabled,
+            showRemoveButtons = state.showRemoveMediaButtons,
+            showLimitError = state.showMediaLimitError,
+            errorMessage = state.mediaErrorMessage,
+            onMediaPicked = viewModel::onMediaPicked,
+            onRemoveClick = viewModel::onRemoveMediaClick
         )
     }
 }

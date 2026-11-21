@@ -15,13 +15,16 @@ import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.report.MediaItem
 import pl.ceranka.happypies.data.report.MediaType
 import pl.ceranka.happypies.fakes.FakeMediaRepository
+import pl.ceranka.happypies.fakes.FakePhotoCompressor
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.accountOf
 import pl.ceranka.happypies.fakes.anna
 import pl.ceranka.happypies.fakes.report
 import pl.ceranka.happypies.fakes.trainer
+import pl.ceranka.happypies.fakes.uploadedMedia
 import pl.ceranka.happypies.fakes.uploadedVideo
 import pl.ceranka.happypies.fakes.video
+import pl.ceranka.happypies.ui.media.PickedFile
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -45,7 +48,7 @@ class EditReportViewModelTest {
 
     // The state is shared WhileSubscribed, so a test collects it like the screen does.
     private fun TestScope.createViewModel() =
-        EditReportViewModel(reports, media, accountOf(trainer), existing.id).also { viewModel ->
+        EditReportViewModel(reports, media, accountOf(trainer), FakePhotoCompressor(), existing.id).also { viewModel ->
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
         }
 
@@ -161,28 +164,31 @@ class EditReportViewModelTest {
 
     private val photo = MediaItem(MediaType.PHOTO, "clients/client-1/media/p1", "https://example.com/p1", 500_000)
 
+    private fun uploaded(item: MediaItem) = ReportMedia.Uploaded(item, previewUri = item.downloadUrl)
+
     private fun storeWithMedia() {
         reports.stored[existing.id] = existing.copy(media = listOf(photo, video))
     }
 
     @Test
-    fun showsTheVideosOfTheReport() = runTest {
+    fun showsTheMediaOfTheReport() = runTest {
         storeWithMedia()
         val viewModel = createViewModel()
 
-        assertEquals(listOf(ReportVideo.Uploaded(video)), viewModel.editing.videos)
+        assertEquals(listOf(uploaded(photo), uploaded(video)), viewModel.editing.media)
     }
 
     @Test
-    fun removedVideoIsDeletedAfterTheReportIsSaved() = runTest {
+    fun removedFilesAreDeletedAfterTheReportIsSaved() = runTest {
         storeWithMedia()
         val viewModel = createViewModel()
-        viewModel.onRemoveVideoClick(ReportVideo.Uploaded(video))
+        viewModel.onRemoveMediaClick(uploaded(video))
+        viewModel.onRemoveMediaClick(uploaded(photo))
 
         viewModel.onSaveClick()
 
-        assertEquals(listOf(photo), reports.updated.single().media)
-        assertEquals(listOf(video), media.deleted)
+        assertEquals(emptyList(), reports.updated.single().media)
+        assertEquals(listOf(photo, video), media.deleted)
         assertTrue(viewModel.editing.isSaved)
     }
 
@@ -190,8 +196,8 @@ class EditReportViewModelTest {
     fun replacedVideoIsUploadedAndTheOldOneDeleted() = runTest {
         storeWithMedia()
         val viewModel = createViewModel()
-        viewModel.onRemoveVideoClick(ReportVideo.Uploaded(video))
-        viewModel.onVideosPicked(listOf(ReportVideo.Picked("file:///new.mov", 2_000)))
+        viewModel.onRemoveMediaClick(uploaded(video))
+        viewModel.onMediaPicked(listOf(PickedFile("file:///new.mov", "video/mp4", 2_000)))
 
         viewModel.onSaveClick()
 
@@ -201,11 +207,26 @@ class EditReportViewModelTest {
     }
 
     @Test
+    fun addedPhotoIsCompressedAndUploaded() = runTest {
+        storeWithMedia()
+        val viewModel = createViewModel()
+        viewModel.onMediaPicked(listOf(PickedFile("file:///p2.heic", "image/heic", 3_000_000)))
+
+        viewModel.onSaveClick()
+
+        assertEquals(
+            listOf(photo, video, uploadedMedia(MediaType.PHOTO, "file:///p2.heic.jpg", 300_000)),
+            reports.updated.single().media
+        )
+        assertTrue(media.deleted.isEmpty())
+    }
+
+    @Test
     fun failedDeleteStillSavesTheReport() = runTest {
         storeWithMedia()
         media.deleteError = DataException.Unavailable("offline")
         val viewModel = createViewModel()
-        viewModel.onRemoveVideoClick(ReportVideo.Uploaded(video))
+        viewModel.onRemoveMediaClick(uploaded(video))
 
         viewModel.onSaveClick()
 
@@ -213,11 +234,11 @@ class EditReportViewModelTest {
     }
 
     @Test
-    fun failedUpdateDeletesNoVideo() = runTest {
+    fun failedUpdateDeletesNoFile() = runTest {
         storeWithMedia()
         reports.updateError = DataException.Unavailable("offline")
         val viewModel = createViewModel()
-        viewModel.onRemoveVideoClick(ReportVideo.Uploaded(video))
+        viewModel.onRemoveMediaClick(uploaded(video))
 
         viewModel.onSaveClick()
 

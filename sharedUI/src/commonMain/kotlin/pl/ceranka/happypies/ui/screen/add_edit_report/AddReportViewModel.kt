@@ -7,7 +7,6 @@ import co.touchlab.kermit.Logger
 import happypies.sharedui.generated.resources.Res
 import happypies.sharedui.generated.resources.report_form_session_expired
 import happypies.sharedui.generated.resources.report_form_title_required
-import happypies.sharedui.generated.resources.report_form_video_unreadable
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,16 +19,20 @@ import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.media.MediaRepository
 import pl.ceranka.happypies.data.report.NewReport
 import pl.ceranka.happypies.data.report.ReportRepository
+import pl.ceranka.happypies.infrastructure.media.PhotoCompressor
 import pl.ceranka.happypies.ui.common.toUserMessage
+import pl.ceranka.happypies.ui.media.PickedFile
 
 class AddReportViewModel(
     private val reportRepository: ReportRepository,
-    private val mediaRepository: MediaRepository,
+    mediaRepository: MediaRepository,
     private val accountRepository: AccountRepository,
+    private val photoCompressor: PhotoCompressor,
     private val clientId: String
 ) : ViewModel() {
 
     private val log = Logger.withTag("AddReport")
+    private val mediaUploader by lazy { ReportMediaUploader(mediaRepository) }
 
     private val reportFormFields = ReportFormFields()
     val titleState: TextFieldState get() = reportFormFields.titleState
@@ -38,14 +41,22 @@ class AddReportViewModel(
     private val _uiState = MutableStateFlow(AddReportUiState.INITIAL)
     val uiState: StateFlow<AddReportUiState> = _uiState.asStateFlow()
 
-    fun onVideosPicked(videos: List<ReportVideo.Picked>) {
-        val readable = videos.filter { it.sizeBytes >= 0 }
-        val videoErrorMessage = if (readable.size < videos.size) Res.string.report_form_video_unreadable else null
-        _uiState.update { it.copy(videos = it.videos.withPicked(readable), videoErrorMessage = videoErrorMessage) }
+    fun onMediaPicked(files: List<PickedFile>) {
+        _uiState.update { it.copy(isPreparingMedia = true, mediaErrorMessage = null) }
+        viewModelScope.launch {
+            val prepared = files.map { photoCompressor.preparedMediaOrNull(it) }
+            _uiState.update {
+                it.copy(
+                    media = it.media.withPicked(prepared.filterNotNull()),
+                    isPreparingMedia = false,
+                    mediaErrorMessage = pickErrorMessage(prepared)
+                )
+            }
+        }
     }
 
-    fun onRemoveVideoClick(video: ReportVideo) {
-        _uiState.update { it.copy(videos = it.videos - video, videoErrorMessage = null) }
+    fun onRemoveMediaClick(media: ReportMedia) {
+        _uiState.update { it.copy(media = it.media - media, mediaErrorMessage = null) }
     }
 
     fun onSaveClick() {
@@ -53,6 +64,10 @@ class AddReportViewModel(
         if (reportFormFields.title.isEmpty()) return showTitleRequiredError()
         val viewer = accountRepository.state.value.accountOrNull ?: return showSessionExpiredError()
         createReport(viewer)
+    }
+
+    private fun clearErrors() {
+        _uiState.update { it.copy(titleFieldErrorMessage = null, saveErrorMessage = null, mediaErrorMessage = null) }
     }
 
     private fun showTitleRequiredError() {
@@ -63,15 +78,11 @@ class AddReportViewModel(
         _uiState.update { it.copy(saveErrorMessage = Res.string.report_form_session_expired) }
     }
 
-    private fun clearErrors() {
-        _uiState.update { it.copy(titleFieldErrorMessage = null, saveErrorMessage = null, videoErrorMessage = null) }
-    }
-
     private fun createReport(viewer: Account) {
-        _uiState.update { it.copy(saveStatus = it.videos.firstSaveStatus()) }
+        _uiState.update { it.copy(saveStatus = it.media.firstSaveStatus(), media = it.media.withUploadsWaiting()) }
         viewModelScope.launch {
             try {
-                uploadPickedVideos()
+                uploadPickedMedia()
                 _uiState.update { it.copy(saveStatus = SaveStatus.Saving) }
                 reportRepository.createReport(
                     NewReport(
@@ -80,7 +91,7 @@ class AddReportViewModel(
                         reportFormFields.description,
                         authorId = viewer.uid,
                         authorRole = viewer.role,
-                        media = uiState.value.videos.uploadedItems()
+                        media = uiState.value.media.uploadedItems()
                     )
                 )
                 _uiState.update { it.copy(saveStatus = SaveStatus.Saved) }
@@ -88,17 +99,25 @@ class AddReportViewModel(
                 throw e
             } catch (e: Exception) {
                 log.e(e) { "Saving a new report for client $clientId failed" }
-                _uiState.update { it.copy(saveStatus = SaveStatus.Idle, saveErrorMessage = e.toUserMessage()) }
+                _uiState.update { it.copy(saveStatus = SaveStatus.Idle, saveErrorMessage = e.toUserMessage(), media = it.media.withUploadsNotStarted()) }
             }
         }
     }
 
-    private suspend fun uploadPickedVideos() {
-        mediaRepository.uploadPickedVideos(
-            clientId,
-            uiState.value.videos,
-            onProgress = { percent -> _uiState.update { it.copy(saveStatus = SaveStatus.Uploading(percent)) } },
-            onUploaded = { picked, uploaded -> _uiState.update { it.copy(videos = it.videos.replace(picked, uploaded)) } }
+    private suspend fun uploadPickedMedia() {
+        mediaUploader.uploadPicked(
+            clientId = clientId,
+            media = uiState.value.media,
+            onProgress = { file, filePercent, totalPercent ->
+                _uiState.update {
+                    it.copy(saveStatus = SaveStatus.Uploading(totalPercent), media = it.media.withUploadProgress(file.localFileUri, filePercent))
+                }
+            },
+            onUploaded = { file, item ->
+                _uiState.update {
+                    it.copy(media = it.media.withUploaded(file.localFileUri, item))
+                }
+            }
         )
     }
 }

@@ -72,7 +72,7 @@ class ReportDetailsViewModelTest {
                 report = ReportDetailsItem(
                     title = "Raport r1",
                     description = "Trzy próby",
-                    videos = emptyList(),
+                    media = emptyList(),
                     addedBy = ChangeStamp("Anna Kowalska", "05.10.2026, 09:05"),
                     editedBy = null,
                     comment = CommentItem("Jan Trener", "Dobra robota", "12.10.2026, 18:40", viewerCanEdit = true),
@@ -84,7 +84,7 @@ class ReportDetailsViewModelTest {
     }
 
     @Test
-    fun showsTheVideosInOrderWithoutPhotos() = runTest {
+    fun showsPhotosAndVideosInTheirOrder() = runTest {
         val first = MediaItem(MediaType.VIDEO, "clients/client-1/media/v1", "https://example.com/v1", 24_000_000)
         val photo = MediaItem(MediaType.PHOTO, "clients/client-1/media/p1", "https://example.com/p1", 500_000)
         val second = MediaItem(MediaType.VIDEO, "clients/client-1/media/v2", "https://example.com/v2", 12_000_000)
@@ -92,10 +92,16 @@ class ReportDetailsViewModelTest {
 
         val viewModel = createViewModel()
 
+        val report = viewModel.uiState.value.report
         assertEquals(
-            listOf(ReportDetailsVideo("https://example.com/v1", 24_000_000), ReportDetailsVideo("https://example.com/v2", 12_000_000)),
-            viewModel.uiState.value.report?.videos
+            listOf(
+                ReportDetailsMedia.Video("https://example.com/v1", 24_000_000),
+                ReportDetailsMedia.Photo("https://example.com/p1"),
+                ReportDetailsMedia.Video("https://example.com/v2", 12_000_000)
+            ),
+            report?.media
         )
+        assertEquals(listOf("https://example.com/p1"), report?.photoUrls)
     }
 
     @Test

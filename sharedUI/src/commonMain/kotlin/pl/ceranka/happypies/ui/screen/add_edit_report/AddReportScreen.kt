@@ -38,14 +38,19 @@ fun AddReportScreen(
             saveErrorMessage = uiState.saveErrorMessage,
             enabled = uiState.fieldsEnabled
         )
-        ReportVideos(
-            videos = uiState.videos,
-            addButtonEnabled = uiState.addVideoButtonEnabled,
-            removeEnabled = uiState.fieldsEnabled,
-            pickerMaxItems = uiState.videoPickerMaxItems,
-            errorMessage = uiState.videoErrorMessage,
-            onVideosPicked = viewModel::onVideosPicked,
-            onRemoveClick = viewModel::onRemoveVideoClick
+        ReportMediaSection(
+            media = uiState.media,
+            isPreparing = uiState.isPreparingMedia,
+            showAddPhotosButton = uiState.showAddPhotosButton,
+            showAddVideosButton = uiState.showAddVideosButton,
+            photoPickerMaxItems = uiState.photoPickerMaxItems,
+            videoPickerMaxItems = uiState.videoPickerMaxItems,
+            addButtonEnabled = uiState.addMediaButtonEnabled,
+            showRemoveButtons = uiState.showRemoveMediaButtons,
+            showLimitError = uiState.showMediaLimitError,
+            errorMessage = uiState.mediaErrorMessage,
+            onMediaPicked = viewModel::onMediaPicked,
+            onRemoveClick = viewModel::onRemoveMediaClick
         )
     }
 }

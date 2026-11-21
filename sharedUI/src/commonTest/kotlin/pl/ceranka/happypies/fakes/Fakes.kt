@@ -31,6 +31,8 @@ import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.firebase.auth.AuthManager
 import pl.ceranka.happypies.firebase.auth.AuthStateListener
 import pl.ceranka.happypies.firebase.auth.AuthUser
+import pl.ceranka.happypies.infrastructure.media.CompressedPhoto
+import pl.ceranka.happypies.infrastructure.media.PhotoCompressor
 
 val anna = Client("client-1", "Anna Kowalska", "anna@przyklad.pl", trainerId = "trainer-1", listOf(Dog("Bala", "border collie")))
 val trainer = Account("trainer-1", "jan@przyklad.pl", "Jan Trener", UserRole.TRAINER)
@@ -207,7 +209,7 @@ class FakeReportRepository : ReportRepository {
 
 class FakeMediaRepository : MediaRepository {
 
-    data class Upload(val clientId: String, val localFileUri: String, val sizeBytes: Long)
+    data class Upload(val clientId: String, val type: MediaType, val localFileUri: String, val sizeBytes: Long)
 
     val uploads = mutableListOf<Upload>()
     val deleted = mutableListOf<MediaItem>()
@@ -219,13 +221,13 @@ class FakeMediaRepository : MediaRepository {
     /** When set, each upload reports half of the file and waits for it, so a test can see the progress. */
     var uploadGate: CompletableDeferred<Unit>? = null
 
-    override suspend fun uploadVideo(clientId: String, localFileUri: String, sizeBytes: Long, onProgress: (uploadedBytes: Long) -> Unit): MediaItem {
-        uploads += Upload(clientId, localFileUri, sizeBytes)
+    override suspend fun upload(clientId: String, type: MediaType, localFileUri: String, sizeBytes: Long, onProgress: (uploadedBytes: Long) -> Unit): MediaItem {
+        uploads += Upload(clientId, type, localFileUri, sizeBytes)
         if (localFileUri in failingUris) throw DataException.Unavailable("offline")
         onProgress(sizeBytes / 2)
         uploadGate?.await()
         onProgress(sizeBytes)
-        return uploadedVideo(localFileUri, sizeBytes)
+        return uploadedMedia(type, localFileUri, sizeBytes)
     }
 
     override suspend fun delete(item: MediaItem) {
@@ -234,5 +236,25 @@ class FakeMediaRepository : MediaRepository {
     }
 }
 
-fun uploadedVideo(localFileUri: String, sizeBytes: Long) =
-    MediaItem(MediaType.VIDEO, "clients/uploaded/media/$localFileUri", "https://example.com/uploaded/$localFileUri", sizeBytes)
+fun uploadedMedia(type: MediaType, localFileUri: String, sizeBytes: Long) =
+    MediaItem(type, "clients/uploaded/media/$localFileUri", "https://example.com/uploaded/$localFileUri", sizeBytes)
+
+fun uploadedVideo(localFileUri: String, sizeBytes: Long) = uploadedMedia(MediaType.VIDEO, localFileUri, sizeBytes)
+
+/** Compressed photos get the URI of the original plus ".jpg" and a tenth of its size. */
+class FakePhotoCompressor : PhotoCompressor {
+    val compressed = mutableListOf<String>()
+
+    /** Compressing these photos fails. */
+    val failingUris = mutableSetOf<String>()
+
+    /** When set, compress waits for it, so a test can act while photos are being prepared. */
+    var gate: CompletableDeferred<Unit>? = null
+
+    override suspend fun compress(uri: String): CompressedPhoto {
+        compressed += uri
+        gate?.await()
+        if (uri in failingUris) throw IllegalStateException("Cannot decode $uri")
+        return CompressedPhoto("$uri.jpg", 300_000)
+    }
+}

@@ -43,6 +43,10 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.media3.exoplayer)
             implementation(libs.media3.ui)
+            implementation(libs.ktor.client.okhttp)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
         commonMain.dependencies {
             api(projects.sharedLogic)
@@ -65,6 +69,8 @@ kotlin {
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.androidx.paging.compose)
             implementation(libs.filekit.dialogs.compose)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

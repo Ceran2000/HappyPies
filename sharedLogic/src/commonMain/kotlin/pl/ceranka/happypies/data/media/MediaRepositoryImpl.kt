@@ -10,11 +10,17 @@ import kotlin.uuid.Uuid
 
 class MediaRepositoryImpl(private val gateway: StorageGateway) : MediaRepository {
 
-    override suspend fun uploadVideo(clientId: String, localFileUri: String, sizeBytes: Long, onProgress: (uploadedBytes: Long) -> Unit): MediaItem {
+    override suspend fun upload(
+        clientId: String,
+        type: MediaType,
+        localFileUri: String,
+        sizeBytes: Long,
+        onProgress: (uploadedBytes: Long) -> Unit
+    ): MediaItem {
         val storagePath = newStoragePath(clientId)
         gateway.uploadFlow(localFileUri, storagePath).collect { onProgress(it.uploadedBytes) }
         val downloadUrl = gateway.downloadUrlOrThrow(storagePath)
-        return MediaItem(MediaType.VIDEO, storagePath, downloadUrl, sizeBytes)
+        return MediaItem(type, storagePath, downloadUrl, sizeBytes)
     }
 
     override suspend fun delete(item: MediaItem) {
