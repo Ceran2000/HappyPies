@@ -12,8 +12,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.TimeZone
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.report.ReportComment
+import pl.ceranka.happypies.data.report.ReportEntry
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.FakeClientRepository
 import pl.ceranka.happypies.fakes.FakeReportRepository
@@ -49,13 +50,15 @@ class ClientDetailsViewModelTest {
     @Test
     fun showsTheClientAndTheReportsWithResolvedAuthors() = runTest {
         reports.reports = listOf(
-            report("r1", createdAt = 1_791_830_400_000, media = listOf(video)),
-            report(
-                "r2",
-                createdAt = 1_791_191_100_000,
-                authorId = trainer.uid,
-                authorRole = UserRole.TRAINER,
-                comment = ReportComment(anna.id, UserRole.CLIENT, "Dzięki", 2_000)
+            ReportEntry.Readable(report("r1", createdAt = 1_791_830_400_000, media = listOf(video))),
+            ReportEntry.Readable(
+                report(
+                    "r2",
+                    createdAt = 1_791_191_100_000,
+                    authorId = trainer.uid,
+                    authorRole = UserRole.TRAINER,
+                    comment = ReportComment(anna.id, UserRole.CLIENT, "Dzięki", 2_000)
+                )
             )
         )
 
@@ -64,8 +67,8 @@ class ClientDetailsViewModelTest {
         assertEquals(ClientDetailsUiState.ShowContent(anna, annasTrainer), viewModel.uiState.value)
         assertEquals(
             listOf(
-                ReportListItem("r1", "Raport r1", "12.10.2026", "Anna Kowalska", hasComment = false),
-                ReportListItem("r2", "Raport r2", "05.10.2026", "Jan Trener", hasComment = true)
+                ReportListItem.Readable("r1", "Raport r1", "12.10.2026", "Anna Kowalska", hasComment = false),
+                ReportListItem.Readable("r2", "Raport r2", "05.10.2026", "Jan Trener", hasComment = true)
             ),
             viewModel.reports.asSnapshot()
         )
@@ -90,7 +93,7 @@ class ClientDetailsViewModelTest {
         assertEquals(ClientDetailsUiState.Error(offline), viewModel.uiState.value)
 
         clients.error = null
-        reports.reports = listOf(report("r1"))
+        reports.reports = listOf(ReportEntry.Readable(report("r1")))
         viewModel.onRetry()
 
         assertEquals(ClientDetailsUiState.ShowContent(anna, annasTrainer), viewModel.uiState.value)

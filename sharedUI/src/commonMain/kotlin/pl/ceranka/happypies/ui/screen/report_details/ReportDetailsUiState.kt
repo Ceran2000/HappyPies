@@ -22,6 +22,7 @@ data class ReportDetailsUiState(
 data class ReportDetailsItem(
     val title: String,
     val description: String?,
+    val media: List<ReportDetailsMedia>,
     val addedBy: ChangeStamp,
     val editedBy: ChangeStamp?,
     val comment: CommentItem?,
@@ -29,6 +30,12 @@ data class ReportDetailsItem(
 ) {
     val showAddCommentButton: Boolean get() = viewerCanAddComment
     val showDeleteCommentButton: Boolean get() = comment != null
+    val photoUrls: List<String> get() = media.filterIsInstance<ReportDetailsMedia.Photo>().map { it.downloadUrl }
+}
+
+sealed interface ReportDetailsMedia {
+    data class Photo(val downloadUrl: String) : ReportDetailsMedia
+    data class Video(val downloadUrl: String, val sizeBytes: Long) : ReportDetailsMedia
 }
 
 data class ChangeStamp(val personName: String, val date: String)

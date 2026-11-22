@@ -11,19 +11,20 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import pl.ceranka.happypies.data.firestore.DocumentReader
-import pl.ceranka.happypies.data.firestore.FirestoreDocument
-import pl.ceranka.happypies.data.firestore.FirestoreGateway
-import pl.ceranka.happypies.data.firestore.FirestoreValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.documentFlow
-import pl.ceranka.happypies.data.firestore.documentIdOrThrow
-import pl.ceranka.happypies.data.firestore.documentOrThrow
-import pl.ceranka.happypies.data.firestore.toFirestoreValue
 import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.firebase.firestore.DocumentReader
+import pl.ceranka.happypies.firebase.firestore.FirestoreDocument
+import pl.ceranka.happypies.firebase.firestore.FirestoreGateway
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ArrayValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.LongValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.MapValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ServerTimestamp
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.firebase.firestore.documentFlow
+import pl.ceranka.happypies.firebase.firestore.documentIdOrThrow
+import pl.ceranka.happypies.firebase.firestore.documentOrThrow
+import pl.ceranka.happypies.firebase.firestore.toFirestoreValue
 
 private typealias Fields = ReportFirestoreFields
 
@@ -36,7 +37,7 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
     private val cachedRefreshes = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
     override val cachedReloads: Flow<Unit> = cachedRefreshes
 
-    override fun reports(clientId: String): Flow<PagingData<Report>> = channelFlow {
+    override fun reports(clientId: String): Flow<PagingData<ReportEntry>> = channelFlow {
         val sources = InvalidatingPagingSourceFactory {
             ReportPagingSource(gateway, clientId, onCachedRefresh = { cachedRefreshes.tryEmit(Unit) })
         }
@@ -57,10 +58,11 @@ class ReportRepositoryImpl(private val gateway: FirestoreGateway) : ReportReposi
         return id
     }
 
-    override suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String) {
+    override suspend fun updateReport(reportId: String, title: String, description: String?, media: List<MediaItem>, editorId: String) {
         val fields = mapOf(
             Fields.TITLE to StringValue(title),
             Fields.DESCRIPTION to description.toFirestoreValue(),
+            Fields.MEDIA to media.toFirestoreValue(),
             Fields.LAST_EDITED_BY to StringValue(editorId),
             Fields.UPDATED_AT to ServerTimestamp,
         )
@@ -99,7 +101,20 @@ internal fun NewReport.toFields(): Map<String, FirestoreValue> = mapOf(
     Fields.LAST_EDITED_BY to StringValue(authorId),
     Fields.CREATED_AT to ServerTimestamp,
     Fields.UPDATED_AT to ServerTimestamp,
-    Fields.MEDIA to ArrayValue(emptyList()),
+    Fields.MEDIA to media.toFirestoreValue()
+)
+
+private fun List<MediaItem>.toFirestoreValue() = ArrayValue(
+    map { item ->
+        MapValue(
+            mapOf(
+                Fields.MEDIA_TYPE to StringValue(item.type.name),
+                Fields.MEDIA_STORAGE_PATH to StringValue(item.storagePath),
+                Fields.MEDIA_DOWNLOAD_URL to StringValue(item.downloadUrl),
+                Fields.MEDIA_SIZE_BYTES to LongValue(item.sizeBytes)
+            )
+        )
+    }
 )
 
 internal fun FirestoreDocument.toReport(): Report {
@@ -129,5 +144,6 @@ private fun DocumentReader.toComment() = ReportComment(
 private fun DocumentReader.toMediaItem() = MediaItem(
     type = requireEnum(Fields.MEDIA_TYPE, MediaType.entries),
     storagePath = requireString(Fields.MEDIA_STORAGE_PATH),
-    sizeBytes = requireLong(Fields.MEDIA_SIZE_BYTES),
+    downloadUrl = requireString(Fields.MEDIA_DOWNLOAD_URL),
+    sizeBytes = requireLong(Fields.MEDIA_SIZE_BYTES)
 )

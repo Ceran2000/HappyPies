@@ -13,25 +13,25 @@ import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import pl.ceranka.happypies.data.DataException
-import pl.ceranka.happypies.data.firestore.CollectionQuery
-import pl.ceranka.happypies.data.firestore.DocumentResult
-import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway
-import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway.PageRequest
-import pl.ceranka.happypies.data.firestore.FirestoreDocument
-import pl.ceranka.happypies.data.firestore.FirestoreValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.Delete
-import pl.ceranka.happypies.data.firestore.FirestoreValue.LongValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.NullValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ServerTimestamp
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.TimestampValue
-import pl.ceranka.happypies.data.firestore.OrderBy
-import pl.ceranka.happypies.data.firestore.PageCursor
-import pl.ceranka.happypies.data.firestore.WriteResult
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.firebase.firestore.CollectionQuery
+import pl.ceranka.happypies.firebase.firestore.DocumentResult
+import pl.ceranka.happypies.firebase.firestore.FakeFirestoreGateway
+import pl.ceranka.happypies.firebase.firestore.FakeFirestoreGateway.PageRequest
+import pl.ceranka.happypies.firebase.firestore.FirestoreDocument
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ArrayValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.Delete
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.LongValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.MapValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.NullValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ServerTimestamp
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.TimestampValue
+import pl.ceranka.happypies.firebase.firestore.OrderBy
+import pl.ceranka.happypies.firebase.firestore.PageCursor
+import pl.ceranka.happypies.firebase.firestore.WriteResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -57,8 +57,9 @@ class ReportRepositoryImplTest {
     private val video = MapValue(
         mapOf(
             ReportFirestoreFields.MEDIA_TYPE to StringValue("VIDEO"),
-            ReportFirestoreFields.MEDIA_STORAGE_PATH to StringValue("reports/r1/video.mp4"),
-            ReportFirestoreFields.MEDIA_SIZE_BYTES to LongValue(24_000_000),
+            ReportFirestoreFields.MEDIA_STORAGE_PATH to StringValue("clients/client-1/media/v1"),
+            ReportFirestoreFields.MEDIA_DOWNLOAD_URL to StringValue("https://example.com/v1"),
+            ReportFirestoreFields.MEDIA_SIZE_BYTES to LongValue(24_000_000)
         )
     )
 
@@ -103,7 +104,7 @@ class ReportRepositoryImplTest {
                 createdAt = 1_000,
                 updatedAt = 2_000,
                 comment = ReportComment("trainer-1", UserRole.TRAINER, "Dobra robota", 3_000),
-                media = listOf(MediaItem(MediaType.VIDEO, "reports/r1/video.mp4", 24_000_000)),
+                media = listOf(MediaItem(MediaType.VIDEO, "clients/client-1/media/v1", "https://example.com/v1", 24_000_000)),
             ),
             readReport(validFields),
         )
@@ -144,7 +145,7 @@ class ReportRepositoryImplTest {
         gateway.pageError = DataException.PermissionDenied("denied")
         val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1", onCachedRefresh = {}))
 
-        val result = assertIs<PagingSource.LoadResult.Error<PageCursor, Report>>(pager.refresh())
+        val result = assertIs<PagingSource.LoadResult.Error<PageCursor, ReportEntry>>(pager.refresh())
 
         assertIs<DataException.PermissionDenied>(result.throwable)
     }
@@ -174,21 +175,27 @@ class ReportRepositoryImplTest {
     }
 
     @Test
-    fun malformedReportIsALoadError() = runTest {
-        gateway.pageDocuments = listOf(FirestoreDocument("r1", validFields - ReportFirestoreFields.TITLE))
-        val pager = TestPager(PagingConfig(pageSize = 10, initialLoadSize = 20), ReportPagingSource(gateway, "client-1", onCachedRefresh = {}))
+    fun malformedReportIsUnreadableAndTheOthersLoad() = runTest {
+        gateway.pageDocuments = listOf(
+            reportDocument("r1", createdAt = 3_000),
+            FirestoreDocument("r2", validFields - ReportFirestoreFields.TITLE),
+            reportDocument("r3", createdAt = 1_000)
+        )
 
-        val result = assertIs<PagingSource.LoadResult.Error<PageCursor, Report>>(pager.refresh())
+        val loaded = repository.reports("client-1").asSnapshot()
 
-        assertIs<DataException.MalformedData>(result.throwable)
+        assertEquals(listOf("r1", "r2", "r3"), loaded.map { it.id })
+        assertIs<ReportEntry.Readable>(loaded[0])
+        assertEquals(ReportEntry.Unreadable("r2"), loaded[1])
+        assertIs<ReportEntry.Readable>(loaded[2])
     }
 
     @Test
     fun reportWritesReloadTheReports() = runTest {
         val generations = collect(repository.reports("client-1"))
 
-        repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER))
-        repository.updateReport("r1", "Nowy tytuł", null, "trainer-1")
+        repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER, media = emptyList()))
+        repository.updateReport("r1", "Nowy tytuł", null, emptyList(), "trainer-1")
         repository.deleteReport("r1")
 
         assertEquals(4, generations.size)
@@ -291,6 +298,12 @@ class ReportRepositoryImplTest {
     }
 
     @Test
+    fun mediaEntryWithoutDownloadUrlIsMalformed() = runTest {
+        val withoutUrl = MapValue(video.fields - ReportFirestoreFields.MEDIA_DOWNLOAD_URL)
+        assertFailsWith<DataException.MalformedData> { readReport(validFields + (ReportFirestoreFields.MEDIA to ArrayValue(listOf(withoutUrl)))) }
+    }
+
+    @Test
     fun missingReportIsNotFound() = runTest {
         assertFailsWith<DataException.NotFound> { repository.getReport("r1") }
     }
@@ -303,7 +316,7 @@ class ReportRepositoryImplTest {
 
     @Test
     fun createReportWritesServerTimestampsAndEmptyMedia() = runTest {
-        val id = repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER))
+        val id = repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER, media = emptyList()))
 
         val write = gateway.writes.single()
         assertEquals("new-id", id)
@@ -319,8 +332,17 @@ class ReportRepositoryImplTest {
     }
 
     @Test
+    fun createReportWritesTheMedia() = runTest {
+        val item = MediaItem(MediaType.VIDEO, "clients/client-1/media/v1", "https://example.com/v1", 24_000_000)
+
+        repository.createReport(NewReport("client-1", "Tytuł", description = null, "trainer-1", UserRole.TRAINER, media = listOf(item)))
+
+        assertEquals(ArrayValue(listOf(video)), gateway.writes.single().fields!![ReportFirestoreFields.MEDIA])
+    }
+
+    @Test
     fun updateReportRecordsTheEditor() = runTest {
-        repository.updateReport("r1", "Nowy tytuł", "Opis", "client-1")
+        repository.updateReport("r1", "Nowy tytuł", "Opis", listOf(MediaItem(MediaType.VIDEO, "clients/client-1/media/v1", "https://example.com/v1", 24_000_000)), "client-1")
 
         val write = gateway.writes.single()
         assertEquals("update", write.operation)
@@ -329,6 +351,7 @@ class ReportRepositoryImplTest {
             mapOf(
                 ReportFirestoreFields.TITLE to StringValue("Nowy tytuł"),
                 ReportFirestoreFields.DESCRIPTION to StringValue("Opis"),
+                ReportFirestoreFields.MEDIA to ArrayValue(listOf(video)),
                 ReportFirestoreFields.LAST_EDITED_BY to StringValue("client-1"),
                 ReportFirestoreFields.UPDATED_AT to ServerTimestamp,
             ),

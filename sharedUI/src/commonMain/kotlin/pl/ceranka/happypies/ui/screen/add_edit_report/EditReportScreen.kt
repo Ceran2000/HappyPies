@@ -60,7 +60,7 @@ private fun EditingContent(
         cancelButtonEnabled = state.cancelButtonEnabled,
         onCancel = onCancel,
         bottomBar = {
-            SaveReportBar(isSaving = state.showSavingProgress, enabled = state.saveButtonEnabled, onSaveClick = viewModel::onSaveClick)
+            SaveReportBar(saveStatus = state.saveStatus, enabled = state.saveButtonEnabled, onSaveClick = viewModel::onSaveClick)
         }
     ) {
         ReportFields(
@@ -69,6 +69,19 @@ private fun EditingContent(
             titleFieldErrorMessage = state.titleFieldErrorMessage,
             saveErrorMessage = state.saveErrorMessage,
             enabled = state.fieldsEnabled
+        )
+        ReportMediaSection(
+            media = state.media,
+            showAddPhotosButton = state.showAddPhotosButton,
+            showAddVideosButton = state.showAddVideosButton,
+            photoPickerMaxItems = state.photoPickerMaxItems,
+            videoPickerMaxItems = state.videoPickerMaxItems,
+            addButtonEnabled = state.addMediaButtonEnabled,
+            showRemoveButtons = state.showRemoveMediaButtons,
+            showLimitError = state.showMediaLimitError,
+            errorMessage = state.mediaErrorMessage,
+            onMediaPicked = viewModel::onMediaPicked,
+            onRemoveClick = viewModel::onRemoveMediaClick
         )
     }
 }

@@ -1,15 +1,15 @@
 package pl.ceranka.happypies.data.client
 
 import kotlinx.coroutines.test.runTest
-import pl.ceranka.happypies.data.DataException
-import pl.ceranka.happypies.data.firestore.CollectionQuery
-import pl.ceranka.happypies.data.firestore.FakeFirestoreGateway
-import pl.ceranka.happypies.data.firestore.FirestoreDocument
-import pl.ceranka.happypies.data.firestore.FirestoreValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.ArrayValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.MapValue
-import pl.ceranka.happypies.data.firestore.FirestoreValue.StringValue
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.user.UserFirestoreFields
+import pl.ceranka.happypies.firebase.firestore.CollectionQuery
+import pl.ceranka.happypies.firebase.firestore.FakeFirestoreGateway
+import pl.ceranka.happypies.firebase.firestore.FirestoreDocument
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.ArrayValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.MapValue
+import pl.ceranka.happypies.firebase.firestore.FirestoreValue.StringValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

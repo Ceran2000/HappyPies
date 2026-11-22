@@ -26,8 +26,10 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.messaging)
+    implementation(libs.media3.transformer)
 
     implementation(libs.koin.core)
+    implementation(libs.koin.android)
 }
 
 android {

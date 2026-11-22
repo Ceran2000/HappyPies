@@ -26,3 +26,5 @@ GoogleService-Info.plist
 CLAUDE.md
 docs/*
 !docs/ROADMAP.md
+
+firebase-debug.log

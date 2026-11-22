@@ -4,7 +4,7 @@ import happypies.sharedui.generated.resources.Res
 import happypies.sharedui.generated.resources.error_permission_denied
 import happypies.sharedui.generated.resources.error_unavailable
 import happypies.sharedui.generated.resources.error_unknown
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

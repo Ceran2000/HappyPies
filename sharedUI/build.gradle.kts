@@ -15,9 +15,9 @@ kotlin {
         iosSimulatorArm64()
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "SharedUI"
+            baseName = "Shared"
             isStatic = true
-            binaryOption("bundleId", "pl.ceranka.happypies.sharedUI")
+            binaryOption("bundleId", "pl.ceranka.happypies.shared")
             export(projects.sharedLogic)
         }
     }
@@ -41,6 +41,12 @@ kotlin {
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
+            implementation(libs.media3.exoplayer)
+            implementation(libs.media3.ui)
+            implementation(libs.ktor.client.okhttp)
+        }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
         commonMain.dependencies {
             api(projects.sharedLogic)
@@ -62,6 +68,9 @@ kotlin {
             implementation(libs.koin.core)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.androidx.paging.compose)
+            implementation(libs.filekit.dialogs.compose)
+            implementation(libs.coil.compose)
+            implementation(libs.coil.network.ktor3)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

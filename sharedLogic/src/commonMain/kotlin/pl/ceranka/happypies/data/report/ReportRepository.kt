@@ -2,13 +2,13 @@ package pl.ceranka.happypies.data.report
 
 import androidx.paging.PagingData
 import kotlinx.coroutines.flow.Flow
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 import pl.ceranka.happypies.data.user.UserRole
 
 interface ReportRepository {
 
-    /** The client's reports, newest first, in pages */
-    fun reports(clientId: String): Flow<PagingData<Report>>
+    /** The client's reports, newest first, in pages; a malformed report comes as [ReportEntry.Unreadable] instead of failing the page. */
+    fun reports(clientId: String): Flow<PagingData<ReportEntry>>
 
     /** Emits when [reports] reloaded from the device cache because the server was unreachable. */
     val cachedReloads: Flow<Unit>
@@ -23,7 +23,7 @@ interface ReportRepository {
     suspend fun createReport(report: NewReport): String
 
     @Throws(Exception::class)
-    suspend fun updateReport(reportId: String, title: String, description: String?, editorId: String)
+    suspend fun updateReport(reportId: String, title: String, description: String?, media: List<MediaItem>, editorId: String)
 
     @Throws(Exception::class)
     suspend fun setComment(reportId: String, text: String, authorId: String, authorRole: UserRole)

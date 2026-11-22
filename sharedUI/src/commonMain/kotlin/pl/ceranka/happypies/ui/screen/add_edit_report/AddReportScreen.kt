@@ -28,7 +28,7 @@ fun AddReportScreen(
         cancelButtonEnabled = uiState.cancelButtonEnabled,
         onCancel = onCancel,
         bottomBar = {
-            SaveReportBar(isSaving = uiState.showSavingProgress, enabled = uiState.saveButtonEnabled, onSaveClick = viewModel::onSaveClick)
+            SaveReportBar(saveStatus = uiState.saveStatus, enabled = uiState.saveButtonEnabled, onSaveClick = viewModel::onSaveClick)
         }
     ) {
         ReportFields(
@@ -37,6 +37,19 @@ fun AddReportScreen(
             titleFieldErrorMessage = uiState.titleFieldErrorMessage,
             saveErrorMessage = uiState.saveErrorMessage,
             enabled = uiState.fieldsEnabled
+        )
+        ReportMediaSection(
+            media = uiState.media,
+            showAddPhotosButton = uiState.showAddPhotosButton,
+            showAddVideosButton = uiState.showAddVideosButton,
+            photoPickerMaxItems = uiState.photoPickerMaxItems,
+            videoPickerMaxItems = uiState.videoPickerMaxItems,
+            addButtonEnabled = uiState.addMediaButtonEnabled,
+            showRemoveButtons = uiState.showRemoveMediaButtons,
+            showLimitError = uiState.showMediaLimitError,
+            errorMessage = uiState.mediaErrorMessage,
+            onMediaPicked = viewModel::onMediaPicked,
+            onRemoveClick = viewModel::onRemoveMediaClick
         )
     }
 }

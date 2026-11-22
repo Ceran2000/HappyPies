@@ -33,10 +33,12 @@ import happypies.sharedui.generated.resources.report_form_description_label
 import happypies.sharedui.generated.resources.report_form_description_placeholder
 import happypies.sharedui.generated.resources.report_form_save
 import happypies.sharedui.generated.resources.report_form_title_label
+import happypies.sharedui.generated.resources.report_form_uploading
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 import pl.ceranka.happypies.ui.common.ProgressButton
+import pl.ceranka.happypies.ui.common.clearFocusOnTap
 import pl.ceranka.happypies.ui.common.filledFieldColors
 
 @Composable
@@ -61,6 +63,7 @@ fun ReportFormLayout(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .clearFocusOnTap()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),
@@ -109,17 +112,31 @@ fun ReportFields(
 }
 
 @Composable
-fun SaveReportBar(isSaving: Boolean, enabled: Boolean, onSaveClick: () -> Unit) {
+fun SaveReportBar(saveStatus: SaveStatus, enabled: Boolean, onSaveClick: () -> Unit) {
     Box(
         modifier = Modifier
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal))
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
-        ProgressButton(
-            text = stringResource(Res.string.report_form_save),
-            isLoading = isSaving,
-            enabled = enabled,
-            onClick = onSaveClick
-        )
+        when (saveStatus) {
+            is SaveStatus.Uploading -> ProgressButton(
+                text = stringResource(Res.string.report_form_uploading, saveStatus.totalPercent),
+                isLoading = false,
+                enabled = false,
+                onClick = onSaveClick
+            )
+            SaveStatus.Saving -> ProgressButton(
+                text = stringResource(Res.string.report_form_save),
+                isLoading = true,
+                enabled = false,
+                onClick = onSaveClick
+            )
+            SaveStatus.Idle, SaveStatus.Saved -> ProgressButton(
+                text = stringResource(Res.string.report_form_save),
+                isLoading = false,
+                enabled = enabled,
+                onClick = onSaveClick
+            )
+        }
     }
 }

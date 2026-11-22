@@ -1,6 +1,7 @@
 package pl.ceranka.happypies.ui.screen.report_details
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -46,6 +47,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -53,6 +55,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,6 +64,9 @@ import happypies.sharedui.generated.resources.common_cancel
 import happypies.sharedui.generated.resources.common_delete
 import happypies.sharedui.generated.resources.common_edit_report
 import happypies.sharedui.generated.resources.common_save
+import happypies.sharedui.generated.resources.common_media_label
+import happypies.sharedui.generated.resources.common_photo_item
+import happypies.sharedui.generated.resources.common_video_item
 import happypies.sharedui.generated.resources.report_details_add_comment
 import happypies.sharedui.generated.resources.report_details_added_by
 import happypies.sharedui.generated.resources.report_details_comment
@@ -77,12 +83,21 @@ import happypies.sharedui.generated.resources.report_details_deleting
 import happypies.sharedui.generated.resources.report_details_edit_comment
 import happypies.sharedui.generated.resources.report_details_edited_by
 import happypies.sharedui.generated.resources.report_details_go_back
+import happypies.sharedui.generated.resources.report_details_open_photo
+import happypies.sharedui.generated.resources.report_details_play_video
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import pl.ceranka.happypies.ui.common.CenteredProgress
 import pl.ceranka.happypies.ui.common.ErrorWithRetry
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
+import pl.ceranka.happypies.ui.common.MediaGrid
+import pl.ceranka.happypies.ui.common.MediaTileFrame
+import pl.ceranka.happypies.ui.common.PhotoTileContent
+import pl.ceranka.happypies.ui.common.VideoTileContent
+import pl.ceranka.happypies.ui.common.clearFocusOnTap
+import pl.ceranka.happypies.ui.common.formatMegabytes
+import pl.ceranka.happypies.ui.media.rememberVideoPlayerLauncher
 
 @Composable
 fun ReportDetailsScreen(
@@ -94,6 +109,7 @@ fun ReportDetailsScreen(
 ) {
     val viewModel = koinViewModel<ReportDetailsViewModel> { parametersOf(clientId, reportId) }
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val videoPlayer = rememberVideoPlayerLauncher()
 
     LaunchedEffect(uiState.isDeleteFinished) {
         if (uiState.isDeleteFinished) onDeleted()
@@ -103,6 +119,7 @@ fun ReportDetailsScreen(
         uiState = uiState,
         onBack = onBack,
         onEditReport = onEditReport,
+        onVideoClick = videoPlayer::play,
         onDelete = viewModel::onDelete,
         onRetry = viewModel::onRetry,
         commentText = viewModel.commentText,
@@ -129,12 +146,14 @@ private fun ReportDetailsContent(
     uiState: ReportDetailsUiState,
     onBack: () -> Unit,
     onEditReport: () -> Unit,
+    onVideoClick: (url: String) -> Unit,
     onDelete: () -> Unit,
     onRetry: () -> Unit,
     commentText: TextFieldState,
     commentActions: CommentActions
 ) {
     var showDeleteReportDialog by rememberSaveable { mutableStateOf(false) }
+    var openedPhotoIndex by rememberSaveable { mutableStateOf<Int?>(null) }
     val report = uiState.report
 
     Scaffold(
@@ -168,17 +187,23 @@ private fun ReportDetailsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .clearFocusOnTap()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             when {
                 uiState.isDeleted -> ReportDeletedNotice(onBack)
-                report != null -> LoadedReport(report, uiState, commentText, commentActions, onRetry)
+                report != null -> LoadedReport(report, uiState, commentText, commentActions, onVideoClick, onPhotoClick = { openedPhotoIndex = it }, onRetry)
                 uiState.error != null -> ErrorWithRetry(stringResource(uiState.error), onRetry)
                 else -> CenteredProgress()
             }
         }
+    }
+
+    val photoIndex = openedPhotoIndex
+    if (report != null && photoIndex != null) {
+        PhotoViewer(photoUrls = report.photoUrls, initialIndex = photoIndex, onClose = { openedPhotoIndex = null })
     }
 
     if (showDeleteReportDialog) {
@@ -217,16 +242,76 @@ private fun LoadedReport(
     uiState: ReportDetailsUiState,
     commentText: TextFieldState,
     commentActions: CommentActions,
+    onVideoClick: (url: String) -> Unit,
+    onPhotoClick: (photoIndex: Int) -> Unit,
     onRetry: () -> Unit
 ) {
     Text(text = report.title, style = MaterialTheme.typography.titleLarge)
     report.description?.let { Text(text = it, style = MaterialTheme.typography.bodyLarge) }
+    if (report.media.isNotEmpty()) MediaSection(report.media, onVideoClick, onPhotoClick)
     Spacer(Modifier.height(4.dp))
     CommentSection(report, uiState.commentEditor, commentText, commentActions)
     if (uiState.showReportDeletionProgress) ReportDeletionProgress()
     uiState.deleteError?.let { Text(text = stringResource(it), color = MaterialTheme.colorScheme.error) }
     uiState.error?.let { ErrorWithRetry(stringResource(it), onRetry) }
 }
+
+@Composable
+private fun MediaSection(media: List<ReportDetailsMedia>, onVideoClick: (url: String) -> Unit, onPhotoClick: (photoIndex: Int) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(text = stringResource(Res.string.common_media_label), style = MaterialTheme.typography.titleSmall)
+        MediaGrid(items = media.withIndex().toList()) { (index, item), modifier ->
+            MediaItem(item, previous = media.take(index), modifier, onPhotoClick, onVideoClick)
+        }
+    }
+}
+
+@Composable
+private fun MediaItem(
+    item: ReportDetailsMedia,
+    previous: List<ReportDetailsMedia>,
+    modifier: Modifier,
+    onPhotoClick: (Int) -> Unit,
+    onVideoClick: (String) -> Unit
+) {
+    when (item) {
+        is ReportDetailsMedia.Photo -> PhotoItem(item, previous, modifier, onPhotoClick)
+        is ReportDetailsMedia.Video -> VideoItem(item, previous, modifier, onVideoClick)
+    }
+}
+
+@Composable
+private fun PhotoItem(
+    item: ReportDetailsMedia.Photo,
+    previous: List<ReportDetailsMedia>,
+    modifier: Modifier,
+    onPhotoClick: (Int) -> Unit
+) {
+    val photoIndex = previous.count { it is ReportDetailsMedia.Photo }
+    MediaTileFrame(modifier.clickableTile(stringResource(Res.string.report_details_open_photo)) { onPhotoClick(photoIndex) }) {
+        PhotoTileContent(model = item.downloadUrl, contentDescription = stringResource(Res.string.common_photo_item, photoIndex + 1))
+    }
+}
+
+@Composable
+private fun VideoItem(
+    item: ReportDetailsMedia.Video,
+    previous: List<ReportDetailsMedia>,
+    modifier: Modifier,
+    onVideoClick: (String) -> Unit
+) {
+    val number = previous.count { it is ReportDetailsMedia.Video } + 1
+    MediaTileFrame(modifier.clickableTile(stringResource(Res.string.report_details_play_video)) { onVideoClick(item.downloadUrl) }) {
+        VideoTileContent(
+            contentDescription = stringResource(Res.string.common_video_item, number, formatMegabytes(item.sizeBytes)),
+            sizeText = formatMegabytes(item.sizeBytes)
+        )
+    }
+}
+
+@Composable
+private fun Modifier.clickableTile(onClickLabel: String, onClick: () -> Unit): Modifier =
+    clip(MaterialTheme.shapes.medium).clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick)
 
 @Composable
 private fun ReportFooter(report: ReportDetailsItem, editButtonEnabled: Boolean, onEditReport: () -> Unit) {

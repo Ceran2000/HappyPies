@@ -7,7 +7,7 @@ import happypies.sharedui.generated.resources.error_permission_denied
 import happypies.sharedui.generated.resources.error_unavailable
 import happypies.sharedui.generated.resources.error_unknown
 import org.jetbrains.compose.resources.StringResource
-import pl.ceranka.happypies.data.DataException
+import pl.ceranka.happypies.core.DataException
 
 fun Throwable.toUserMessage(): StringResource = when (this) {
     is DataException.Unavailable -> Res.string.error_unavailable
