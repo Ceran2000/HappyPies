@@ -258,22 +258,21 @@ private fun LoadedReport(
 private fun MediaSection(media: List<ReportDetailsMedia>, onVideoClick: (url: String) -> Unit, onPhotoClick: (photoIndex: Int) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(text = stringResource(Res.string.common_media_label), style = MaterialTheme.typography.titleSmall)
-        MediaGrid(itemCount = media.size) { index, modifier ->
-            MediaItem(media, index, modifier, onPhotoClick, onVideoClick)
+        MediaGrid(items = media.withIndex().toList()) { (index, item), modifier ->
+            MediaItem(item, previous = media.take(index), modifier, onPhotoClick, onVideoClick)
         }
     }
 }
 
 @Composable
 private fun MediaItem(
-    media: List<ReportDetailsMedia>,
-    index: Int,
+    item: ReportDetailsMedia,
+    previous: List<ReportDetailsMedia>,
     modifier: Modifier,
     onPhotoClick: (Int) -> Unit,
     onVideoClick: (String) -> Unit
 ) {
-    val previous = media.take(index)
-    when (val item = media[index]) {
+    when (item) {
         is ReportDetailsMedia.Photo -> PhotoItem(item, previous, modifier, onPhotoClick)
         is ReportDetailsMedia.Video -> VideoItem(item, previous, modifier, onVideoClick)
     }

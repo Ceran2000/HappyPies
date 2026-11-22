@@ -9,6 +9,7 @@ import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
 import pl.ceranka.happypies.core.ListenerHandle
+import pl.ceranka.happypies.fakes.FakeVideoTranscoder
 import pl.ceranka.happypies.firebase.auth.AuthManager
 import pl.ceranka.happypies.firebase.auth.AuthStateListener
 import pl.ceranka.happypies.firebase.auth.AuthUser
@@ -25,6 +26,7 @@ import pl.ceranka.happypies.firebase.storage.DownloadUrlResult
 import pl.ceranka.happypies.firebase.storage.StorageGateway
 import pl.ceranka.happypies.firebase.storage.UploadHandle
 import pl.ceranka.happypies.firebase.storage.UploadListener
+import pl.ceranka.happypies.infrastructure.media.VideoTranscoder
 import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportViewModel
 import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportViewModel
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
@@ -50,6 +52,7 @@ class ViewModelModuleTest {
         single<AuthManager> { FakeAuthManager }
         single<FirestoreGateway> { FakeFirestoreGateway }
         single<StorageGateway> { FakeStorageGateway }
+        single<VideoTranscoder> { FakeVideoTranscoder() }
     }
 
     private val koin = koinApplication { modules(platformModule, dataModule, viewModelModule) }.koin

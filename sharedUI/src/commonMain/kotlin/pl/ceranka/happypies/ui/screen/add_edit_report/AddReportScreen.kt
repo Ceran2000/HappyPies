@@ -40,7 +40,6 @@ fun AddReportScreen(
         )
         ReportMediaSection(
             media = uiState.media,
-            isPreparing = uiState.isPreparingMedia,
             showAddPhotosButton = uiState.showAddPhotosButton,
             showAddVideosButton = uiState.showAddVideosButton,
             photoPickerMaxItems = uiState.photoPickerMaxItems,

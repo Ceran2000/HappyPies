@@ -75,11 +75,11 @@
     <string name="report_form_add_videos">Dodaj filmy</string>
     <string name="report_form_photo_limit">Zdjęcia %1$d/%2$d</string>
     <string name="report_form_video_limit">Filmy %1$d/%2$d</string>
-    <string name="report_form_upload_waiting">Czeka na wysłanie</string>
     <string name="report_form_remove_photo">Usuń zdjęcie %1$d</string>
     <string name="report_form_remove_video">Usuń film %1$d</string>
     <string name="report_form_uploading">Wysyłanie %1$d%</string>
     <string name="report_form_media_unreadable">Nie udało się odczytać części plików.</string>
+    <string name="report_form_media_too_large">Część plików jest za duża nawet po kompresji.</string>
     <string name="report_form_media_over_limit">Raport może mieć najwyżej %1$d zdjęć i %2$d filmy. Usuń nadmiarowe pliki, żeby zapisać raport.</string>
     <!-- [/ReportForm] -->
 

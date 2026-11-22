@@ -37,11 +37,11 @@ import org.jetbrains.compose.resources.stringResource
 private const val MEDIA_GRID_COLUMNS = 3
 
 @Composable
-fun MediaGrid(itemCount: Int, tile: @Composable (index: Int, modifier: Modifier) -> Unit) {
+fun <T> MediaGrid(items: List<T>, tile: @Composable (item: T, modifier: Modifier) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        (0 until itemCount).chunked(MEDIA_GRID_COLUMNS).forEach { row ->
+        items.chunked(MEDIA_GRID_COLUMNS).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                row.forEach { index -> tile(index, Modifier.weight(1f).aspectRatio(1f)) }
+                row.forEach { item -> tile(item, Modifier.weight(1f).aspectRatio(1f)) }
                 repeat(MEDIA_GRID_COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }

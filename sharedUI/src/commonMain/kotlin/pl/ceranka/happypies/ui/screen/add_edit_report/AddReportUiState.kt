@@ -8,12 +8,11 @@ data class AddReportUiState(
     val titleFieldErrorMessage: StringResource?,
     val saveErrorMessage: StringResource?,
     val media: List<ReportMedia>,
-    val isPreparingMedia: Boolean,
     val mediaErrorMessage: StringResource?
 ) {
     val fieldsEnabled: Boolean get() = saveStatus == SaveStatus.Idle
 
-    val saveButtonEnabled: Boolean get() = saveStatus == SaveStatus.Idle && !isPreparingMedia && !showMediaLimitError
+    val saveButtonEnabled: Boolean get() = saveStatus == SaveStatus.Idle && !media.isCompressing() && !showMediaLimitError
 
     val showMediaLimitError: Boolean get() = media.exceedsLimits()
 
@@ -29,7 +28,7 @@ data class AddReportUiState(
 
     val videoPickerMaxItems: Int get() = media.freeSlotsOf(MediaType.VIDEO).coerceAtLeast(1)
 
-    val addMediaButtonEnabled: Boolean get() = !isPreparingMedia
+    val addMediaButtonEnabled: Boolean get() = !media.isCompressing()
 
     val showRemoveMediaButtons: Boolean get() = fieldsEnabled
 
@@ -39,7 +38,6 @@ data class AddReportUiState(
             titleFieldErrorMessage = null,
             saveErrorMessage = null,
             media = emptyList(),
-            isPreparingMedia = false,
             mediaErrorMessage = null
         )
     }

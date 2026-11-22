@@ -12,7 +12,8 @@ struct iOSApp: App {
         KoinIosKt.setUpKoin(
             authManager: AuthManagerImpl(auth: Auth.auth()),
             firestoreGateway: IosFirestoreGateway(firestore: Firestore.firestore()),
-            storageGateway: IosStorageGateway(storage: Storage.storage())
+            storageGateway: IosStorageGateway(storage: Storage.storage()),
+            videoTranscoder: IosVideoTranscoder()
         )
     }
 

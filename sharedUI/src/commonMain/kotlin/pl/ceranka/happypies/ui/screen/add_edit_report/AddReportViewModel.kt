@@ -19,7 +19,6 @@ import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.media.MediaRepository
 import pl.ceranka.happypies.data.report.NewReport
 import pl.ceranka.happypies.data.report.ReportRepository
-import pl.ceranka.happypies.infrastructure.media.PhotoCompressor
 import pl.ceranka.happypies.ui.common.toUserMessage
 import pl.ceranka.happypies.ui.media.PickedFile
 
@@ -27,7 +26,7 @@ class AddReportViewModel(
     private val reportRepository: ReportRepository,
     mediaRepository: MediaRepository,
     private val accountRepository: AccountRepository,
-    private val photoCompressor: PhotoCompressor,
+    private val mediaPreparer: ReportMediaPreparer,
     private val clientId: String
 ) : ViewModel() {
 
@@ -42,16 +41,18 @@ class AddReportViewModel(
     val uiState: StateFlow<AddReportUiState> = _uiState.asStateFlow()
 
     fun onMediaPicked(files: List<PickedFile>) {
-        _uiState.update { it.copy(isPreparingMedia = true, mediaErrorMessage = null) }
+        val newFiles = files.distinctFrom(uiState.value.media)
+        val compressing = newFiles.mapNotNull { ReportMedia.Compressing.fromPickedFileOrNull(it) }
+        val rejected = List(newFiles.size - compressing.size) { PreparedMedia.Unreadable }
+
+        _uiState.update { it.copy(media = it.media + compressing, mediaErrorMessage = null) }
         viewModelScope.launch {
-            val prepared = files.map { photoCompressor.preparedMediaOrNull(it) }
-            _uiState.update {
-                it.copy(
-                    media = it.media.withPicked(prepared.filterNotNull()),
-                    isPreparingMedia = false,
-                    mediaErrorMessage = pickErrorMessage(prepared)
-                )
-            }
+            val prepared = mediaPreparer.prepare(
+                media = compressing,
+                onProgress = { file, percent -> _uiState.update { it.copy(media = it.media.withCompressionProgress(file.sourceUri, percent)) } },
+                onPrepared = { file, result -> _uiState.update { it.copy(media = it.media.withPreparationResult(file.sourceUri, result)) } }
+            )
+            _uiState.update { it.copy(mediaErrorMessage = pickErrorMessage(rejected + prepared)) }
         }
     }
 
@@ -79,7 +80,8 @@ class AddReportViewModel(
     }
 
     private fun createReport(viewer: Account) {
-        _uiState.update { it.copy(saveStatus = it.media.firstSaveStatus(), media = it.media.withUploadsWaiting()) }
+        _uiState.update { it.copy(saveStatus = it.media.saveStartStatus()) }
+
         viewModelScope.launch {
             try {
                 uploadPickedMedia()
@@ -99,23 +101,23 @@ class AddReportViewModel(
                 throw e
             } catch (e: Exception) {
                 log.e(e) { "Saving a new report for client $clientId failed" }
-                _uiState.update { it.copy(saveStatus = SaveStatus.Idle, saveErrorMessage = e.toUserMessage(), media = it.media.withUploadsNotStarted()) }
+                _uiState.update { it.copy(saveStatus = SaveStatus.Idle, saveErrorMessage = e.toUserMessage()) }
             }
         }
     }
 
     private suspend fun uploadPickedMedia() {
-        mediaUploader.uploadPicked(
+        mediaUploader.uploadCompressed(
             clientId = clientId,
             media = uiState.value.media,
-            onProgress = { file, filePercent, totalPercent ->
+            onProgress = { totalPercent ->
                 _uiState.update {
-                    it.copy(saveStatus = SaveStatus.Uploading(totalPercent), media = it.media.withUploadProgress(file.localFileUri, filePercent))
+                    it.copy(saveStatus = SaveStatus.Uploading(totalPercent))
                 }
             },
             onUploaded = { file, item ->
                 _uiState.update {
-                    it.copy(media = it.media.withUploaded(file.localFileUri, item))
+                    it.copy(media = it.media.withUploaded(file.sourceUri, item))
                 }
             }
         )

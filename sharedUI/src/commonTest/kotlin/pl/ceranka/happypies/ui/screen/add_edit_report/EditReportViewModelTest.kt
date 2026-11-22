@@ -16,6 +16,7 @@ import pl.ceranka.happypies.data.report.MediaItem
 import pl.ceranka.happypies.data.report.MediaType
 import pl.ceranka.happypies.fakes.FakeMediaRepository
 import pl.ceranka.happypies.fakes.FakePhotoCompressor
+import pl.ceranka.happypies.fakes.FakeVideoCompressor
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.accountOf
 import pl.ceranka.happypies.fakes.anna
@@ -48,7 +49,7 @@ class EditReportViewModelTest {
 
     // The state is shared WhileSubscribed, so a test collects it like the screen does.
     private fun TestScope.createViewModel() =
-        EditReportViewModel(reports, media, accountOf(trainer), FakePhotoCompressor(), existing.id).also { viewModel ->
+        EditReportViewModel(reports, media, accountOf(trainer), ReportMediaPreparer(FakePhotoCompressor(), FakeVideoCompressor()), existing.id).also { viewModel ->
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect {} }
         }
 
@@ -201,7 +202,7 @@ class EditReportViewModelTest {
 
         viewModel.onSaveClick()
 
-        assertEquals(listOf(photo, uploadedVideo("file:///new.mov", 2_000)), reports.updated.single().media)
+        assertEquals(listOf(photo, uploadedVideo("file:///new.mov", 1_000)), reports.updated.single().media)
         assertEquals(anna.id, media.uploads.single().clientId)
         assertEquals(listOf(video), media.deleted)
     }

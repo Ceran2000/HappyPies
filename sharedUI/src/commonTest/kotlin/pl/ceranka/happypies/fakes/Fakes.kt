@@ -28,6 +28,14 @@ import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.data.trainer.Trainer
 import pl.ceranka.happypies.data.trainer.TrainerRepository
 import pl.ceranka.happypies.data.user.UserRole
+import pl.ceranka.happypies.infrastructure.media.CompressedVideo
+import pl.ceranka.happypies.infrastructure.media.CompressionHandle
+import pl.ceranka.happypies.infrastructure.media.VideoCompressionEvent
+import pl.ceranka.happypies.infrastructure.media.VideoCompressionListener
+import pl.ceranka.happypies.infrastructure.media.VideoCompressionSettings
+import pl.ceranka.happypies.infrastructure.media.VideoCompressor
+import pl.ceranka.happypies.infrastructure.media.VideoDurationResult
+import pl.ceranka.happypies.infrastructure.media.VideoTranscoder
 import pl.ceranka.happypies.firebase.auth.AuthManager
 import pl.ceranka.happypies.firebase.auth.AuthStateListener
 import pl.ceranka.happypies.firebase.auth.AuthUser
@@ -255,6 +263,52 @@ class FakePhotoCompressor : PhotoCompressor {
         compressed += uri
         gate?.await()
         if (uri in failingUris) throw IllegalStateException("Cannot decode $uri")
-        return CompressedPhoto("$uri.jpg", 300_000)
+        return CompressedPhoto("$uri.jpg", compressedSizes[uri] ?: 300_000)
+    }
+
+    val compressedSizes = mutableMapOf<String, Long>()
+}
+
+class FakeVideoCompressor : VideoCompressor {
+    val compressed = mutableListOf<Pair<String, Long>>()
+
+    /** Compressing these videos fails. */
+    val failingUris = mutableSetOf<String>()
+
+    /** Size of a compressed video by source URI; 1_000 bytes when not set. */
+    val compressedSizes = mutableMapOf<String, Long>()
+
+    /** When set, compress reports 50% and waits for it, so a test can act mid-compression. */
+    var gate: CompletableDeferred<Unit>? = null
+
+    override suspend fun compress(uri: String, maxSizeBytes: Long, onProgress: (percent: Int) -> Unit): CompressedVideo {
+        compressed += uri to maxSizeBytes
+        if (uri in failingUris) throw IllegalStateException("Cannot transcode $uri")
+        onProgress(50)
+        gate?.await()
+        onProgress(100)
+        return CompressedVideo(uri, compressedSizes[uri] ?: 1_000)
+    }
+}
+
+class FakeVideoTranscoder : VideoTranscoder {
+    var duration: VideoDurationResult = VideoDurationResult.Success(60_000)
+    val started = mutableListOf<VideoCompressionSettings>()
+    var cancelled = false
+
+    /** Sent to the listener as soon as compression starts; without Success or Failure the compression never ends. */
+    var events: List<VideoCompressionEvent> = listOf(VideoCompressionEvent.Success)
+
+    override suspend fun readDuration(sourceUri: String): VideoDurationResult = duration
+
+    override fun startCompression(
+        sourceUri: String,
+        outputUri: String,
+        settings: VideoCompressionSettings,
+        listener: VideoCompressionListener
+    ): CompressionHandle {
+        started += settings
+        events.forEach { listener.onCompressionEvent(it) }
+        return CompressionHandle { cancelled = true }
     }
 }

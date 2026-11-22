@@ -5,6 +5,7 @@ import happypies.sharedui.generated.resources.Res
 import happypies.sharedui.generated.resources.error_unavailable
 import happypies.sharedui.generated.resources.report_form_session_expired
 import happypies.sharedui.generated.resources.report_form_title_required
+import happypies.sharedui.generated.resources.report_form_media_too_large
 import happypies.sharedui.generated.resources.report_form_media_unreadable
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,7 @@ import pl.ceranka.happypies.data.report.NewReport
 import pl.ceranka.happypies.data.user.UserRole
 import pl.ceranka.happypies.fakes.FakeMediaRepository
 import pl.ceranka.happypies.fakes.FakePhotoCompressor
+import pl.ceranka.happypies.fakes.FakeVideoCompressor
 import pl.ceranka.happypies.fakes.FakeReportRepository
 import pl.ceranka.happypies.fakes.accountOf
 import pl.ceranka.happypies.fakes.anna
@@ -39,8 +41,9 @@ class AddReportViewModelTest {
     private val reports = FakeReportRepository()
     private val media = FakeMediaRepository()
     private val photos = FakePhotoCompressor()
+    private val videos = FakeVideoCompressor()
     private var account = accountOf(trainer)
-    private val viewModel by lazy { AddReportViewModel(reports, media, account, photos, anna.id) }
+    private val viewModel by lazy { AddReportViewModel(reports, media, account, ReportMediaPreparer(photos, videos), anna.id) }
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -145,10 +148,9 @@ class AddReportViewModelTest {
 
     private fun photoFile(name: String) = PickedFile("file:///$name.heic", "image/heic", 3_000_000)
 
-    private fun pickedVideo(name: String, sizeBytes: Long = 1_000, uploadStatus: MediaUploadStatus = MediaUploadStatus.NotStarted) =
-        ReportMedia.Picked("file:///$name.mov", sizeBytes, MediaType.VIDEO, uploadStatus)
+    private fun compressedVideo(name: String, sizeBytes: Long = 1_000) = ReportMedia.Compressed("file:///$name.mov", "file:///$name.mov", sizeBytes, MediaType.VIDEO)
 
-    private fun pickedPhoto(name: String) = ReportMedia.Picked("file:///$name.heic.jpg", 300_000, MediaType.PHOTO, MediaUploadStatus.NotStarted)
+    private fun compressedPhoto(name: String) = ReportMedia.Compressed("file:///$name.heic", "file:///$name.heic.jpg", 300_000, MediaType.PHOTO)
 
     @Test
     fun uploadsPickedMediaBeforeSavingTheReport() {
@@ -176,7 +178,7 @@ class AddReportViewModelTest {
         viewModel.onMediaPicked(listOf(photoFile("p"), videoFile("a")))
 
         assertEquals(listOf("file:///p.heic"), photos.compressed)
-        assertEquals(listOf(pickedPhoto("p"), pickedVideo("a")), viewModel.uiState.value.media)
+        assertEquals(listOf(compressedPhoto("p"), compressedVideo("a")), viewModel.uiState.value.media)
     }
 
     @Test
@@ -185,12 +187,12 @@ class AddReportViewModelTest {
         photos.gate = gate
 
         viewModel.onMediaPicked(listOf(photoFile("p")))
-        assertTrue(viewModel.uiState.value.isPreparingMedia)
+        assertEquals(listOf(ReportMedia.Compressing("file:///p.heic", MediaType.PHOTO, percent = 0)), viewModel.uiState.value.media)
         assertFalse(viewModel.uiState.value.saveButtonEnabled)
         assertFalse(viewModel.uiState.value.addMediaButtonEnabled)
         gate.complete(Unit)
 
-        assertFalse(viewModel.uiState.value.isPreparingMedia)
+        assertEquals(listOf(compressedPhoto("p")), viewModel.uiState.value.media)
         assertTrue(viewModel.uiState.value.saveButtonEnabled)
     }
 
@@ -199,17 +201,11 @@ class AddReportViewModelTest {
         val gate = CompletableDeferred<Unit>()
         media.uploadGate = gate
         fill(title = "Przywołanie")
-        viewModel.onMediaPicked(listOf(videoFile("a", sizeBytes = 1_000), videoFile("b", sizeBytes = 3_000)))
+        videos.compressedSizes["file:///b.mov"] = 3_000
+        viewModel.onMediaPicked(listOf(videoFile("a"), videoFile("b")))
 
         viewModel.onSaveClick()
         assertEquals(SaveStatus.Uploading(totalPercent = 12), viewModel.uiState.value.saveStatus)
-        assertEquals(
-            listOf(
-                pickedVideo("a", sizeBytes = 1_000, uploadStatus = MediaUploadStatus.InProgress(50)),
-                pickedVideo("b", sizeBytes = 3_000, uploadStatus = MediaUploadStatus.Waiting)
-            ),
-            viewModel.uiState.value.media
-        )
         assertFalse(viewModel.uiState.value.cancelButtonEnabled)
         assertFalse(viewModel.uiState.value.showRemoveMediaButtons)
         assertFalse(viewModel.uiState.value.showAddPhotosButton)
@@ -229,7 +225,7 @@ class AddReportViewModelTest {
 
         val failed = viewModel.uiState.value
         assertEquals(Res.string.error_unavailable, failed.saveErrorMessage)
-        assertEquals(listOf(ReportMedia.Uploaded(uploadedVideo("file:///a.mov", 1_000), previewUri = "file:///a.mov"), pickedVideo("b")), failed.media)
+        assertEquals(listOf(ReportMedia.Uploaded(uploadedVideo("file:///a.mov", 1_000), previewUri = "file:///a.mov"), compressedVideo("b")), failed.media)
         assertTrue(reports.created.isEmpty())
 
         media.failingUris.clear()
@@ -245,7 +241,7 @@ class AddReportViewModelTest {
         viewModel.onMediaPicked(listOf("a", "b", "c", "d").map { videoFile(it) } + listOf("p1", "p2").map { photoFile(it) })
 
         val state = viewModel.uiState.value
-        assertEquals(listOf("a", "b", "c", "d").map { pickedVideo(it) } + listOf("p1", "p2").map { pickedPhoto(it) }, state.media)
+        assertEquals(listOf("a", "b", "c", "d").map { compressedVideo(it) } + listOf("p1", "p2").map { compressedPhoto(it) }, state.media)
         assertTrue(state.showMediaLimitError)
         assertFalse(state.saveButtonEnabled)
         assertFalse(state.showAddVideosButton)
@@ -278,7 +274,7 @@ class AddReportViewModelTest {
         fill(title = "Przywołanie")
         viewModel.onMediaPicked(listOf("a", "b", "c", "d").map { videoFile(it) })
 
-        viewModel.onRemoveMediaClick(pickedVideo("d"))
+        viewModel.onRemoveMediaClick(compressedVideo("d"))
 
         assertFalse(viewModel.uiState.value.showMediaLimitError)
         assertTrue(viewModel.uiState.value.saveButtonEnabled)
@@ -303,7 +299,55 @@ class AddReportViewModelTest {
         viewModel.onMediaPicked(listOf(videoFile("a")))
         viewModel.onMediaPicked(listOf(videoFile("a"), videoFile("a"), videoFile("b")))
 
-        assertEquals(listOf(pickedVideo("a"), pickedVideo("b")), viewModel.uiState.value.media)
+        assertEquals(listOf(compressedVideo("a"), compressedVideo("b")), viewModel.uiState.value.media)
+    }
+
+    @Test
+    fun videosAreCompressedWithinTheReportLimitWhenPicked() {
+        videos.compressedSizes["file:///a.mov"] = 20_000_000
+        viewModel.onMediaPicked(listOf(videoFile("a", sizeBytes = 80_000_000)))
+
+        assertEquals(listOf("file:///a.mov" to MediaType.VIDEO.maxReportSizeBytes()), videos.compressed)
+        assertEquals(listOf(compressedVideo("a", sizeBytes = 20_000_000)), viewModel.uiState.value.media)
+    }
+
+    @Test
+    fun everyPickedFileGetsATileWithItsOwnPreparationProgress() {
+        val gate = CompletableDeferred<Unit>()
+        videos.gate = gate
+
+        viewModel.onMediaPicked(listOf(photoFile("p"), videoFile("a"), videoFile("b")))
+        assertEquals(
+            listOf(
+                compressedPhoto("p"),
+                ReportMedia.Compressing("file:///a.mov", MediaType.VIDEO, percent = 50),
+                ReportMedia.Compressing("file:///b.mov", MediaType.VIDEO, percent = 0)
+            ),
+            viewModel.uiState.value.media
+        )
+        assertEquals(2, viewModel.uiState.value.media.countOf(MediaType.VIDEO))
+        gate.complete(Unit)
+
+        assertEquals(listOf(compressedPhoto("p"), compressedVideo("a"), compressedVideo("b")), viewModel.uiState.value.media)
+    }
+
+    @Test
+    fun filesOverTheSizeLimitAreRejected() {
+        photos.compressedSizes["file:///big.heic"] = MediaType.PHOTO.maxReportSizeBytes() + 1
+        videos.compressedSizes["file:///long.mov"] = MediaType.VIDEO.maxReportSizeBytes() + 1
+        viewModel.onMediaPicked(listOf(photoFile("big"), videoFile("long"), videoFile("b")))
+
+        assertEquals(listOf(compressedVideo("b")), viewModel.uiState.value.media)
+        assertEquals(Res.string.report_form_media_too_large, viewModel.uiState.value.mediaErrorMessage)
+    }
+
+    @Test
+    fun failedVideoCompressionIsReportedAsUnreadable() {
+        videos.failingUris += "file:///a.mov"
+        viewModel.onMediaPicked(listOf(videoFile("a")))
+
+        assertTrue(viewModel.uiState.value.media.isEmpty())
+        assertEquals(Res.string.report_form_media_unreadable, viewModel.uiState.value.mediaErrorMessage)
     }
 
     @Test
@@ -319,7 +363,7 @@ class AddReportViewModelTest {
             )
         )
 
-        assertEquals(listOf(pickedVideo("b")), viewModel.uiState.value.media)
+        assertEquals(listOf(compressedVideo("b")), viewModel.uiState.value.media)
         assertEquals(Res.string.report_form_media_unreadable, viewModel.uiState.value.mediaErrorMessage)
     }
 
@@ -327,7 +371,7 @@ class AddReportViewModelTest {
     fun removedMediaIsNotUploaded() {
         fill(title = "Przywołanie")
         viewModel.onMediaPicked(listOf(videoFile("a"), photoFile("p")))
-        viewModel.onRemoveMediaClick(pickedVideo("a"))
+        viewModel.onRemoveMediaClick(compressedVideo("a"))
 
         viewModel.onSaveClick()
 

@@ -5,18 +5,18 @@ import pl.ceranka.happypies.data.report.MediaItem
 
 class ReportMediaUploader(private val mediaRepository: MediaRepository) {
 
-    suspend fun uploadPicked(
+    suspend fun uploadCompressed(
         clientId: String,
         media: List<ReportMedia>,
-        onProgress: (file: ReportMedia.Picked, filePercent: Int, totalPercent: Int) -> Unit,
-        onUploaded: (file: ReportMedia.Picked, item: MediaItem) -> Unit
+        onProgress: (totalPercent: Int) -> Unit,
+        onUploaded: (file: ReportMedia.Compressed, item: MediaItem) -> Unit
     ) {
-        val picked = media.pickedMedia()
+        val picked = media.compressedMedia()
         val totalBytes = picked.sumOf { it.sizeBytes }
         var doneBytes = 0L
         for (file in picked) {
             val item = mediaRepository.upload(clientId, file.type, file.localFileUri, file.sizeBytes) { uploadedBytes ->
-                onProgress(file, percentOf(uploadedBytes, file.sizeBytes), percentOf(doneBytes + uploadedBytes, totalBytes))
+                onProgress(percentOf(doneBytes + uploadedBytes, totalBytes))
             }
             doneBytes += file.sizeBytes
             onUploaded(file, item)

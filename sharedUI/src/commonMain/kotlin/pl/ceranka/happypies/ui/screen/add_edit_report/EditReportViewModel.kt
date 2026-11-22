@@ -21,7 +21,6 @@ import pl.ceranka.happypies.data.media.MediaRepository
 import pl.ceranka.happypies.data.report.MediaItem
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
-import pl.ceranka.happypies.infrastructure.media.PhotoCompressor
 import pl.ceranka.happypies.ui.common.toUserMessage
 import pl.ceranka.happypies.ui.media.PickedFile
 
@@ -29,7 +28,7 @@ class EditReportViewModel(
     private val reportRepository: ReportRepository,
     private val mediaRepository: MediaRepository,
     private val accountRepository: AccountRepository,
-    private val photoCompressor: PhotoCompressor,
+    private val mediaPreparer: ReportMediaPreparer,
     private val reportId: String
 ) : ViewModel() {
 
@@ -44,16 +43,26 @@ class EditReportViewModel(
     val uiState: StateFlow<EditReportUiState> = _uiState.asStateFlow()
 
     fun onMediaPicked(files: List<PickedFile>) {
-        updateEditing { it.copy(isPreparingMedia = true, mediaErrorMessage = null) }
+        val newFiles = files.distinctFrom(uiState.value.editingOrNull?.media.orEmpty())
+        val compressing = newFiles.mapNotNull { ReportMedia.Compressing.fromPickedFileOrNull(it) }
+        val rejected = List(newFiles.size - compressing.size) { PreparedMedia.Unreadable }
+
+        updateEditing { it.copy(media = it.media + compressing, mediaErrorMessage = null) }
         viewModelScope.launch {
-            val prepared = files.map { photoCompressor.preparedMediaOrNull(it) }
-            updateEditing {
-                it.copy(
-                    media = it.media.withPicked(prepared.filterNotNull()),
-                    isPreparingMedia = false,
-                    mediaErrorMessage = pickErrorMessage(prepared)
-                )
-            }
+            val prepared = mediaPreparer.prepare(
+                media = compressing,
+                onProgress = { file, percent ->
+                    updateEditing {
+                        it.copy(media = it.media.withCompressionProgress(file.sourceUri, percent))
+                    }
+                },
+                onPrepared = { file, result ->
+                    updateEditing {
+                        it.copy(media = it.media.withPreparationResult(file.sourceUri, result))
+                    }
+                }
+            )
+            updateEditing { it.copy(mediaErrorMessage = pickErrorMessage(rejected + prepared)) }
         }
     }
 
@@ -74,7 +83,7 @@ class EditReportViewModel(
     }
 
     private fun updateReport(report: Report, viewer: Account) {
-        updateEditing { it.copy(saveStatus = it.media.firstSaveStatus(), media = it.media.withUploadsWaiting()) }
+        updateEditing { it.copy(saveStatus = it.media.saveStartStatus()) }
         viewModelScope.launch {
             try {
                 uploadPickedMedia(report.clientId)
@@ -87,21 +96,21 @@ class EditReportViewModel(
                 throw e
             } catch (e: Exception) {
                 log.e(e) { "Saving report $reportId failed" }
-                updateEditing { it.copy(saveStatus = SaveStatus.Idle, saveErrorMessage = e.toUserMessage(), media = it.media.withUploadsNotStarted()) }
+                updateEditing { it.copy(saveStatus = SaveStatus.Idle, saveErrorMessage = e.toUserMessage()) }
             }
         }
     }
 
+
+    //tu
     private suspend fun uploadPickedMedia(clientId: String) {
-        mediaUploader.uploadPicked(
+        mediaUploader.uploadCompressed(
             clientId = clientId,
             media = uiState.value.editingOrNull?.media.orEmpty(),
-            onProgress = { file, filePercent, totalPercent ->
-                updateEditing {
-                    it.copy(saveStatus = SaveStatus.Uploading(totalPercent), media = it.media.withUploadProgress(file.localFileUri, filePercent))
-                }
+            onProgress = { totalPercent ->
+                updateEditing { it.copy(saveStatus = SaveStatus.Uploading(totalPercent)) }
             },
-            onUploaded = { file, item -> updateEditing { it.copy(media = it.media.withUploaded(file.localFileUri, item)) } }
+            onUploaded = { file, item -> updateEditing { it.copy(media = it.media.withUploaded(file.sourceUri, item)) } }
         )
     }
 
@@ -121,6 +130,7 @@ class EditReportViewModel(
         loadReport()
     }
 
+
     private fun loadReport() {
         _uiState.update { EditReportUiState.Loading }
 
@@ -135,7 +145,6 @@ class EditReportViewModel(
                         titleFieldErrorMessage = null,
                         saveErrorMessage = null,
                         media = report.media.toReportMedia(),
-                        isPreparingMedia = false,
                         mediaErrorMessage = null
                     )
                 }

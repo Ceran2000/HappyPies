@@ -72,7 +72,6 @@ private fun EditingContent(
         )
         ReportMediaSection(
             media = state.media,
-            isPreparing = state.isPreparingMedia,
             showAddPhotosButton = state.showAddPhotosButton,
             showAddVideosButton = state.showAddVideosButton,
             photoPickerMaxItems = state.photoPickerMaxItems,

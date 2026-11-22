@@ -16,14 +16,13 @@ sealed interface EditReportUiState {
         val titleFieldErrorMessage: StringResource?,
         val saveErrorMessage: StringResource?,
         val media: List<ReportMedia>,
-        val isPreparingMedia: Boolean,
         val mediaErrorMessage: StringResource?
     ) : EditReportUiState {
         val fieldsEnabled: Boolean get() = saveStatus == SaveStatus.Idle
 
         val cancelButtonEnabled: Boolean get() = saveStatus == SaveStatus.Idle || saveStatus == SaveStatus.Saved
 
-        val saveButtonEnabled: Boolean get() = saveStatus == SaveStatus.Idle && !isPreparingMedia && !showMediaLimitError
+        val saveButtonEnabled: Boolean get() = saveStatus == SaveStatus.Idle && !media.isCompressing() && !showMediaLimitError
 
         val showMediaLimitError: Boolean get() = media.exceedsLimits()
 
@@ -37,7 +36,7 @@ sealed interface EditReportUiState {
 
         val videoPickerMaxItems: Int get() = media.freeSlotsOf(MediaType.VIDEO).coerceAtLeast(1)
 
-        val addMediaButtonEnabled: Boolean get() = !isPreparingMedia
+        val addMediaButtonEnabled: Boolean get() = !media.isCompressing()
 
         val showRemoveMediaButtons: Boolean get() = fieldsEnabled
     }
