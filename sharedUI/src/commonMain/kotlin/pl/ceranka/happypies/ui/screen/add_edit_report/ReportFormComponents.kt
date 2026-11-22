@@ -38,6 +38,7 @@ import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import pl.ceranka.happypies.ui.common.HappyPiesAppBar
 import pl.ceranka.happypies.ui.common.ProgressButton
+import pl.ceranka.happypies.ui.common.clearFocusOnTap
 import pl.ceranka.happypies.ui.common.filledFieldColors
 
 @Composable
@@ -62,6 +63,7 @@ fun ReportFormLayout(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .clearFocusOnTap()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp),

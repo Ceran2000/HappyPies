@@ -95,6 +95,7 @@ import pl.ceranka.happypies.ui.common.MediaGrid
 import pl.ceranka.happypies.ui.common.MediaTileFrame
 import pl.ceranka.happypies.ui.common.PhotoTileContent
 import pl.ceranka.happypies.ui.common.VideoTileContent
+import pl.ceranka.happypies.ui.common.clearFocusOnTap
 import pl.ceranka.happypies.ui.common.formatMegabytes
 import pl.ceranka.happypies.ui.media.rememberVideoPlayerLauncher
 
@@ -186,6 +187,7 @@ private fun ReportDetailsContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .clearFocusOnTap()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)

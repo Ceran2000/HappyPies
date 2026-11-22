@@ -35,6 +35,7 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.ui.common.AppLogo
 import pl.ceranka.happypies.ui.common.ProgressButton
+import pl.ceranka.happypies.ui.common.clearFocusOnTap
 import pl.ceranka.happypies.ui.common.filledFieldColors
 
 @Composable
@@ -67,6 +68,7 @@ private fun LoginContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .clearFocusOnTap()
             .safeDrawingPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 28.dp, vertical = 48.dp),
