@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isMediaOfClient, removedStoragePaths } from "./removedStoragePaths.js";
+import { isMediaOfClient } from "./mediaPath.js";
+import { removedStoragePaths } from "./removedStoragePaths.js";
 
 const media = (...paths: string[]) => ({ media: paths.map((storagePath) => ({ storagePath })) });
 
