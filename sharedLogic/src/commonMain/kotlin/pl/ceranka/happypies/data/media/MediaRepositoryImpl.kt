@@ -3,7 +3,6 @@ package pl.ceranka.happypies.data.media
 import pl.ceranka.happypies.data.report.MediaItem
 import pl.ceranka.happypies.data.report.MediaType
 import pl.ceranka.happypies.firebase.storage.StorageGateway
-import pl.ceranka.happypies.firebase.storage.deleteOrThrow
 import pl.ceranka.happypies.firebase.storage.downloadUrlOrThrow
 import pl.ceranka.happypies.firebase.storage.uploadFlow
 import kotlin.uuid.Uuid
@@ -21,10 +20,6 @@ class MediaRepositoryImpl(private val gateway: StorageGateway) : MediaRepository
         gateway.uploadFlow(localFileUri, storagePath).collect { onProgress(it.uploadedBytes) }
         val downloadUrl = gateway.downloadUrlOrThrow(storagePath)
         return MediaItem(type, storagePath, downloadUrl, sizeBytes)
-    }
-
-    override suspend fun delete(item: MediaItem) {
-        gateway.deleteOrThrow(item.storagePath)
     }
 }
 

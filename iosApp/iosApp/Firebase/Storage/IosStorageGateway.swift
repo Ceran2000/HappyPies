@@ -29,16 +29,6 @@ final class IosStorageGateway: StorageGateway {
         return StorageUploadHandle { task.cancel() }
     }
     
-    func delete(storagePath: String) async throws -> DeleteResult {
-        do {
-            try await storage.reference(withPath: storagePath).delete()
-            return DeleteResult.Success.shared
-        } catch {
-            if error is CancellationError { throw error }
-            return DeleteResult.Failure(error: classify(error))
-        }
-    }
-    
     func getDownloadUrl(storagePath: String) async throws -> DownloadUrlResult {
         do {
             let downloadUrl = try await storage.reference(withPath: storagePath).downloadURL().absoluteString

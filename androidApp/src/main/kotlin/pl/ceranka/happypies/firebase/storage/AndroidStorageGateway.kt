@@ -24,17 +24,6 @@ class AndroidStorageGateway(private val storage: FirebaseStorage) : StorageGatew
         return UploadHandle { uploadTask.cancel() }
     }
 
-    override suspend fun delete(storagePath: String): DeleteResult {
-        return try {
-            storage.reference.child(storagePath).delete().await()
-            DeleteResult.Success
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            DeleteResult.Failure(e.toDataException())
-        }
-    }
-
     override suspend fun getDownloadUrl(storagePath: String): DownloadUrlResult {
         return try {
             val downloadUrl = storage.reference.child(storagePath).downloadUrl.await()

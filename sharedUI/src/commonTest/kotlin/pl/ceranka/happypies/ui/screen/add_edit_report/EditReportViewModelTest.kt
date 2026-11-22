@@ -180,7 +180,7 @@ class EditReportViewModelTest {
     }
 
     @Test
-    fun removedFilesAreDeletedAfterTheReportIsSaved() = runTest {
+    fun removedFilesAreLeftOutOfTheSavedReport() = runTest {
         storeWithMedia()
         val viewModel = createViewModel()
         viewModel.onRemoveMediaClick(uploaded(video))
@@ -189,12 +189,11 @@ class EditReportViewModelTest {
         viewModel.onSaveClick()
 
         assertEquals(emptyList(), reports.updated.single().media)
-        assertEquals(listOf(photo, video), media.deleted)
         assertTrue(viewModel.editing.isSaved)
     }
 
     @Test
-    fun replacedVideoIsUploadedAndTheOldOneDeleted() = runTest {
+    fun replacedVideoIsUploadedInPlaceOfTheOldOne() = runTest {
         storeWithMedia()
         val viewModel = createViewModel()
         viewModel.onRemoveMediaClick(uploaded(video))
@@ -204,7 +203,6 @@ class EditReportViewModelTest {
 
         assertEquals(listOf(photo, uploadedVideo("file:///new.mov", 1_000)), reports.updated.single().media)
         assertEquals(anna.id, media.uploads.single().clientId)
-        assertEquals(listOf(video), media.deleted)
     }
 
     @Test
@@ -219,31 +217,5 @@ class EditReportViewModelTest {
             listOf(photo, video, uploadedMedia(MediaType.PHOTO, "file:///p2.heic.jpg", 300_000)),
             reports.updated.single().media
         )
-        assertTrue(media.deleted.isEmpty())
-    }
-
-    @Test
-    fun failedDeleteStillSavesTheReport() = runTest {
-        storeWithMedia()
-        media.deleteError = DataException.Unavailable("offline")
-        val viewModel = createViewModel()
-        viewModel.onRemoveMediaClick(uploaded(video))
-
-        viewModel.onSaveClick()
-
-        assertTrue(viewModel.editing.isSaved)
-    }
-
-    @Test
-    fun failedUpdateDeletesNoFile() = runTest {
-        storeWithMedia()
-        reports.updateError = DataException.Unavailable("offline")
-        val viewModel = createViewModel()
-        viewModel.onRemoveMediaClick(uploaded(video))
-
-        viewModel.onSaveClick()
-
-        assertTrue(media.deleted.isEmpty())
-        assertFalse(viewModel.editing.isSaved)
     }
 }

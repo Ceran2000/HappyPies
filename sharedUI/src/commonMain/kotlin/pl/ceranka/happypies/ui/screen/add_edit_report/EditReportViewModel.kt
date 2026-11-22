@@ -18,7 +18,6 @@ import pl.ceranka.happypies.data.account.Account
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.accountOrNull
 import pl.ceranka.happypies.data.media.MediaRepository
-import pl.ceranka.happypies.data.report.MediaItem
 import pl.ceranka.happypies.data.report.Report
 import pl.ceranka.happypies.data.report.ReportRepository
 import pl.ceranka.happypies.ui.common.toUserMessage
@@ -90,7 +89,6 @@ class EditReportViewModel(
                 updateEditing { it.copy(saveStatus = SaveStatus.Saving) }
                 val media = uiState.value.editingOrNull?.media.orEmpty().uploadedItems()
                 reportRepository.updateReport(reportId, reportFormFields.title, reportFormFields.description, media, editorId = viewer.uid)
-                deleteRemovedMedia(report.media - media.toSet())
                 updateEditing { it.copy(saveStatus = SaveStatus.Saved) }
             } catch (e: CancellationException) {
                 throw e
@@ -112,18 +110,6 @@ class EditReportViewModel(
             },
             onUploaded = { file, item -> updateEditing { it.copy(media = it.media.withUploaded(file.sourceUri, item)) } }
         )
-    }
-
-    private suspend fun deleteRemovedMedia(removed: List<MediaItem>) {
-        for (item in removed) {
-            try {
-                mediaRepository.delete(item)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                log.w(e) { "Deleting removed file ${item.storagePath} of report $reportId failed" }
-            }
-        }
     }
 
     fun onRetryClick() {

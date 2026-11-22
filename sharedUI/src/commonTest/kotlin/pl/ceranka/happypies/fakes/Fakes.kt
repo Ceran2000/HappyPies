@@ -220,11 +220,9 @@ class FakeMediaRepository : MediaRepository {
     data class Upload(val clientId: String, val type: MediaType, val localFileUri: String, val sizeBytes: Long)
 
     val uploads = mutableListOf<Upload>()
-    val deleted = mutableListOf<MediaItem>()
 
     /** Uploads of these local files fail. */
     val failingUris = mutableSetOf<String>()
-    var deleteError: Exception? = null
 
     /** When set, each upload reports half of the file and waits for it, so a test can see the progress. */
     var uploadGate: CompletableDeferred<Unit>? = null
@@ -236,11 +234,6 @@ class FakeMediaRepository : MediaRepository {
         uploadGate?.await()
         onProgress(sizeBytes)
         return uploadedMedia(type, localFileUri, sizeBytes)
-    }
-
-    override suspend fun delete(item: MediaItem) {
-        deleted += item
-        deleteError?.let { throw it }
     }
 }
 

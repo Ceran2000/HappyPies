@@ -13,7 +13,4 @@ interface MediaRepository {
         sizeBytes: Long,
         onProgress: (uploadedBytes: Long) -> Unit
     ): MediaItem
-
-    @Throws(Exception::class)
-    suspend fun delete(item: MediaItem)
 }
