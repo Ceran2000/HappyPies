@@ -12,6 +12,9 @@ sealed interface Route : NavKey {
     data object ClientList : Route
 
     @Serializable
+    data object InviteClient: Route
+
+    @Serializable
     data class ClientHome(val clientId: String) : Route
 
     @Serializable

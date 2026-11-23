@@ -48,15 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import happypies.sharedui.generated.resources.Res
@@ -96,6 +88,7 @@ import pl.ceranka.happypies.ui.common.MediaTileFrame
 import pl.ceranka.happypies.ui.common.PhotoTileContent
 import pl.ceranka.happypies.ui.common.VideoTileContent
 import pl.ceranka.happypies.ui.common.clearFocusOnTap
+import pl.ceranka.happypies.ui.common.dashedBorder
 import pl.ceranka.happypies.ui.common.formatMegabytes
 import pl.ceranka.happypies.ui.media.rememberVideoPlayerLauncher
 
@@ -463,15 +456,4 @@ private fun ReportDeletionProgress() {
         CircularProgressIndicator(strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
         Text(stringResource(Res.string.report_details_deleting))
     }
-}
-
-private fun Modifier.dashedBorder(color: Color, cornerRadius: Dp): Modifier = drawBehind {
-    val strokeWidth = 2.dp.toPx()
-    drawRoundRect(
-        color = color,
-        topLeft = Offset(strokeWidth / 2, strokeWidth / 2),
-        size = Size(size.width - strokeWidth, size.height - strokeWidth),
-        cornerRadius = CornerRadius(cornerRadius.toPx()),
-        style = Stroke(width = strokeWidth, pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())))
-    )
 }

@@ -40,7 +40,32 @@
     <!-- [ClientList] -->
     <string name="client_list_title">Klienci</string>
     <string name="client_list_empty">Nie masz jeszcze żadnych klientów</string>
+    <string name="client_list_invite">Zaproś</string>
+    <string name="client_list_invitations_title">Zaproszenia</string>
+    <string name="client_list_invitation_valid_until">do %1$s</string>
+    <string name="client_list_invitation_expired">Wygasło</string>
+    <string name="client_list_invitation_valid_until_long">Zaproszenie ważne do %1$s</string>
+    <string name="client_list_invitation_expired_on">Zaproszenie wygasło %1$s</string>
+    <string name="client_list_resend_invitation">Wyślij ponownie</string>
+    <string name="client_list_resend_invitation_hint">Nowy link, ważny 7 dni. Poprzedni przestanie działać.</string>
+    <string name="client_list_cancel_invitation">Anuluj zaproszenie</string>
+    <string name="client_list_cancel_invitation_title">Anulować zaproszenie?</string>
+    <string name="client_list_cancel_invitation_message">Link z zaproszenia przestanie działać.</string>
+    <string name="client_list_keep_invitation">Zostaw</string>
+    <string name="client_list_invitation_resent">Wysłano nowe zaproszenie</string>
+    <string name="client_list_invitation_cancelled">Zaproszenie anulowane</string>
     <!-- [/ClientList] -->
+
+    <!-- [InviteClient] -->
+    <string name="invite_client_title">Zaproś klienta</string>
+    <string name="invite_client_name_label">Imię i nazwisko</string>
+    <string name="invite_client_email_label">E-mail</string>
+    <string name="invite_client_info">Wyślemy klientowi e-mail z linkiem i kodem. Zaproszenie jest ważne 7 dni.</string>
+    <string name="invite_client_send">Wyślij zaproszenie</string>
+    <string name="invite_client_invalid_email">Wpisz poprawny adres e-mail</string>
+    <string name="invite_client_account_exists">Ten e-mail ma już konto w HappyPies.</string>
+    <string name="invite_client_already_invited">Ten e-mail ma już zaproszenie. Wyślesz je ponownie z listy klientów.</string>
+    <!-- [/InviteClient] -->
 
     <!-- [ClientHome] -->
     <string name="client_home_trainer">trener: %1$s</string>

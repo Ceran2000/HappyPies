@@ -17,6 +17,9 @@ import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.data.client.Client
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.client.Dog
+import pl.ceranka.happypies.data.invitation.Invitation
+import pl.ceranka.happypies.data.invitation.InvitationPreview
+import pl.ceranka.happypies.data.invitation.InvitationRepository
 import pl.ceranka.happypies.data.media.MediaRepository
 import pl.ceranka.happypies.data.report.MediaItem
 import pl.ceranka.happypies.data.report.MediaType
@@ -304,4 +307,43 @@ class FakeVideoTranscoder : VideoTranscoder {
         events.forEach { listener.onCompressionEvent(it) }
         return CompressionHandle { cancelled = true }
     }
+}
+
+val ewasInvitation = Invitation("invitation-1", "Ewa Nowak", "ewa@przyklad.pl", expiresAt = 1_800_000_000_000)
+
+class FakeInvitationRepository(var invitations: List<Invitation> = listOf(ewasInvitation)) : InvitationRepository {
+    override val changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    var error: Exception? = null
+    var actionError: Exception? = null
+    val requestedTrainers = mutableListOf<String>()
+    val invited = mutableListOf<Pair<String, String>>()
+    val resent = mutableListOf<String>()
+    val cancelled = mutableListOf<String>()
+    var pendingInvite: CompletableDeferred<Unit>? = null
+
+    override suspend fun getInvitations(trainerId: String): List<Invitation> {
+        requestedTrainers += trainerId
+        error?.let { throw it }
+        return invitations
+    }
+
+    override suspend fun invite(name: String, email: String) {
+        invited += name to email
+        pendingInvite?.await()
+        actionError?.let { throw it }
+    }
+
+    override suspend fun resend(invitationId: String) {
+        resent += invitationId
+        actionError?.let { throw it }
+    }
+
+    override suspend fun cancel(invitationId: String) {
+        cancelled += invitationId
+        actionError?.let { throw it }
+    }
+
+    override suspend fun getInvitation(code: String): InvitationPreview = throw UnsupportedOperationException()
+
+    override suspend fun accept(code: String, password: String) = throw UnsupportedOperationException()
 }

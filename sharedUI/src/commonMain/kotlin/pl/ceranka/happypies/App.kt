@@ -42,6 +42,7 @@ import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportScreen
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsScreen
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeScreen
 import pl.ceranka.happypies.ui.screen.client_list.ClientListScreen
+import pl.ceranka.happypies.ui.screen.invite_client.InviteClientScreen
 import pl.ceranka.happypies.ui.screen.login.LoginScreen
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsScreen
 import pl.ceranka.happypies.ui.theme.HappyPiesTheme
@@ -114,7 +115,14 @@ fun App() {
                         entry<Route.ClientList> {
                             ClientListScreen(
                                 onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) },
+                                onInviteClick = { backStack.add(Route.InviteClient) },
                                 onLogout = ::logout
+                            )
+                        }
+                        entry<Route.InviteClient> {
+                            InviteClientScreen(
+                                onSent = ::goBack,
+                                onBack = ::goBack
                             )
                         }
                         entry<Route.ClientDetail> { route ->

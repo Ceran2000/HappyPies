@@ -29,8 +29,11 @@ fun PagingLazyColumn(
     val offlineMessage = stringResource(Res.string.paging_offline_stale)
     if (showOfflineMessage) {
         LaunchedEffect(Unit) {
-            snackbarHostState.showSnackbar(offlineMessage)
-            onOfflineMessageShown()
+            try {
+                snackbarHostState.showSnackbar(offlineMessage)
+            } finally {
+                onOfflineMessageShown()
+            }
         }
     }
 

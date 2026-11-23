@@ -9,6 +9,7 @@ import pl.ceranka.happypies.ui.screen.add_edit_report.ReportMediaPreparer
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
 import pl.ceranka.happypies.ui.screen.client_list.ClientListViewModel
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeViewModel
+import pl.ceranka.happypies.ui.screen.invite_client.InviteClientViewModel
 import pl.ceranka.happypies.ui.screen.login.LoginViewModel
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsViewModel
 
@@ -16,7 +17,8 @@ val viewModelModule = module {
     factory { ReportMediaPreparer(get(), get()) }
 
     viewModelOf(::LoginViewModel)
-    viewModelOf(::ClientListViewModel)
+    viewModel { ClientListViewModel(get(), get(), get()) }
+    viewModelOf(::InviteClientViewModel)
     viewModel { params -> ClientDetailsViewModel(get(), get(), get(), clientId = params.get()) }
     viewModel { params -> ClientHomeViewModel(get(), get(), get(), clientId = params.get()) }
     viewModel { (clientId: String, reportId: String) -> ReportDetailsViewModel(get(), get(), get(), get(), clientId, reportId) }

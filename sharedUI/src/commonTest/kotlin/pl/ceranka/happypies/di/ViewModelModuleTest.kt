@@ -21,6 +21,8 @@ import pl.ceranka.happypies.firebase.firestore.FirestoreValue
 import pl.ceranka.happypies.firebase.firestore.PageResult
 import pl.ceranka.happypies.firebase.firestore.ReadResult
 import pl.ceranka.happypies.firebase.firestore.WriteResult
+import pl.ceranka.happypies.firebase.functions.FunctionCallResult
+import pl.ceranka.happypies.firebase.functions.FunctionsGateway
 import pl.ceranka.happypies.firebase.storage.DownloadUrlResult
 import pl.ceranka.happypies.firebase.storage.StorageGateway
 import pl.ceranka.happypies.firebase.storage.UploadHandle
@@ -31,6 +33,7 @@ import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportViewModel
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeViewModel
 import pl.ceranka.happypies.ui.screen.client_list.ClientListViewModel
+import pl.ceranka.happypies.ui.screen.invite_client.InviteClientViewModel
 import pl.ceranka.happypies.ui.screen.login.LoginViewModel
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsViewModel
 import kotlin.test.AfterTest
@@ -51,6 +54,7 @@ class ViewModelModuleTest {
         single<AuthManager> { FakeAuthManager }
         single<FirestoreGateway> { FakeFirestoreGateway }
         single<StorageGateway> { FakeStorageGateway }
+        single<FunctionsGateway> { FakeFunctionsGateway }
         single<VideoTranscoder> { FakeVideoTranscoder() }
     }
 
@@ -64,6 +68,11 @@ class ViewModelModuleTest {
     @Test
     fun resolvesClientListViewModel() {
         assertNotNull(koin.get<ClientListViewModel>())
+    }
+
+    @Test
+    fun resolvesInviteClientViewModel() {
+        assertNotNull(koin.get<InviteClientViewModel>())
     }
 
     @Test
@@ -115,4 +124,8 @@ private object FakeFirestoreGateway : FirestoreGateway {
 private object FakeStorageGateway : StorageGateway {
     override fun startUpload(localFileUri: String, storagePath: String, listener: UploadListener) = UploadHandle {}
     override suspend fun getDownloadUrl(storagePath: String) = DownloadUrlResult.Success("https://example.com/$storagePath")
+}
+
+private object FakeFunctionsGateway : FunctionsGateway {
+    override suspend fun call(name: String, data: Map<String, String>) = FunctionCallResult.Success(emptyMap())
 }
