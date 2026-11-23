@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		717E85BE30B4B63400EFE729 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = 717E85BD30B4B63400EFE729 /* FirebaseFunctions */; };
 		71D1AFA63002CA2200E9788F /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 71D1AFA53002CA2200E9788F /* FirebaseAuth */; };
 		71D1AFA83002CA2200E9788F /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 71D1AFA73002CA2200E9788F /* FirebaseFirestore */; };
 		71D1AFAA3002CA2200E9788F /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 71D1AFA93002CA2200E9788F /* FirebaseMessaging */; };
@@ -19,7 +20,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B5E36DD933B93FF4B5F2166D /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		B5E36DD933B93FF4B5F2166D /* Exceptions for "iosApp" folder in "iosApp" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -32,21 +33,13 @@
 		6CA15B02B45921C18E8FF221 /* iosApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				B5E36DD933B93FF4B5F2166D /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
+				B5E36DD933B93FF4B5F2166D /* Exceptions for "iosApp" folder in "iosApp" target */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
 		};
 		C2B74F1BEFC7315F9C0B4042 /* Configuration */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
 			path = Configuration;
 			sourceTree = "<group>";
 		};
@@ -60,6 +53,7 @@
 				71D1AFAA3002CA2200E9788F /* FirebaseMessaging in Frameworks */,
 				71D1AFAF3002CCE700E9788F /* FirebaseCore in Frameworks */,
 				71D1AFAC3002CA2200E9788F /* FirebaseStorage in Frameworks */,
+				717E85BE30B4B63400EFE729 /* FirebaseFunctions in Frameworks */,
 				71D1AFA63002CA2200E9788F /* FirebaseAuth in Frameworks */,
 				71D1AFA83002CA2200E9788F /* FirebaseFirestore in Frameworks */,
 			);
@@ -119,6 +113,7 @@
 				71D1AFA93002CA2200E9788F /* FirebaseMessaging */,
 				71D1AFAB3002CA2200E9788F /* FirebaseStorage */,
 				71D1AFAE3002CCE700E9788F /* FirebaseCore */,
+				717E85BD30B4B63400EFE729 /* FirebaseFunctions */,
 			);
 			productName = iosApp;
 			productReference = ACE6C38BC129EE6E5F7C7DA5 /* HappyPies.app */;
@@ -422,6 +417,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		717E85BD30B4B63400EFE729 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 71D1AFA43002CA2200E9788F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
 		71D1AFA53002CA2200E9788F /* FirebaseAuth */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 71D1AFA43002CA2200E9788F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

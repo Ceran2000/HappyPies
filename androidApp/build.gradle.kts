@@ -24,8 +24,10 @@ dependencies {
     implementation(project.dependencies.platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.functions)
     implementation(libs.firebase.storage)
     implementation(libs.firebase.messaging)
+
     implementation(libs.media3.transformer)
 
     implementation(libs.koin.core)
