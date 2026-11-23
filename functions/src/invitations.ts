@@ -92,7 +92,7 @@ export const getInvitation = onCall({ region: REGION }, async (request) => {
     email: invitation.email,
     name: invitation.name,
     trainerName: trainer.get("name") ?? "",
-    expiresAt: invitation.expiresAt.toDate().toISOString()
+    expiresAtMillis: String(invitation.expiresAt.toMillis())
   };
 });
 

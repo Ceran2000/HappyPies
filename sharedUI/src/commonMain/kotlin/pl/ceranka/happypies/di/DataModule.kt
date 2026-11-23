@@ -9,6 +9,8 @@ import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountRepositoryImpl
 import pl.ceranka.happypies.data.client.ClientRepository
 import pl.ceranka.happypies.data.client.ClientRepositoryImpl
+import pl.ceranka.happypies.data.invitation.InvitationRepository
+import pl.ceranka.happypies.data.invitation.InvitationRepositoryImpl
 import pl.ceranka.happypies.data.media.MediaRepository
 import pl.ceranka.happypies.data.media.MediaRepositoryImpl
 import pl.ceranka.happypies.data.report.ReportRepository
@@ -30,6 +32,7 @@ val dataModule = module {
     single<TrainerRepository> { TrainerRepositoryImpl(get()) }
     single<ReportRepository> { ReportRepositoryImpl(get()) }
     single<MediaRepository> { MediaRepositoryImpl(get()) }
+    single<InvitationRepository> { InvitationRepositoryImpl(get(), get()) }
     single<AccountRepository> { AccountRepositoryImpl(get(), get(), get(ApplicationScope)) }
 
     single<PhotoCompressor> { FileKitPhotoCompressor() }
