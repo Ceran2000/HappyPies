@@ -84,6 +84,7 @@ class FakeAccountRepository(initial: AccountState) : AccountRepository {
 class FakeAuthManager : AuthManager {
     var signInError: Exception? = null
     val signIns = mutableListOf<Pair<String, String>>()
+    var signOuts = 0
 
     override val authUser: AuthUser? = null
 
@@ -92,7 +93,9 @@ class FakeAuthManager : AuthManager {
         signInError?.let { throw it }
     }
 
-    override suspend fun signOut() = Unit
+    override suspend fun signOut() {
+        signOuts++
+    }
 
     override fun addAuthStateListener(listener: AuthStateListener) = ListenerHandle {}
 }

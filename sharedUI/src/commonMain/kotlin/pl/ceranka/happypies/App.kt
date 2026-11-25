@@ -15,7 +15,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,15 +25,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import co.touchlab.kermit.Logger
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountState
-import pl.ceranka.happypies.firebase.auth.AuthManager
 import pl.ceranka.happypies.navigation.Route
 import pl.ceranka.happypies.navigation.requiredBackStack
 import pl.ceranka.happypies.navigation.routeSavedStateConfiguration
@@ -54,16 +47,13 @@ import pl.ceranka.happypies.ui.theme.HappyPiesTheme
 
 @Composable
 fun App() {
-    val authManager = koinInject<AuthManager>()
-    val accountRepository = koinInject<AccountRepository>()
     val viewModel = koinViewModel<AppViewModel>()
 
     HappyPiesTheme {
         // Restored after process death; kept as long as the account allows it.
         val backStack = rememberNavBackStack(routeSavedStateConfiguration, Route.Login)
-        val accountState by accountRepository.state.collectAsStateWithLifecycle()
+        val accountState by viewModel.accountState.collectAsStateWithLifecycle()
         val pendingInvitationCode by viewModel.pendingInvitationCode.collectAsStateWithLifecycle()
-        val scope = rememberCoroutineScope()
 
         // Navigation follows the account: signing in and out (also outside the app) moves the back stack.
         val requiredStack = requiredBackStack(accountState, backStack)
@@ -74,33 +64,21 @@ fun App() {
             }
         }
 
-        val onLogout: () -> Unit = {
-            scope.launch {
-                try {
-                    authManager.signOut()
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Logger.withTag("App").e(e) { "Sign-out failed" }
-                }
-            }
-        }
-
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.safeDrawingPadding()) {
                 val state = accountState
                 when {
                     state is AccountState.Unavailable -> AccountUnavailableScreen(
                         message = stringResource(state.error.toUserMessage()),
-                        onRetry = accountRepository::retry,
-                        onLogout = onLogout
+                        onRetry = viewModel::onRetryClick,
+                        onLogout = viewModel::onLogoutClick
                     )
                     state == AccountState.Loading || requiredStack != null -> LoadingScreen()
                     else -> AppNavDisplay(
                         backStack = backStack,
                         pendingInvitationCode = pendingInvitationCode,
                         onInvitationOpened = viewModel::onInvitationOpened,
-                        onLogout = onLogout
+                        onLogout = viewModel::onLogoutClick
                     )
                 }
             }

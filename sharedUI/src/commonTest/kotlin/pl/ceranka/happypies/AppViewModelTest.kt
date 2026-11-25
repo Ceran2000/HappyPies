@@ -7,6 +7,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.fakes.FakeAccountRepository
+import pl.ceranka.happypies.fakes.FakeAuthManager
 import pl.ceranka.happypies.fakes.trainer
 import pl.ceranka.happypies.infrastructure.app_links.AppLinks
 import kotlin.test.AfterTest
@@ -19,6 +20,7 @@ import kotlin.test.assertNull
 class AppViewModelTest {
 
     private val appLinks = AppLinks()
+    private val authManager = FakeAuthManager()
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -26,9 +28,27 @@ class AppViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
+    private fun viewModel(account: FakeAccountRepository) = AppViewModel(account, authManager, appLinks)
+
+    @Test
+    fun retriesLoadingTheAccount() {
+        val account = FakeAccountRepository(AccountState.Loading)
+
+        viewModel(account).onRetryClick()
+
+        assertEquals(1, account.retries)
+    }
+
+    @Test
+    fun signsOut() {
+        viewModel(FakeAccountRepository(AccountState.SignedIn(trainer))).onLogoutClick()
+
+        assertEquals(1, authManager.signOuts)
+    }
+
     @Test
     fun keepsThePendingInvitationCodeForASignedOutUser() {
-        val viewModel = AppViewModel(FakeAccountRepository(AccountState.SignedOut()), appLinks)
+        val viewModel = viewModel(FakeAccountRepository(AccountState.SignedOut()))
 
         appLinks.open(LINK_PATH)
 
@@ -37,7 +57,7 @@ class AppViewModelTest {
 
     @Test
     fun keepsThePendingInvitationCodeWhileTheAccountIsLoading() {
-        val viewModel = AppViewModel(FakeAccountRepository(AccountState.Loading), appLinks)
+        val viewModel = viewModel(FakeAccountRepository(AccountState.Loading))
 
         appLinks.open(LINK_PATH)
 
@@ -47,7 +67,7 @@ class AppViewModelTest {
     @Test
     fun dropsThePendingInvitationCodeWhenTheAccountTurnsOutSignedIn() {
         val account = FakeAccountRepository(AccountState.Loading)
-        val viewModel = AppViewModel(account, appLinks)
+        val viewModel = viewModel(account)
         appLinks.open(LINK_PATH)
 
         account.state.value = AccountState.SignedIn(trainer)
@@ -58,7 +78,7 @@ class AppViewModelTest {
     @Test
     fun ignoresALinkOpenedWhileSignedIn() {
         val account = FakeAccountRepository(AccountState.SignedIn(trainer))
-        val viewModel = AppViewModel(account, appLinks)
+        val viewModel = viewModel(account)
         appLinks.open(LINK_PATH)
 
         account.state.value = AccountState.SignedOut()
@@ -68,7 +88,7 @@ class AppViewModelTest {
 
     @Test
     fun ignoresAPathWithoutACode() {
-        val viewModel = AppViewModel(FakeAccountRepository(AccountState.SignedOut()), appLinks)
+        val viewModel = viewModel(FakeAccountRepository(AccountState.SignedOut()))
 
         appLinks.open("/i/ABC")
 
@@ -79,14 +99,14 @@ class AppViewModelTest {
     fun keepsALinkOpenedBeforeTheViewModelExists() {
         appLinks.open(LINK_PATH)
 
-        val viewModel = AppViewModel(FakeAccountRepository(AccountState.SignedOut()), appLinks)
+        val viewModel = viewModel(FakeAccountRepository(AccountState.SignedOut()))
 
         assertEquals(CODE, viewModel.pendingInvitationCode.value)
     }
 
     @Test
     fun forgetsThePendingInvitationCodeOnceOpened() {
-        val viewModel = AppViewModel(FakeAccountRepository(AccountState.SignedOut()), appLinks)
+        val viewModel = viewModel(FakeAccountRepository(AccountState.SignedOut()))
         appLinks.open(LINK_PATH)
 
         viewModel.onInvitationOpened()
