@@ -37,11 +37,13 @@ import pl.ceranka.happypies.navigation.requiredBackStack
 import pl.ceranka.happypies.navigation.routeSavedStateConfiguration
 import pl.ceranka.happypies.ui.common.AccountUnavailableScreen
 import pl.ceranka.happypies.ui.common.toUserMessage
+import pl.ceranka.happypies.ui.screen.accept_invitation.AcceptInvitationScreen
 import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportScreen
 import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportScreen
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsScreen
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeScreen
 import pl.ceranka.happypies.ui.screen.client_list.ClientListScreen
+import pl.ceranka.happypies.ui.screen.invitation_code.InvitationCodeScreen
 import pl.ceranka.happypies.ui.screen.invite_client.InviteClientScreen
 import pl.ceranka.happypies.ui.screen.login.LoginScreen
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsScreen
@@ -68,7 +70,7 @@ fun App() {
             }
         }
 
-        fun logout() {
+        val onLogout: () -> Unit = {
             scope.launch {
                 try {
                     authManager.signOut()
@@ -80,8 +82,13 @@ fun App() {
             }
         }
 
-        fun goBack() {
+        val onNavigateBack: () -> Unit = {
             backStack.removeLastOrNull()
+        }
+
+        val onNavigateBackToLogin: () -> Unit = {
+            backStack.clear()
+            backStack.add(Route.Login)
         }
 
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
@@ -91,7 +98,7 @@ fun App() {
                     AccountUnavailableScreen(
                         message = stringResource(state.error.toUserMessage()),
                         onRetry = accountRepository::retry,
-                        onLogout = ::logout,
+                        onLogout = onLogout,
                     )
                 } else if (state == AccountState.Loading || requiredStack != null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -110,25 +117,38 @@ fun App() {
                     predictivePopTransitionSpec = { popTransition() },
                     entryProvider = entryProvider {
                         entry<Route.Login> {
-                            LoginScreen()
+                            LoginScreen(onHaveInvitationClick = { backStack.add(Route.InvitationCode) })
+                        }
+                        entry<Route.InvitationCode> {
+                            InvitationCodeScreen(
+                                onFound = { code -> backStack.add(Route.AcceptInvitation(code)) },
+                                onBack = onNavigateBack
+                            )
+                        }
+                        entry<Route.AcceptInvitation> { route ->
+                            AcceptInvitationScreen(
+                                code = route.code,
+                                onBack = onNavigateBack,
+                                onBackToLogin = onNavigateBackToLogin
+                            )
                         }
                         entry<Route.ClientList> {
                             ClientListScreen(
                                 onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) },
                                 onInviteClick = { backStack.add(Route.InviteClient) },
-                                onLogout = ::logout
+                                onLogout = onLogout
                             )
                         }
                         entry<Route.InviteClient> {
                             InviteClientScreen(
-                                onSent = ::goBack,
-                                onBack = ::goBack
+                                onSent = onNavigateBack,
+                                onBack = onNavigateBack
                             )
                         }
                         entry<Route.ClientDetail> { route ->
                             ClientDetailsScreen(
                                 clientId = route.clientId,
-                                onBack = ::goBack,
+                                onBack = onNavigateBack,
                                 onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
                                 onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) }
                             )
@@ -137,23 +157,23 @@ fun App() {
                             ReportDetailsScreen(
                                 clientId = route.clientId,
                                 reportId = route.reportId,
-                                onBack = ::goBack,
+                                onBack = onNavigateBack,
                                 onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
-                                onDeleted = ::goBack
+                                onDeleted = onNavigateBack
                             )
                         }
                         entry<Route.AddReport> { route ->
                             AddReportScreen(
                                 clientId = route.clientId,
-                                onSaved = ::goBack,
-                                onCancel = ::goBack
+                                onSaved = onNavigateBack,
+                                onCancel = onNavigateBack
                             )
                         }
                         entry<Route.EditReport> { route ->
                             EditReportScreen(
                                 reportId = route.reportId,
-                                onSaved = ::goBack,
-                                onCancel = ::goBack
+                                onSaved = onNavigateBack,
+                                onCancel = onNavigateBack
                             )
                         }
                         entry<Route.ClientHome> { route ->
@@ -161,7 +181,7 @@ fun App() {
                                 clientId = route.clientId,
                                 onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
                                 onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
-                                onLogout = ::logout
+                                onLogout = onLogout
                             )
                         }
                     }

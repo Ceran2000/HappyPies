@@ -31,7 +31,38 @@
     <string name="login_sign_in">Zaloguj się</string>
     <string name="login_error_account_not_configured">Konto nie jest skonfigurowane. Skontaktuj się z trenerem.</string>
     <string name="login_error_sign_in_failed">Nie udało się zalogować. Sprawdź e-mail, hasło i połączenie z internetem.</string>
+    <string name="login_have_invitation">Mam zaproszenie</string>
     <!-- [/Login] -->
+
+    <!-- [InvitationCode] -->
+    <string name="invitation_code_title">Zaproszenie</string>
+    <string name="invitation_code_label">Kod zaproszenia</string>
+    <string name="invitation_code_info">Wpisz kod z e-maila od trenera. Jeśli otworzysz link z e-maila na tym telefonie, kod uzupełni się sam.</string>
+    <string name="invitation_code_next">Dalej</string>
+    <string name="invitation_code_not_found">Nie znaleźliśmy takiego zaproszenia. Sprawdź kod.</string>
+    <string name="invitation_code_expired">To zaproszenie wygasło. Poproś trenera o nowe.</string>
+    <!-- [/InvitationCode] -->
+
+    <!-- [AcceptInvitation] -->
+    <string name="accept_invitation_title">Rejestracja z zaproszenia</string>
+    <string name="accept_invitation_valid_until">Zaproszenie ważne do %1$s</string>
+    <string name="accept_invitation_greeting">Cześć, %1$s!</string>
+    <string name="accept_invitation_message">%1$s zaprasza Cię do HappyPies. Ustaw hasło, żeby razem prowadzić raporty z treningów.</string>
+    <string name="accept_invitation_email_label">E-mail</string>
+    <string name="accept_invitation_password_label">Hasło</string>
+    <string name="accept_invitation_repeat_password_label">Powtórz hasło</string>
+    <string name="accept_invitation_password_hint">Co najmniej 8 znaków</string>
+    <string name="accept_invitation_password_too_short">Hasło musi mieć co najmniej 8 znaków</string>
+    <string name="accept_invitation_passwords_differ">Hasła muszą być takie same</string>
+    <string name="accept_invitation_create_account">Załóż konto</string>
+    <string name="accept_invitation_account_exists">Ten e-mail ma już konto. Zaloguj się.</string>
+    <string name="accept_invitation_sign_in_failed">Konto założone. Zaloguj się na ekranie logowania.</string>
+    <string name="accept_invitation_expired_title">Zaproszenie wygasło</string>
+    <string name="accept_invitation_expired_message">Zaproszenie było ważne 7 dni. Poproś trenera, żeby wysłał je ponownie.</string>
+    <string name="accept_invitation_not_current_title">Zaproszenie nieaktualne</string>
+    <string name="accept_invitation_not_current_message">Ten link już nie działa: konto zostało założone albo trener wysłał nowe zaproszenie. Sprawdź najnowszy e-mail albo zaloguj się.</string>
+    <string name="accept_invitation_back_to_login">Wróć do logowania</string>
+    <!-- [/AcceptInvitation] -->
 
     <!-- [AccountUnavailable] -->
     <string name="account_unavailable_title">Nie udało się wczytać Twojego konta.</string>

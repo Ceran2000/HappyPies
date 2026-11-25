@@ -28,11 +28,13 @@ import pl.ceranka.happypies.firebase.storage.StorageGateway
 import pl.ceranka.happypies.firebase.storage.UploadHandle
 import pl.ceranka.happypies.firebase.storage.UploadListener
 import pl.ceranka.happypies.infrastructure.media.VideoTranscoder
+import pl.ceranka.happypies.ui.screen.accept_invitation.AcceptInvitationViewModel
 import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportViewModel
 import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportViewModel
 import pl.ceranka.happypies.ui.screen.client_details.ClientDetailsViewModel
 import pl.ceranka.happypies.ui.screen.client_home.ClientHomeViewModel
 import pl.ceranka.happypies.ui.screen.client_list.ClientListViewModel
+import pl.ceranka.happypies.ui.screen.invitation_code.InvitationCodeViewModel
 import pl.ceranka.happypies.ui.screen.invite_client.InviteClientViewModel
 import pl.ceranka.happypies.ui.screen.login.LoginViewModel
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsViewModel
@@ -73,6 +75,16 @@ class ViewModelModuleTest {
     @Test
     fun resolvesInviteClientViewModel() {
         assertNotNull(koin.get<InviteClientViewModel>())
+    }
+
+    @Test
+    fun resolvesInvitationCodeViewModel() {
+        assertNotNull(koin.get<InvitationCodeViewModel>())
+    }
+
+    @Test
+    fun resolvesAcceptInvitationViewModelWithCode() {
+        assertNotNull(koin.get<AcceptInvitationViewModel> { parametersOf("ABCD2345") })
     }
 
     @Test

@@ -50,4 +50,27 @@ class SessionNavigationTest {
             requiredBackStack(AccountState.SignedIn(trainer), stackOf(Route.ClientList, Route.ClientDetail("client-1")))
         )
     }
+
+    @Test
+    fun signedOutKeepsTheInvitationScreens() {
+        val stack = stackOf(Route.Login, Route.InvitationCode, Route.AcceptInvitation("ABCD2345"))
+        assertNull(requiredBackStack(AccountState.SignedOut(), stack))
+    }
+
+    @Test
+    fun signedOutWithoutLoginUnderneathGoesToLogin() {
+        assertEquals(listOf(Route.Login), requiredBackStack(AccountState.SignedOut(), stackOf(Route.AcceptInvitation("ABCD2345"))))
+    }
+
+    @Test
+    fun signedOutBelowASignedInScreenGoesToLogin() {
+        assertEquals(listOf(Route.Login), requiredBackStack(AccountState.SignedOut(), stackOf(Route.Login, Route.ClientList)))
+    }
+
+    @Test
+    fun signedInAfterAcceptingAnInvitationGoesToTheRolesStartScreen() {
+        val client = Account("client-1", "ewa@przyklad.pl", "Ewa", UserRole.CLIENT)
+        val stack = stackOf(Route.Login, Route.InvitationCode, Route.AcceptInvitation("ABCD2345"))
+        assertEquals(listOf(Route.ClientHome(client.uid)), requiredBackStack(AccountState.SignedIn(client), stack))
+    }
 }

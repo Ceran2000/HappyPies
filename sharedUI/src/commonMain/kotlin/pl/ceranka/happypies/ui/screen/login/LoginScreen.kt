@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedSecureTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldLabelPosition
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -29,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import happypies.sharedui.generated.resources.Res
 import happypies.sharedui.generated.resources.login_email
+import happypies.sharedui.generated.resources.login_have_invitation
 import happypies.sharedui.generated.resources.login_password
 import happypies.sharedui.generated.resources.login_sign_in
 import org.jetbrains.compose.resources.stringResource
@@ -39,7 +41,7 @@ import pl.ceranka.happypies.ui.common.clearFocusOnTap
 import pl.ceranka.happypies.ui.common.filledFieldColors
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(onHaveInvitationClick: () -> Unit) {
     val viewModel = koinViewModel<LoginViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -47,7 +49,8 @@ fun LoginScreen() {
         emailState = viewModel.emailState,
         passwordState = viewModel.passwordState,
         uiState = uiState,
-        onSignIn = viewModel::onSignIn
+        onSignIn = viewModel::onSignIn,
+        onHaveInvitationClick = onHaveInvitationClick
     )
 }
 
@@ -56,13 +59,15 @@ private fun LoginContent(
     emailState: TextFieldState,
     passwordState: TextFieldState,
     uiState: LoginUiState,
-    onSignIn: () -> Unit
+    onSignIn: () -> Unit,
+    onHaveInvitationClick: () -> Unit
 ) {
     val isLoading = uiState is LoginUiState.Loading
     val fieldsFilled by remember(emailState, passwordState) {
         derivedStateOf { emailState.text.isNotEmpty() && passwordState.text.isNotEmpty() }
     }
     val signInButtonEnabled = !isLoading && fieldsFilled
+    val haveInvitationButtonEnabled = !isLoading
     val showError = uiState is LoginUiState.Error
 
     Column(
@@ -104,5 +109,12 @@ private fun LoginContent(
             enabled = signInButtonEnabled,
             onClick = onSignIn
         )
+        TextButton(
+            onClick = onHaveInvitationClick,
+            enabled = haveInvitationButtonEnabled,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text(stringResource(Res.string.login_have_invitation))
+        }
     }
 }

@@ -59,8 +59,9 @@ class InvitationRepositoryImpl(
         )
     }
 
-    override suspend fun accept(code: String, password: String) {
-        callFunction(Functions.ACCEPT_INVITATION, mapOf(Functions.CODE to code, Functions.PASSWORD to password))
+    override suspend fun accept(code: String, password: String): String {
+        val data = callFunction(Functions.ACCEPT_INVITATION, mapOf(Functions.CODE to code, Functions.PASSWORD to password))
+        return data.requireValue(Functions.EMAIL)
     }
 
     private suspend fun callFunction(name: String, data: Map<String, String>): Map<String, String> =

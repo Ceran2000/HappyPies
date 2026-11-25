@@ -310,6 +310,7 @@ class FakeVideoTranscoder : VideoTranscoder {
 }
 
 val ewasInvitation = Invitation("invitation-1", "Ewa Nowak", "ewa@przyklad.pl", expiresAt = 1_800_000_000_000)
+val ewasInvitationPreview = InvitationPreview(ewasInvitation.name, ewasInvitation.email, trainer.name, ewasInvitation.expiresAt)
 
 class FakeInvitationRepository(var invitations: List<Invitation> = listOf(ewasInvitation)) : InvitationRepository {
     override val changes = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -320,6 +321,11 @@ class FakeInvitationRepository(var invitations: List<Invitation> = listOf(ewasIn
     val resent = mutableListOf<String>()
     val cancelled = mutableListOf<String>()
     var pendingInvite: CompletableDeferred<Unit>? = null
+    var preview = ewasInvitationPreview
+    var lookupError: Exception? = null
+    var acceptError: Exception? = null
+    val lookedUpCodes = mutableListOf<String>()
+    val accepted = mutableListOf<Pair<String, String>>()
 
     override suspend fun getInvitations(trainerId: String): List<Invitation> {
         requestedTrainers += trainerId
@@ -343,7 +349,15 @@ class FakeInvitationRepository(var invitations: List<Invitation> = listOf(ewasIn
         actionError?.let { throw it }
     }
 
-    override suspend fun getInvitation(code: String): InvitationPreview = throw UnsupportedOperationException()
+    override suspend fun getInvitation(code: String): InvitationPreview {
+        lookedUpCodes += code
+        lookupError?.let { throw it }
+        return preview
+    }
 
-    override suspend fun accept(code: String, password: String) = throw UnsupportedOperationException()
+    override suspend fun accept(code: String, password: String): String {
+        accepted += code to password
+        acceptError?.let { throw it }
+        return preview.email
+    }
 }

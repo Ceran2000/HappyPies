@@ -23,5 +23,5 @@ interface InvitationRepository {
     suspend fun getInvitation(code: String): InvitationPreview
 
     @Throws(Exception::class)
-    suspend fun accept(code: String, password: String)
+    suspend fun accept(code: String, password: String): String
 }

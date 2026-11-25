@@ -143,9 +143,17 @@ class InvitationRepositoryImplTest {
     }
 
     @Test
-    fun acceptCallsTheFunctionWithCodeAndPassword() = runTest {
-        repository.accept("K7P2QXHM", "haslo1234")
+    fun acceptCallsTheFunctionWithCodeAndPasswordAndReturnsTheEmail() = runTest {
+        functions.result = FunctionCallResult.Success(mapOf("email" to "tomasz@przyklad.pl"))
 
+        val email = repository.accept("K7P2QXHM", "haslo1234")
+
+        assertEquals("tomasz@przyklad.pl", email)
         assertEquals(FakeFunctionsGateway.Call("acceptInvitation", mapOf("code" to "K7P2QXHM", "password" to "haslo1234")), functions.calls.single())
+    }
+
+    @Test
+    fun acceptResultWithoutEmailIsMalformed() = runTest {
+        assertFailsWith<DataException.MalformedData> { repository.accept("K7P2QXHM", "haslo1234") }
     }
 }
