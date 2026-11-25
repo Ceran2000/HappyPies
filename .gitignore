@@ -28,3 +28,4 @@ docs/*
 !docs/ROADMAP.md
 
 firebase-debug.log
+.firebase/
