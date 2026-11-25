@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function userDoc(id) { return get(/databases/$(database)/documents/users/$(id)).data; }
+    function role() { return userDoc(uid()).role; }
+    function inClientSpace(clientId) {
+      return signedIn() && (uid() == clientId || userDoc(clientId).trainerId == uid());
+    }
+    function changesOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn() && (resource == null
+        || uid() == userId
+        || resource.data.trainerId == uid()
+        || userDoc(uid()).trainerId == userId);
+      allow list: if signedIn() && resource.data.trainerId == uid();
+      allow update: if signedIn() && uid() == userId
+        && resource.data.role == 'CLIENT'
+        && changesOnly(['dogs']);
+      allow create, delete: if false;
+    }
+
+    match /reports/{reportId} {
+      function isContentEdit() {
+        return changesOnly(['title', 'description', 'media', 'lastEditedBy', 'updatedAt'])
+          && request.resource.data.lastEditedBy == uid()
+          && request.resource.data.updatedAt == request.time;
+      }
+      function isOwnCommentWrite() {
+        let comment = request.resource.data.comment;
+        return comment.keys().hasOnly(['authorId', 'authorRole', 'text', 'updatedAt'])
+          && comment.authorId == uid()
+          && comment.authorRole == role()
+          && role() != resource.data.authorRole
+          && (!('comment' in resource.data) || resource.data.comment.authorId == uid());
+      }
+      function isOwnCommentDelete() {
+        return !('comment' in request.resource.data) && resource.data.comment.authorId == uid();
+      }
+      function isCommentChange() {
+        return changesOnly(['comment'])
+          && ('comment' in request.resource.data ? isOwnCommentWrite() : isOwnCommentDelete());
+      }
+
+      allow get: if resource == null || inClientSpace(resource.data.clientId);
+      allow list: if inClientSpace(resource.data.clientId);
+      allow create: if inClientSpace(request.resource.data.clientId)
+        && request.resource.data.authorId == uid()
+        && request.resource.data.authorRole == role()
+        && request.resource.data.lastEditedBy == uid()
+        && request.resource.data.createdAt == request.time
+        && !('comment' in request.resource.data);
+      allow update: if inClientSpace(resource.data.clientId) && (isContentEdit() || isCommentChange());
+      allow delete: if inClientSpace(resource.data.clientId);
+    }
+
+    match /invitations/{invitationId} {
+      allow read, delete: if signedIn() && resource.data.trainerId == uid();
+      allow create, update: if false;
+    }
+  }
+}

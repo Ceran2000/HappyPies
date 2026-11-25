@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function inClientSpace(clientId) {
+      return request.auth != null && (request.auth.uid == clientId
+        || firestore.get(/databases/(default)/documents/users/$(clientId)).data.trainerId == request.auth.uid);
+    }
+
+    match /clients/{clientId}/media/{fileId} {
+      allow read: if inClientSpace(clientId);
+      allow create: if resource == null && inClientSpace(clientId) && request.resource.size <= 35 * 1024 * 1024;
+      allow update, delete: if false;
+    }
+  }
+}
