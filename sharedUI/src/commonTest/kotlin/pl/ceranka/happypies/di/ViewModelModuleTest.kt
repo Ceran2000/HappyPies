@@ -8,6 +8,7 @@ import kotlinx.coroutines.test.setMain
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import pl.ceranka.happypies.AppViewModel
 import pl.ceranka.happypies.core.ListenerHandle
 import pl.ceranka.happypies.fakes.FakeVideoTranscoder
 import pl.ceranka.happypies.firebase.auth.AuthManager
@@ -61,6 +62,11 @@ class ViewModelModuleTest {
     }
 
     private val koin = koinApplication { modules(platformModule, dataModule, viewModelModule) }.koin
+
+    @Test
+    fun resolvesAppViewModel() {
+        assertNotNull(koin.get<AppViewModel>())
+    }
 
     @Test
     fun resolvesLoginViewModel() {

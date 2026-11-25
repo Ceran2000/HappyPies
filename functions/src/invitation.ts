@@ -39,8 +39,8 @@ export function isExpired(expiresAt: Date, now: Date): boolean {
   return expiresAt.getTime() <= now.getTime();
 }
 
-export function invitationLink(projectId: string, code: string): string {
-  return `https://${projectId}.web.app/i/${code}`;
+export function invitationLink(host: string, code: string): string {
+  return `https://${host}/i/${code}`;
 }
 
 export interface InvitationMail {

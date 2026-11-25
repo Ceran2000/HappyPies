@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /** Uses the real NavBackStack: App.kt passes it, and it must be compared by content. */
-class SessionNavigationTest {
+class AccountNavigationTest {
 
     private fun stackOf(vararg routes: NavKey) = NavBackStack(*routes)
 
@@ -73,4 +73,5 @@ class SessionNavigationTest {
         val stack = stackOf(Route.Login, Route.InvitationCode, Route.AcceptInvitation("ABCD2345"))
         assertEquals(listOf(Route.ClientHome(client.uid)), requiredBackStack(AccountState.SignedIn(client), stack))
     }
+
 }

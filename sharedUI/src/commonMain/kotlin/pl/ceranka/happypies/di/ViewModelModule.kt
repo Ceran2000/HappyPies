@@ -3,6 +3,7 @@ package pl.ceranka.happypies.di
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
+import pl.ceranka.happypies.AppViewModel
 import pl.ceranka.happypies.ui.screen.accept_invitation.AcceptInvitationViewModel
 import pl.ceranka.happypies.ui.screen.add_edit_report.AddReportViewModel
 import pl.ceranka.happypies.ui.screen.add_edit_report.EditReportViewModel
@@ -18,6 +19,7 @@ import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsViewModel
 val viewModelModule = module {
     factory { ReportMediaPreparer(get(), get()) }
 
+    viewModelOf(::AppViewModel)
     viewModelOf(::LoginViewModel)
     viewModel { ClientListViewModel(get(), get(), get()) }
     viewModelOf(::InviteClientViewModel)

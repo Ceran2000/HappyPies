@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "happypies-dev"
+  },
+  "targets": {
+    "happypies-dev": {
+      "hosting": {
+        "invitations": [
+          "dev-happypies"
+        ]
+      }
+    }
   }
 }

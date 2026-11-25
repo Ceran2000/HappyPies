@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "pl.ceranka.happypies",
+      "sha256_cert_fingerprints": [
+        "DD:CA:3A:AB:19:67:80:DD:BB:47:26:81:83:64:91:CA:A5:3F:B5:EE:B6:D8:D8:AD:98:5A:9A:81:F2:F5:61:C3"
+      ]
+    }
+  }
+]

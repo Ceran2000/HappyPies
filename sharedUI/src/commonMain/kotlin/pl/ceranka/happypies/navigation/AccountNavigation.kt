@@ -11,7 +11,7 @@ import pl.ceranka.happypies.data.user.UserRole
  * signed in on a signed-out screen (or nothing) → the role's start screen.
  * A stack restored after process death is kept.
  */
-internal fun requiredBackStack(state: AccountState, backStack: List<NavKey>): List<NavKey>? = when (state) {
+fun requiredBackStack(state: AccountState, backStack: List<NavKey>): List<NavKey>? = when (state) {
     is AccountState.Unavailable, AccountState.Loading -> null
     is AccountState.SignedOut -> backStack.loginBackStackIfNeeded()
     is AccountState.SignedIn -> backStack.roleStartBackStackIfNeeded(account = state.account)

@@ -50,9 +50,20 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    buildFeatures {
+        buildConfig = true
+    }
     buildTypes {
+        getByName("debug") {
+            val appLinkHost = "dev-happypies.web.app"
+            manifestPlaceholders["appLinkHost"] = appLinkHost
+            buildConfigField("String", "APP_LINK_HOST", "\"$appLinkHost\"")
+        }
         getByName("release") {
             isMinifyEnabled = false
+            val appLinkHost = "happypies.web.app"
+            manifestPlaceholders["appLinkHost"] = appLinkHost
+            buildConfigField("String", "APP_LINK_HOST", "\"$appLinkHost\"")
         }
     }
     compileOptions {

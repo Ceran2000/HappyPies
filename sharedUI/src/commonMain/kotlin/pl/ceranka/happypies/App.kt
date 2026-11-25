@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
@@ -29,6 +31,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import pl.ceranka.happypies.data.account.AccountRepository
 import pl.ceranka.happypies.data.account.AccountState
 import pl.ceranka.happypies.firebase.auth.AuthManager
@@ -49,16 +52,17 @@ import pl.ceranka.happypies.ui.screen.login.LoginScreen
 import pl.ceranka.happypies.ui.screen.report_details.ReportDetailsScreen
 import pl.ceranka.happypies.ui.theme.HappyPiesTheme
 
-//TODO: should have ViewModel?
-
 @Composable
 fun App() {
     val authManager = koinInject<AuthManager>()
     val accountRepository = koinInject<AccountRepository>()
+    val viewModel = koinViewModel<AppViewModel>()
+
     HappyPiesTheme {
         // Restored after process death; kept as long as the account allows it.
         val backStack = rememberNavBackStack(routeSavedStateConfiguration, Route.Login)
         val accountState by accountRepository.state.collectAsStateWithLifecycle()
+        val pendingInvitationCode by viewModel.pendingInvitationCode.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
 
         // Navigation follows the account: signing in and out (also outside the app) moves the back stack.
@@ -82,113 +86,144 @@ fun App() {
             }
         }
 
-        val onNavigateBack: () -> Unit = {
-            backStack.removeLastOrNull()
-        }
-
-        val onNavigateBackToLogin: () -> Unit = {
-            backStack.clear()
-            backStack.add(Route.Login)
-        }
-
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
             Box(modifier = Modifier.safeDrawingPadding()) {
                 val state = accountState
-                if (state is AccountState.Unavailable) {
-                    AccountUnavailableScreen(
+                when {
+                    state is AccountState.Unavailable -> AccountUnavailableScreen(
                         message = stringResource(state.error.toUserMessage()),
                         onRetry = accountRepository::retry,
-                        onLogout = onLogout,
+                        onLogout = onLogout
                     )
-                } else if (state == AccountState.Loading || requiredStack != null) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                } else NavDisplay(
-                    backStack = backStack,
-                    entryDecorators = listOf(
-                        rememberSaveableStateHolderNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator(),
-                    ),
-                    transitionSpec = {
-                        (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 4 } + fadeOut())
-                    },
-                    popTransitionSpec = { popTransition() },
-                    predictivePopTransitionSpec = { popTransition() },
-                    entryProvider = entryProvider {
-                        entry<Route.Login> {
-                            LoginScreen(onHaveInvitationClick = { backStack.add(Route.InvitationCode) })
-                        }
-                        entry<Route.InvitationCode> {
-                            InvitationCodeScreen(
-                                onFound = { code -> backStack.add(Route.AcceptInvitation(code)) },
-                                onBack = onNavigateBack
-                            )
-                        }
-                        entry<Route.AcceptInvitation> { route ->
-                            AcceptInvitationScreen(
-                                code = route.code,
-                                onBack = onNavigateBack,
-                                onBackToLogin = onNavigateBackToLogin
-                            )
-                        }
-                        entry<Route.ClientList> {
-                            ClientListScreen(
-                                onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) },
-                                onInviteClick = { backStack.add(Route.InviteClient) },
-                                onLogout = onLogout
-                            )
-                        }
-                        entry<Route.InviteClient> {
-                            InviteClientScreen(
-                                onSent = onNavigateBack,
-                                onBack = onNavigateBack
-                            )
-                        }
-                        entry<Route.ClientDetail> { route ->
-                            ClientDetailsScreen(
-                                clientId = route.clientId,
-                                onBack = onNavigateBack,
-                                onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
-                                onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) }
-                            )
-                        }
-                        entry<Route.ReportDetail> { route ->
-                            ReportDetailsScreen(
-                                clientId = route.clientId,
-                                reportId = route.reportId,
-                                onBack = onNavigateBack,
-                                onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
-                                onDeleted = onNavigateBack
-                            )
-                        }
-                        entry<Route.AddReport> { route ->
-                            AddReportScreen(
-                                clientId = route.clientId,
-                                onSaved = onNavigateBack,
-                                onCancel = onNavigateBack
-                            )
-                        }
-                        entry<Route.EditReport> { route ->
-                            EditReportScreen(
-                                reportId = route.reportId,
-                                onSaved = onNavigateBack,
-                                onCancel = onNavigateBack
-                            )
-                        }
-                        entry<Route.ClientHome> { route ->
-                            ClientHomeScreen(
-                                clientId = route.clientId,
-                                onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
-                                onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
-                                onLogout = onLogout
-                            )
-                        }
-                    }
-                )
+                    state == AccountState.Loading || requiredStack != null -> LoadingScreen()
+                    else -> AppNavDisplay(
+                        backStack = backStack,
+                        pendingInvitationCode = pendingInvitationCode,
+                        onInvitationOpened = viewModel::onInvitationOpened,
+                        onLogout = onLogout
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun LoadingScreen() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun AppNavDisplay(
+    backStack: NavBackStack<NavKey>,
+    pendingInvitationCode: String?,
+    onInvitationOpened: () -> Unit,
+    onLogout: () -> Unit
+) {
+    // Only a signed-out screen opens an invitation link; the code waits until one is shown.
+    if (backStack.lastOrNull() is Route.SignedOut) {
+        LaunchedEffect(pendingInvitationCode) {
+            pendingInvitationCode?.let { code ->
+                backStack.clear()
+                backStack.addAll(listOf(Route.Login, Route.AcceptInvitation(code)))
+                onInvitationOpened()
+            }
+        }
+    }
+
+    val onNavigateBack: () -> Unit = {
+        backStack.removeLastOrNull()
+    }
+
+    val onNavigateBackToLogin: () -> Unit = {
+        backStack.clear()
+        backStack.add(Route.Login)
+    }
+
+    NavDisplay(
+        backStack = backStack,
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        ),
+        transitionSpec = {
+            (slideInHorizontally { it } + fadeIn()) togetherWith (slideOutHorizontally { -it / 4 } + fadeOut())
+        },
+        popTransitionSpec = { popTransition() },
+        predictivePopTransitionSpec = { popTransition() },
+        entryProvider = entryProvider {
+            entry<Route.Login> {
+                LoginScreen(onHaveInvitationClick = { backStack.add(Route.InvitationCode) })
+            }
+            entry<Route.InvitationCode> {
+                InvitationCodeScreen(
+                    onFound = { code -> backStack.add(Route.AcceptInvitation(code)) },
+                    onBack = onNavigateBack
+                )
+            }
+            entry<Route.AcceptInvitation> { route ->
+                AcceptInvitationScreen(
+                    code = route.code,
+                    onBack = onNavigateBack,
+                    onBackToLogin = onNavigateBackToLogin
+                )
+            }
+            entry<Route.ClientList> {
+                ClientListScreen(
+                    onClientClick = { clientId -> backStack.add(Route.ClientDetail(clientId)) },
+                    onInviteClick = { backStack.add(Route.InviteClient) },
+                    onLogout = onLogout
+                )
+            }
+            entry<Route.InviteClient> {
+                InviteClientScreen(
+                    onSent = onNavigateBack,
+                    onBack = onNavigateBack
+                )
+            }
+            entry<Route.ClientDetail> { route ->
+                ClientDetailsScreen(
+                    clientId = route.clientId,
+                    onBack = onNavigateBack,
+                    onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
+                    onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) }
+                )
+            }
+            entry<Route.ReportDetail> { route ->
+                ReportDetailsScreen(
+                    clientId = route.clientId,
+                    reportId = route.reportId,
+                    onBack = onNavigateBack,
+                    onEditReport = { backStack.add(Route.EditReport(route.reportId)) },
+                    onDeleted = onNavigateBack
+                )
+            }
+            entry<Route.AddReport> { route ->
+                AddReportScreen(
+                    clientId = route.clientId,
+                    onSaved = onNavigateBack,
+                    onCancel = onNavigateBack
+                )
+            }
+            entry<Route.EditReport> { route ->
+                EditReportScreen(
+                    reportId = route.reportId,
+                    onSaved = onNavigateBack,
+                    onCancel = onNavigateBack
+                )
+            }
+            entry<Route.ClientHome> { route ->
+                ClientHomeScreen(
+                    clientId = route.clientId,
+                    onAddReport = { backStack.add(Route.AddReport(route.clientId)) },
+                    onReportClick = { reportId -> backStack.add(Route.ReportDetail(route.clientId, reportId)) },
+                    onLogout = onLogout
+                )
+            }
+        }
+    )
 }
 
 private fun popTransition(): ContentTransform =

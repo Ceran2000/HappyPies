@@ -5,5 +5,11 @@
       "codebase": "default",
       "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
     }
-  ]
+  ],
+  "hosting": {
+    "target": "invitations",
+    "public": "hosting",
+    "ignore": ["**/node_modules/**"],
+    "rewrites": [{ "source": "/i/**", "destination": "/invitation.html" }]
+  }
 }

@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { getAuth } from "firebase-admin/auth";
 import { DocumentSnapshot, getFirestore, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
+import { defineString } from "firebase-functions/params";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import {
   expiresAtFrom,
@@ -19,6 +20,8 @@ const REGION = "europe-west1";
 const INVITATIONS = "invitations";
 const USERS = "users";
 const MAIL = "mail";
+
+const invitationLinkHost = defineString("INVITATION_LINK_HOST");
 
 interface InvitationData {
   email: string;
@@ -180,8 +183,7 @@ async function uniqueCode(): Promise<string> {
 
 async function queueMail(invitation: InvitationData): Promise<void> {
   const trainer = await getFirestore().collection(USERS).doc(invitation.trainerId).get();
-  const projectId = process.env.GCLOUD_PROJECT ?? "";
-  const link = invitationLink(projectId, invitation.code);
+  const link = invitationLink(invitationLinkHost.value(), invitation.code);
   const message = invitationMail(invitation.name, trainer.get("name") ?? "Trener", link, invitation.code, invitation.expiresAt.toDate());
   await getFirestore().collection(MAIL).add({ to: invitation.email, message });
 }

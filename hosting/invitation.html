@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Zaproszenie do HappyPies</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #FBF8F2;
+      color: #2A2013;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    main {
+      max-width: 420px;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 26px;
+    }
+    p {
+      margin: 0 0 20px;
+      line-height: 1.5;
+      color: #5B4A2E;
+    }
+    .code {
+      margin: 0 0 12px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #EFE7D6;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 6px;
+      font-family: ui-monospace, Menlo, monospace;
+    }
+    button {
+      margin-bottom: 28px;
+      padding: 12px 24px;
+      border: 0;
+      border-radius: 24px;
+      background: #F6A605;
+      color: #2A2013;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    ol {
+      margin: 0;
+      padding-left: 20px;
+      text-align: left;
+      line-height: 1.7;
+    }
+    [hidden] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="invitation" hidden>
+      <h1>Zaproszenie do HappyPies</h1>
+      <p>Twój kod zaproszenia:</p>
+      <div class="code" id="code"></div>
+      <button id="copy" type="button">Kopiuj kod</button>
+      <ol>
+        <li>Otwórz aplikację HappyPies.</li>
+        <li>Na ekranie logowania wybierz „Mam zaproszenie”.</li>
+        <li>Wpisz kod i załóż konto.</li>
+      </ol>
+    </section>
+    <section id="invalid" hidden>
+      <h1>Nieprawidłowy link</h1>
+      <p>Ten link do zaproszenia jest niepełny. Poproś trenera o nowe zaproszenie.</p>
+    </section>
+  </main>
+  <script>
+    const code = decodeURIComponent(location.pathname.split("/").filter(Boolean)[1] || "").toUpperCase();
+    if (/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/.test(code)) {
+      document.getElementById("code").textContent = code;
+      document.getElementById("invitation").hidden = false;
+      const copy = document.getElementById("copy");
+      copy.addEventListener("click", () => {
+        navigator.clipboard.writeText(code).then(() => { copy.textContent = "Skopiowano"; });
+      });
+    } else {
+      document.getElementById("invalid").hidden = false;
+    }
+  </script>
+</body>
+</html>

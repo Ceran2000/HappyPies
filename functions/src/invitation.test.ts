@@ -4,6 +4,7 @@ import {
   CODE_LENGTH,
   expiresAtFrom,
   generateCode,
+  invitationLink,
   invitationMail,
   isExpired,
   isValidPassword,
@@ -70,4 +71,8 @@ test("mail escapes names in html and contains the link and the code", () => {
   assert.match(mail.html, /href="https:\/\/p\.web\.app\/i\/K7P2QXHM"/);
   assert.match(mail.text, /K7P2QXHM/);
   assert.match(mail.text, /30\.11\.2026/);
+});
+
+test("invitation link points to the code page on the given host", () => {
+  assert.equal(invitationLink("dev-happypies.web.app", "ABCD2345"), "https://dev-happypies.web.app/i/ABCD2345");
 });
