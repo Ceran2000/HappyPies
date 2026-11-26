@@ -6,9 +6,10 @@ export const MIN_PASSWORD_LENGTH = 8;
 const MAX_NAME_LENGTH = 100;
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INVITATION_ID = /^[0-9a-f]{64}$/;
 
-export function generateCode(randomBytes: (size: number) => Uint8Array): string {
-  return Array.from(randomBytes(CODE_LENGTH), (byte) => CODE_ALPHABET[byte % CODE_ALPHABET.length]).join("");
+export function generateCode(randomInt: (max: number) => number): string {
+  return Array.from({ length: CODE_LENGTH }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("");
 }
 
 export function normalizeCode(input: unknown): string | undefined {
@@ -19,6 +20,10 @@ export function normalizeCode(input: unknown): string | undefined {
 
 export function invitationIdOf(code: string, key: string): string {
   return createHmac("sha256", key).update(code).digest("hex");
+}
+
+export function isInvitationId(input: unknown): input is string {
+  return typeof input === "string" && INVITATION_ID.test(input);
 }
 
 export function normalizeEmail(input: unknown): string | undefined {

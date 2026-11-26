@@ -5,6 +5,7 @@ import {
   expiresAtFrom,
   generateCode,
   invitationIdOf,
+  isInvitationId,
   invitationLink,
   invitationMail,
   isExpired,
@@ -17,7 +18,8 @@ import {
 const now = new Date("2026-11-23T12:00:00Z");
 
 test("generated code has the code length and no ambiguous characters", () => {
-  const code = generateCode((size) => Uint8Array.from({ length: size }, (_, i) => i * 37));
+  let next = 0;
+  const code = generateCode((max) => next++ % max);
   assert.equal(code.length, CODE_LENGTH);
   assert.doesNotMatch(code, /[01ILO]/);
   assert.equal(normalizeCode(code), code);
@@ -43,6 +45,14 @@ test("invitation id is the hmac of the code and does not reveal it", () => {
 
 test("invitation id depends on the key", () => {
   assert.notEqual(invitationIdOf("K7P2QXHM", "key"), invitationIdOf("K7P2QXHM", "other key"));
+});
+
+test("only a 64 character hex string is an invitation id", () => {
+  assert.equal(isInvitationId(invitationIdOf("K7P2QXHM", "key")), true);
+  assert.equal(isInvitationId("a".repeat(63)), false);
+  assert.equal(isInvitationId("A".repeat(64)), false);
+  assert.equal(isInvitationId(`${"a".repeat(30)}/sub/${"a".repeat(29)}`), false);
+  assert.equal(isInvitationId(undefined), false);
 });
 
 test("email is trimmed and lower-cased", () => {
