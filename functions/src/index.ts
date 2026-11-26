@@ -6,6 +6,7 @@ import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { isMediaOfClient } from "./mediaPath.js";
 export { acceptInvitation, getInvitation, inviteClient, resendInvitation } from "./invitations.js";
+export { sendQueuedMail } from "./mails.js";
 import { orphanCandidates, orphansOf } from "./orphanedMedia.js";
 import { removedStoragePaths, storagePathsOf } from "./removedStoragePaths.js";
 
