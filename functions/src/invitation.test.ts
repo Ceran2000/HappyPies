@@ -4,6 +4,7 @@ import {
   CODE_LENGTH,
   expiresAtFrom,
   generateCode,
+  invitationIdOf,
   invitationLink,
   invitationMail,
   isExpired,
@@ -30,6 +31,18 @@ test("code with wrong length, ambiguous characters or wrong type is rejected", (
   assert.equal(normalizeCode("K7P2QXH"), undefined);
   assert.equal(normalizeCode("K7P2QXH0"), undefined);
   assert.equal(normalizeCode(12345678), undefined);
+});
+
+test("invitation id is the hmac of the code and does not reveal it", () => {
+  const id = invitationIdOf("K7P2QXHM", "key");
+  assert.match(id, /^[0-9a-f]{64}$/);
+  assert.equal(id, invitationIdOf("K7P2QXHM", "key"));
+  assert.notEqual(id, invitationIdOf("K7P2QXHN", "key"));
+  assert.doesNotMatch(id, /K7P2QXHM/i);
+});
+
+test("invitation id depends on the key", () => {
+  assert.notEqual(invitationIdOf("K7P2QXHM", "key"), invitationIdOf("K7P2QXHM", "other key"));
 });
 
 test("email is trimmed and lower-cased", () => {

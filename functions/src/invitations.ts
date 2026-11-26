@@ -2,11 +2,12 @@ import { randomBytes } from "node:crypto";
 import { getAuth } from "firebase-admin/auth";
 import { DocumentSnapshot, getFirestore, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions";
-import { defineString } from "firebase-functions/params";
+import { defineSecret, defineString } from "firebase-functions/params";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import {
   expiresAtFrom,
   generateCode,
+  invitationIdOf,
   invitationLink,
   invitationMail,
   isExpired,
@@ -15,24 +16,24 @@ import {
   normalizeEmail,
   normalizeName
 } from "./invitation.js";
+import { sendMail, smtpPassword } from "./mailer.js";
 
 const REGION = "europe-west1";
 const INVITATIONS = "invitations";
 const USERS = "users";
-const MAIL = "mail";
 
 const invitationLinkHost = defineString("INVITATION_LINK_HOST");
+const invitationCodeKey = defineSecret("INVITATION_CODE_KEY");
 
 interface InvitationData {
   email: string;
   name: string;
   trainerId: string;
-  code: string;
   createdAt: Timestamp;
   expiresAt: Timestamp;
 }
 
-export const inviteClient = onCall({ region: REGION }, async (request) => {
+export const inviteClient = onCall({ region: REGION, secrets: [smtpPassword, invitationCodeKey] }, async (request) => {
   const trainerId = await requireTrainer(request.auth?.uid);
   const name = normalizeName(request.data?.name);
   const email = normalizeEmail(request.data?.email);
@@ -48,22 +49,27 @@ export const inviteClient = onCall({ region: REGION }, async (request) => {
   }
 
   const now = new Date();
+  const code = generateCode((size) => randomBytes(size));
   const invitation: InvitationData = {
     email,
     name,
     trainerId,
-    code: await uniqueCode(),
     createdAt: Timestamp.fromDate(now),
     expiresAt: Timestamp.fromDate(expiresAtFrom(now))
   };
-  const ref = getFirestore().collection(INVITATIONS).doc();
-  await ref.set(invitation);
-  await queueMail(invitation);
+  const ref = getFirestore().collection(INVITATIONS).doc(invitationIdOf(code, invitationCodeKey.value()));
+  await ref.create(invitation);
+  try {
+    await sendInvitationMail(invitation, code);
+  } catch (error) {
+    await ref.delete();
+    throw error;
+  }
   logger.info(`Trainer ${trainerId} invited a client`, { invitationId: ref.id });
   return { invitationId: ref.id };
 });
 
-export const resendInvitation = onCall({ region: REGION }, async (request) => {
+export const resendInvitation = onCall({ region: REGION, secrets: [smtpPassword, invitationCodeKey] }, async (request) => {
   const trainerId = await requireTrainer(request.auth?.uid);
   const invitationId = request.data?.invitationId;
   if (typeof invitationId !== "string" || invitationId.length === 0) {
@@ -76,18 +82,25 @@ export const resendInvitation = onCall({ region: REGION }, async (request) => {
     throw new HttpsError("not-found", `Invitation ${invitationId} not found`);
   }
 
+  const code = generateCode((size) => randomBytes(size));
   const renewed: InvitationData = {
-    ...invitation,
-    code: await uniqueCode(),
+    email: invitation.email,
+    name: invitation.name,
+    trainerId: invitation.trainerId,
+    createdAt: invitation.createdAt,
     expiresAt: Timestamp.fromDate(expiresAtFrom(new Date()))
   };
-  await ref.update({ code: renewed.code, expiresAt: renewed.expiresAt });
-  await queueMail(renewed);
-  logger.info(`Trainer ${trainerId} resent an invitation`, { invitationId });
-  return { invitationId };
+  const renewedRef = getFirestore().collection(INVITATIONS).doc(invitationIdOf(code, invitationCodeKey.value()));
+  const batch = getFirestore().batch();
+  batch.create(renewedRef, renewed);
+  batch.delete(ref);
+  await batch.commit();
+  await sendInvitationMail(renewed, code);
+  logger.info(`Trainer ${trainerId} resent an invitation`, { invitationId: renewedRef.id });
+  return { invitationId: renewedRef.id };
 });
 
-export const getInvitation = onCall({ region: REGION }, async (request) => {
+export const getInvitation = onCall({ region: REGION, secrets: [invitationCodeKey] }, async (request) => {
   const snapshot = await validInvitation(request.data?.code);
   const invitation = snapshot.data() as InvitationData;
   const trainer = await getFirestore().collection(USERS).doc(invitation.trainerId).get();
@@ -99,7 +112,7 @@ export const getInvitation = onCall({ region: REGION }, async (request) => {
   };
 });
 
-export const acceptInvitation = onCall({ region: REGION }, async (request) => {
+export const acceptInvitation = onCall({ region: REGION, secrets: [invitationCodeKey] }, async (request) => {
   const password = request.data?.password;
   if (!isValidPassword(password)) {
     throw new HttpsError("invalid-argument", "Password too short");
@@ -152,9 +165,8 @@ async function validInvitation(input: unknown): Promise<DocumentSnapshot> {
   if (code === undefined) {
     throw new HttpsError("not-found", "Unknown invitation code");
   }
-  const found = await getFirestore().collection(INVITATIONS).where("code", "==", code).limit(1).get();
-  const snapshot = found.docs[0];
-  if (snapshot === undefined) {
+  const snapshot = await getFirestore().collection(INVITATIONS).doc(invitationIdOf(code, invitationCodeKey.value())).get();
+  if (!snapshot.exists) {
     throw new HttpsError("not-found", "Unknown invitation code");
   }
   if (isExpired((snapshot.data() as InvitationData).expiresAt.toDate(), new Date())) {
@@ -173,17 +185,8 @@ async function accountExists(email: string): Promise<boolean> {
   }
 }
 
-async function uniqueCode(): Promise<string> {
-  for (;;) {
-    const code = generateCode((size) => randomBytes(size));
-    const taken = await getFirestore().collection(INVITATIONS).where("code", "==", code).limit(1).get();
-    if (taken.empty) return code;
-  }
-}
-
-async function queueMail(invitation: InvitationData): Promise<void> {
+async function sendInvitationMail(invitation: InvitationData, code: string): Promise<void> {
   const trainer = await getFirestore().collection(USERS).doc(invitation.trainerId).get();
-  const link = invitationLink(invitationLinkHost.value(), invitation.code);
-  const message = invitationMail(invitation.name, trainer.get("name") ?? "Trener", link, invitation.code, invitation.expiresAt.toDate());
-  await getFirestore().collection(MAIL).add({ to: invitation.email, message });
+  const link = invitationLink(invitationLinkHost.value(), code);
+  await sendMail(invitation.email, invitationMail(invitation.name, trainer.get("name") ?? "Trener", link, code, invitation.expiresAt.toDate()));
 }

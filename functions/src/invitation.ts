@@ -1,3 +1,5 @@
+import { createHmac } from "node:crypto";
+
 export const INVITATION_VALIDITY_MS = 7 * 24 * 60 * 60 * 1000;
 export const CODE_LENGTH = 8;
 export const MIN_PASSWORD_LENGTH = 8;
@@ -13,6 +15,10 @@ export function normalizeCode(input: unknown): string | undefined {
   if (typeof input !== "string") return undefined;
   const code = input.replace(/[\s-]/g, "").toUpperCase();
   return code.length === CODE_LENGTH && [...code].every((char) => CODE_ALPHABET.includes(char)) ? code : undefined;
+}
+
+export function invitationIdOf(code: string, key: string): string {
+  return createHmac("sha256", key).update(code).digest("hex");
 }
 
 export function normalizeEmail(input: unknown): string | undefined {
